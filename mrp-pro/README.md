@@ -1,7 +1,21 @@
 # MRP Pro — Malzeme İhtiyaç Planlama
 
 Tarayıcıda çalışan, kurulum gerektirmeyen bir MRP (Material Requirements Planning) uygulaması.
-`index.html` dosyasını açmanız yeterlidir (veya klasörde `python3 -m http.server` ile sunun).
+
+İki şekilde kullanılabilir:
+
+- **Tek dosya:** [`mrp-pro-tek-dosya.html`](mrp-pro-tek-dosya.html) — tüm CSS ve JavaScript içine gömülüdür;
+  dosyayı indirip çift tıklamanız yeterli. E-postayla gönderilebilir, başka dosyaya ihtiyaç duymaz.
+- **Modüler kaynak:** `index.html` + `assets/` — geliştirme bunun üzerinde yapılır.
+
+Kaynakta değişiklik yaptıktan sonra tek dosyayı yeniden üretin:
+
+```bash
+python3 build-single.py
+```
+
+> Grafik, Excel ve PDF kütüphaneleri ile yazı tipleri CDN'den yüklenir; bu özellikler için internet bağlantısı gerekir.
+> Bağlantı yoksa uygulama çalışmaya devam eder, yalnızca bu özellikler uyarı verir.
 
 ## Modüller
 
@@ -47,6 +61,8 @@ planlı giriş sayıldığı için aynı öneri tekrar üretilmez.
 
 ```
 mrp-pro/
+├── mrp-pro-tek-dosya.html   # tek dosya sürümü (build-single.py üretir)
+├── build-single.py          # tek dosya derleyici
 ├── index.html
 ├── assets/css/app.css
 └── assets/js/
