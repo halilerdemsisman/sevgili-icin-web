@@ -342,8 +342,10 @@
             else if (unit === 'm') safety = 40 + (h % 60);
             else safety = procurement === 'make' ? 20 : 40 + (h % 120);
             if (procurement === 'service') safety = 0;
+            const currency = CURRENCY_BY_TYPE[tur] || 'TRY';
+            const fx = currency === 'TRY' ? 1 : DEFAULT_FX[currency];
             items[kod] = {
-                kod, ad, tur, unit, price: MRP.U.round(price, 4), procurement,
+                kod, ad, tur, unit, price: MRP.U.round(price / fx, 4), currency, procurement,
                 leadTime: LEAD_BY_TYPE[tur] ?? 7, safetyStock: safety, lotPolicy, lotSize
             };
         };
@@ -351,6 +353,43 @@
         Object.entries(RAW_EXTRA).forEach(([kod, [ad, tur, unit, price]]) => add(kod, ad, tur, price, unit));
         return items;
     }
+
+    // ---------------- Döviz ----------------
+    const CURRENCIES = { TRY: { symbol: '₺', name: 'Türk Lirası' }, USD: { symbol: '$', name: 'ABD Doları' }, EUR: { symbol: '€', name: 'Euro' }, GBP: { symbol: '£', name: 'İngiliz Sterlini' } };
+    /** Demo başlangıç kurları — Maliyet & Kur ekranından güncellenir */
+    const DEFAULT_FX = { USD: 41.80, EUR: 48.60, GBP: 55.90 };
+    /** İthal kalemlerin varsayılan fiyatlandırma para birimi */
+    const CURRENCY_BY_TYPE = { 'İroko Kereste': 'USD', 'Profil': 'EUR' };
+
+    // ---------------- Lokasyonlar ----------------
+    const LOCATIONS = {
+        MERKEZ: { ad: 'Merkez Depo', consume: true },
+        FABRIKA: { ad: 'Fabrika / Üretim Hattı', consume: true },
+        FASON: { ad: 'Fasoncuda', consume: false }
+    };
+
+    // ---------------- İş merkezleri ve rotalar ----------------
+    /** capacity: günlük dakika, rate: saatlik maliyet (₺) */
+    const WORK_CENTERS = [
+        { id: 'KES', ad: 'Kesim', capacity: 960, days: 5, efficiency: 90, rate: 650 },
+        { id: 'KAY', ad: 'Kaynak', capacity: 1440, days: 5, efficiency: 85, rate: 720 },
+        { id: 'POL', ad: 'Polisaj / Ahşap İşleme', capacity: 960, days: 5, efficiency: 85, rate: 600 },
+        { id: 'DOS', ad: 'Döşeme', capacity: 960, days: 5, efficiency: 85, rate: 620 },
+        { id: 'MON', ad: 'Montaj', capacity: 1440, days: 5, efficiency: 90, rate: 560 },
+        { id: 'PAK', ad: 'Paketleme', capacity: 960, days: 5, efficiency: 95, rate: 480 }
+    ];
+    /** Kategori bazında varsayılan rota: [iş merkezi, hazırlık dk, birim süre dk] */
+    const DEFAULT_ROUTINGS = {
+        'Masalar': [['KES', 20, 10], ['POL', 15, 18], ['MON', 10, 20], ['PAK', 5, 8]],
+        'Sandalyeler': [['POL', 15, 8], ['MON', 10, 10], ['PAK', 5, 4]],
+        'Şezlonglar': [['DOS', 10, 15], ['MON', 10, 12], ['PAK', 5, 6]],
+        'Sehpalar': [['KES', 15, 8], ['POL', 15, 12], ['MON', 10, 14], ['PAK', 5, 6]],
+        'Koltuk ve Berjerler': [['DOS', 15, 35], ['MON', 10, 18], ['PAK', 5, 8]],
+        'Bank ve Puflar': [['KES', 10, 6], ['DOS', 10, 20], ['MON', 10, 12], ['PAK', 5, 6]],
+        'Köşe ve Oturma Grupları': [['DOS', 20, 60], ['MON', 15, 45], ['PAK', 10, 20]],
+        'Yedek Parça ve Diğer': [['MON', 5, 10], ['PAK', 3, 4]],
+        '_YM': [['KES', 15, 6], ['KAY', 15, 12]]
+    };
 
     /** Başlangıç stok seviyeleri (deterministik) — bazı kalemler bilerek kritik bırakılır */
     function buildInitialStock(items) {
@@ -380,8 +419,26 @@
         { id: 'TED-007', ad: 'Ankara Vida Bağlantı', yetkili: 'Sevgi Ak', tel: '0312 777 0707', email: 'satis@ankaravida.com', adres: 'Ankara', kategoriler: ['Bağlantı', 'Diğer Hammadde'], vade: 30, puan: 4.4, aktif: true, vergiNo: '7890123456' }
     ];
 
+    /** Tedarikçi fiyat listesi: her satın alma kalemi için kategori uyumlu 1–3 tedarikçi teklifi */
+    function buildPriceList(items) {
+        const list = [];
+        Object.values(items).forEach((it) => {
+            if (it.procurement === 'make') return;
+            SUPPLIERS.filter((s) => s.kategoriler.includes(it.tur)).slice(0, 3).forEach((s, i) => {
+                const h = MRP.U.hash(it.kod + s.id);
+                list.push({
+                    supplierId: s.id, kod: it.kod, currency: it.currency,
+                    price: MRP.U.round(it.price * (0.93 + (h % 15) / 100 + i * 0.02), 4),
+                    leadTime: Math.max(1, it.leadTime + (h % 5) - 2), moq: 0, updatedAt: new Date().toISOString()
+                });
+            });
+        });
+        return list;
+    }
+
     MRP.data = {
         CATEGORIES, CATEGORY_STYLE, BASE_PRODUCTS, BOM_TEMPLATES, SUB_BOMS, ITEM_TYPES, UNIT_BY_TYPE,
-        buildProducts, buildItemMaster, buildInitialStock, SUPPLIERS
+        buildProducts, buildItemMaster, buildInitialStock, buildPriceList, SUPPLIERS,
+        CURRENCIES, DEFAULT_FX, CURRENCY_BY_TYPE, LOCATIONS, WORK_CENTERS, DEFAULT_ROUTINGS
     };
 })(window.MRP);

@@ -43,7 +43,10 @@
             .map((x) => ({ ...x, src: x.srcs.length > 2 ? `${x.srcs.slice(0, 2).join(', ')} +${x.srcs.length - 2}` : x.srcs.join(', ') }));
     }
 
-    function run() {
+    /**
+     * @param {{extraDemands?: Array<{id,kod,qty,dueDate}>}} [opts]  Senaryo analizi için kalıcı olmayan ek talepler
+     */
+    function run(opts = {}) {
         const st = S();
         const today = U.iso(U.today());
         const gross = new Map();
@@ -51,7 +54,7 @@
         const push = (map, kod, entry) => { if (entry.qty <= EPS) return; if (!map.has(kod)) map.set(kod, []); map.get(kod).push(entry); };
 
         // 1) Bağımsız talep
-        st.mps.forEach((d) => {
+        [...st.mps, ...(opts.extraDemands || [])].forEach((d) => {
             if (M.product(d.kod)) push(gross, d.kod, { date: d.dueDate, qty: +d.qty, src: d.id, kind: 'MPS' });
         });
 
@@ -98,7 +101,8 @@
             const isService = it.procurement === 'service';
             const reqs = mergeByDate(gross.get(kod) || []);
             const recs = (receipts.get(kod) || []).sort((a, b) => a.date.localeCompare(b.date));
-            const onHand = isService ? 0 : M.onHand(kod);
+            // Fason/hizmet: teslim alınmış ama henüz üretimde kullanılmamış hizmet bakiyesi netleştirilir
+            const onHand = M.onHand(kod);
             const ss = isService ? 0 : (it.safetyStock || 0);
             if (!reqs.length && !recs.length && onHand >= ss) return;
 
@@ -116,11 +120,13 @@
                 const qty = applyLotSize(it, shortage);
                 const due = maxIso(needDate, today);
                 const release = addDaysIso(due, -(it.leadTime || 0));
+                const unitPrice = it.procurement === 'make' ? M.unitCost(kod) : M.priceTRY(kod);
                 const po = {
                     id: `PL-${String(++seq).padStart(4, '0')}`, kod, ad: it.ad, unit: it.unit, tur: it.tur,
                     type: it.procurement === 'make' ? 'production' : 'purchase', service: isService,
                     qty, shortage: U.round(shortage, 3), needDate, due, release, leadTime: it.leadTime || 0,
-                    price: it.price || 0, value: qty * (it.price || 0), reason, late: release < today
+                    price: unitPrice, currency: it.currency || 'TRY', origPrice: it.price || 0,
+                    value: qty * unitPrice, reason, late: release < today
                 };
                 planned.push(po);
                 rec.planned.push(po);
@@ -173,7 +179,7 @@
             today,
             planned, records, exceptions,
             summary: {
-                demands: st.mps.length,
+                demands: st.mps.length + (opts.extraDemands || []).length,
                 items: Object.keys(records).length,
                 purchaseCount: purchase.length,
                 purchaseValue: U.sum(purchase, (p) => p.value),

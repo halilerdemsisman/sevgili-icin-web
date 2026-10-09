@@ -56,8 +56,8 @@
 
     Object.assign(MRP.actions, {
         csvProducts: () => {
-            const rows = M.products().map((p) => [p.kod, p.ad, p.kategori, M.bom(p.kod).length, p.fason, p.hammadde, p.iroko, p.toplam, U.round(M.unitCost(p.kod), 2), M.onHand(p.kod), p.custom ? 'EVET' : 'HAYIR']);
-            const csv = U.toCSV(['Mamul Kodu', 'Mamul Adı', 'Kategori', 'Bileşen', 'Fason', 'Hammadde', 'İroko', 'Kayıtlı Maliyet', 'BOM Maliyeti', 'Stok', 'Özel'], rows);
+            const rows = M.products().map((p) => [p.kod, p.ad, p.kategori, M.bom(p.kod).length, p.fason, p.hammadde, p.iroko, p.toplam, U.round(M.materialCost(p.kod), 2), U.round(M.unitCost(p.kod), 2), M.onHand(p.kod), p.custom ? 'EVET' : 'HAYIR']);
+            const csv = U.toCSV(['Mamul Kodu', 'Mamul Adı', 'Kategori', 'Bileşen', 'Fason', 'Hammadde', 'İroko', 'Kayıtlı Maliyet', 'BOM Malzeme', 'Standart Maliyet', 'Stok', 'Özel'], rows);
             U.download(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `MRP_Urunler_${stamp()}.csv`);
             UI.toast('CSV indirildi', `${rows.length} ürün`, 'success');
         },
@@ -65,14 +65,17 @@
             if (!needXLSX()) return;
             const st = S();
             const wb = XLSX.utils.book_new();
-            sheet(wb, 'Ürünler', M.products().map((p) => ({ 'Kod': p.kod, 'Ad': p.ad, 'Kategori': p.kategori, 'Kayıtlı Maliyet': p.toplam, 'BOM Maliyeti': U.round(M.unitCost(p.kod), 2), 'Stok': M.onHand(p.kod) })));
-            sheet(wb, 'Malzeme Kartları', M.items().map((i) => ({ 'Kod': i.kod, 'Ad': i.ad, 'Tür': i.tur, 'Birim': i.unit, 'Tedarik': M.PROCUREMENT[i.procurement], 'Birim Maliyet': U.round(M.unitCost(i.kod), 4), 'LT (gün)': i.leadTime, 'Emniyet Stoğu': i.safetyStock, 'Parti Politikası': i.lotPolicy, 'Parti Miktarı': i.lotSize })));
-            sheet(wb, 'Stok', M.items().filter((i) => i.procurement !== 'service').map((i) => ({ 'Kod': i.kod, 'Ad': i.ad, 'Eldeki': M.onHand(i.kod), 'Emniyet': i.safetyStock, 'Siparişte': M.onOrder(i.kod), 'Durum': M.stockStatus(i.kod), 'Değer': U.round(M.onHand(i.kod) * M.unitCost(i.kod), 2) })));
+            sheet(wb, 'Ürünler', M.products().map((p) => { const c = M.costParts(p.kod); return { 'Kod': p.kod, 'Ad': p.ad, 'Kategori': p.kategori, 'Kayıtlı Maliyet': p.toplam, 'BOM Malzeme': U.round(c.material, 2), 'İşçilik': U.round(c.labor, 2), 'Standart Maliyet': U.round(M.unitCost(p.kod), 2), 'Stok': M.onHand(p.kod) }; }));
+            sheet(wb, 'Malzeme Kartları', M.items().map((i) => ({ 'Kod': i.kod, 'Ad': i.ad, 'Tür': i.tur, 'Birim': i.unit, 'Tedarik': M.PROCUREMENT[i.procurement], 'Fiyat': i.price, 'Para Birimi': i.currency, 'Birim Maliyet ₺': U.round(i.procurement === 'make' ? M.unitCost(i.kod) : M.priceTRY(i.kod), 4), 'LT (gün)': i.leadTime, 'Emniyet Stoğu': i.safetyStock, 'Parti Politikası': i.lotPolicy, 'Parti Miktarı': i.lotSize })));
+            sheet(wb, 'Stok', M.items().filter((i) => i.procurement !== 'service').map((i) => ({ 'Kod': i.kod, 'Ad': i.ad, 'Eldeki': M.onHand(i.kod), 'Emniyet': i.safetyStock, 'Siparişte': M.onOrder(i.kod), 'Merkez': M.onHand(i.kod, 'MERKEZ'), 'Fabrika': M.onHand(i.kod, 'FABRIKA'), 'Fason': M.onHand(i.kod, 'FASON'), 'Durum': M.stockStatus(i.kod), 'Değer': U.round(M.onHand(i.kod) * (i.procurement === 'make' ? M.unitCost(i.kod) : M.priceTRY(i.kod)), 2) })));
             sheet(wb, 'MRP Önerileri', plannedRows(st.lastRun));
             sheet(wb, 'Talepler', st.requests.map((r) => ({ 'No': r.no, 'Durum': H.REQ_STATUS[r.status][1], 'Öncelik': H.PRIORITY[r.priority][1], 'Kalem': r.lines.length, 'Tutar': U.round(r.total, 2), 'Talep Eden': r.createdByName, 'Tarih': U.dateTime(r.createdAt), 'Sipariş': r.poNo || '' })));
             sheet(wb, 'Siparişler', st.pos.map((p) => ({ 'No': p.no, 'Tedarikçi': p.supplierName, 'Talep': p.requestNo, 'Teslim': p.deliveryDate, 'Durum': H.PO_STATUS[p.status][1], 'Genel Toplam': U.round(MRP.purchasing.poTotals(p).grand, 2), 'Oluşturan': p.createdBy })));
             sheet(wb, 'İş Emirleri', st.workOrders.map((w) => ({ 'No': w.no, 'Kod': w.kod, 'Ad': w.ad, 'Miktar': w.qty, 'Başlangıç': w.start, 'Bitiş': w.end, 'Durum': H.WO_STATUS[w.status][1] })));
             sheet(wb, 'Hareketler', st.movements.map((m) => ({ 'No': m.id, 'Tarih': U.dateTime(m.at), 'Kod': m.kod, 'Tür': M.MOVE_TYPES[m.type].label, 'Miktar': m.qty, 'Bakiye': m.balance, 'Değer': U.round(m.value, 2), 'Belge': m.ref, 'Kullanıcı': m.user, 'Not': m.note })));
+            sheet(wb, 'Lotlar', st.lots.map((l) => ({ 'Lot': l.lot, 'Kod': l.kod, 'Lokasyon': (M.LOCATIONS[l.loc] || {}).ad || l.loc, 'Miktar': l.qty, 'Giriş': U.dateTime(l.at), 'Tedarikçi': l.supplier, 'Belge': l.ref })));
+            sheet(wb, 'Fiyat Listesi', st.priceList.map((o) => ({ 'Tedarikçi': o.supplierId, 'Kod': o.kod, 'Fiyat': o.price, 'Para Birimi': o.currency, 'TL': U.round(M.toTRY(o.price, o.currency), 4), 'Teslim (gün)': o.leadTime, 'Min. Sipariş': o.moq })));
+            sheet(wb, 'Kurlar', [{ 'Tarih': st.fx.updatedAt ? U.dateTime(st.fx.updatedAt) : 'Varsayılan', 'Kaynak': st.fx.source, ...st.fx.rates }]);
             sheet(wb, 'Tedarikçiler', st.suppliers.map((s) => ({ 'Kod': s.id, 'Firma': s.ad, 'Yetkili': s.yetkili, 'Telefon': s.tel, 'E-posta': s.email, 'Vade': s.vade, 'Puan': s.puan, 'Kategoriler': s.kategoriler.join(', '), 'Aktif': s.aktif ? 'EVET' : 'HAYIR' })));
             XLSX.writeFile(wb, `MRP_Rapor_${stamp()}.xlsx`);
             UI.toast('Excel raporu indirildi', '', 'success');
@@ -109,6 +112,7 @@
                     ['Mamul sayısı', M.products().length.toLocaleString('tr-TR')],
                     ['Malzeme kartı', String(M.items().length)],
                     ['Stok değeri', U.cur(M.stockValue())],
+                    ['Döviz kurları', `${Object.entries(st.fx.rates).map(([c, r]) => `${c} ${U.num(r, 4)}`).join(' · ')} (${st.fx.source})`],
                     ['Kritik stok', String(crit.length)],
                     ['Onay bekleyen talep', String(st.requests.filter((r) => r.status === 'pending').length)],
                     ['Açık sipariş', `${openPOs.length} · ${U.cur(U.sum(openPOs, (p) => MRP.purchasing.poTotals(p).grand))}`],

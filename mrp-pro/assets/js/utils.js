@@ -133,6 +133,11 @@ window.MRP = window.MRP || {};
         print: '<path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>',
         search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
         users: '<circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 014-4h6a4 4 0 014 4v2M16 3.1a4 4 0 010 7.8M22 21v-2a4 4 0 00-3-3.9"/>',
+        coin: '<circle cx="12" cy="12" r="9"/><path d="M14.8 9a3 3 0 00-2.8-1.5c-1.7 0-3 1-3 2.3 0 3 6 1.5 6 4.5 0 1.3-1.3 2.3-3 2.3a3 3 0 01-2.8-1.6M12 5.5v2M12 16.6v2"/>',
+        gauge: '<path d="M12 14l4-4"/><path d="M3.3 17a10 10 0 1117.4 0"/><circle cx="12" cy="14" r="1.5"/>',
+        pie: '<path d="M21.2 15.9A10 10 0 118 2.8"/><path d="M22 12A10 10 0 0012 2v10z"/>',
+        upload: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+        barcode: '<path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14"/>',
         layers: '<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>'
     };
     MRP.icon = (name, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;

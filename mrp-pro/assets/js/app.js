@@ -14,10 +14,12 @@
         { group: 'Genel', items: [{ id: 'dashboard', label: 'Gösterge Paneli', icon: 'dashboard' }] },
         { group: 'Mühendislik', items: [
             { id: 'bom', label: 'Ürün Ağacı', icon: 'tree' },
-            { id: 'items', label: 'Malzeme Kartları', icon: 'layers' }
+            { id: 'items', label: 'Malzeme Kartları', icon: 'layers' },
+            { id: 'costing', label: 'Maliyet & Kur', icon: 'coin' }
         ] },
         { group: 'Planlama', items: [
             { id: 'mrp', label: 'MRP Çalıştırma', icon: 'calc', count: () => (MRP.store.state.lastRun ? MRP.store.state.lastRun.summary.critical : 0), alert: true },
+            { id: 'capacity', label: 'Kapasite Planlama', icon: 'gauge' },
             { id: 'workorders', label: 'İş Emirleri', icon: 'factory', count: () => MRP.store.state.workOrders.filter((w) => w.status === 'planned' || w.status === 'released').length }
         ] },
         { group: 'Satın Alma', items: [
@@ -29,7 +31,9 @@
             { id: 'stock', label: 'Stok Durumu', icon: 'warehouse', count: () => MRP.model.items().filter((i) => MRP.model.stockStatus(i.kod) === 'critical').length, alert: true },
             { id: 'movements', label: 'Stok Hareketleri', icon: 'swap' }
         ] },
-        { group: 'Sistem', items: [
+        { group: 'Analiz & Sistem', items: [
+            { id: 'analysis', label: 'Analizler', icon: 'pie' },
+            { id: 'import', label: 'Veri Aktarımı (Excel)', icon: 'upload' },
             { id: 'reports', label: 'Raporlar & Dışa Aktarım', icon: 'chart' },
             { id: 'audit', label: 'Denetim Kaydı', icon: 'shield' }
         ] }

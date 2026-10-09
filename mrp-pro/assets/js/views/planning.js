@@ -290,7 +290,7 @@
             const it = M.item(l.kod) || { ad: '?', unit: '', procurement: 'buy' };
             const need = l.k * wo.qty;
             const stocked = it.procurement !== 'service';
-            const have = stocked ? M.onHand(l.kod) : need;
+            const have = stocked ? M.available(l.kod) : need;
             return { kod: l.kod, it, need, have, short: stocked ? Math.max(0, need - have) : 0, stocked };
         });
     }
@@ -366,9 +366,14 @@
                     <dt>Durum</dt><dd>${H.badge(H.WO_STATUS, w.status)}</dd><dt>Miktar</dt><dd>${esc(U.qty(w.qty, 'ad'))}</dd>
                     <dt>Başlangıç</dt><dd>${esc(U.date(U.parseDate(w.start)))}</dd><dt>Bitiş</dt><dd>${esc(U.date(U.parseDate(w.end)))}</dd>
                     <dt>Kaynak</dt><dd>${esc(w.source || 'Manuel')}</dd><dt>Oluşturan</dt><dd>${esc(w.createdBy)}</dd></dl>
-                <div class="table-wrap" style="max-height:340px;"><table><thead><tr><th>Kod</th><th>Bileşen</th><th class="num">İhtiyaç</th><th class="num">Eldeki</th><th class="num">Eksik</th></tr></thead><tbody>
+                <div class="table-wrap" style="max-height:340px;"><table><thead><tr><th>Kod</th><th>Bileşen</th><th class="num">İhtiyaç</th><th class="num">Kullanılabilir</th><th class="num">Eksik</th></tr></thead><tbody>
                 ${av.map((a) => `<tr class="${isOpen && a.short > 0 ? 'r-crit' : ''}"><td>${H.itemLink(a.kod)}</td><td>${esc(a.it.ad)}</td><td class="num">${esc(U.qty(a.need, a.it.unit))}</td>
                     <td class="num">${a.stocked ? esc(U.qty(a.have, a.it.unit)) : '<span class="muted">fason</span>'}</td><td class="num ${a.short > 0 ? 'tp-neg' : ''}">${a.short > 0 ? esc(U.qty(a.short, a.it.unit)) : '–'}</td></tr>`).join('')}
+                </tbody></table></div>
+                <h3 style="font-size:.9em;margin:16px 0 8px;">Operasyonlar</h3>
+                <div class="table-wrap"><table><thead><tr><th>#</th><th>İş merkezi</th><th class="num">Hazırlık</th><th class="num">Birim</th><th class="num">Toplam süre</th><th class="num">İşçilik ₺</th></tr></thead><tbody>
+                ${M.routing(w.kod).map((op, i) => { const wc = M.workCenter(op.wc) || { ad: op.wc, rate: 0 }; const min = M.opMinutes(op, w.qty);
+                    return `<tr><td class="num">${(i + 1) * 10}</td><td>${esc(wc.ad)}</td><td class="num">${U.num(op.setup, 0)} dk</td><td class="num">${U.num(op.run, 1)} dk</td><td class="num strong">${U.num(min / 60, 1)} sa</td><td class="num">${U.num(min / 60 * wc.rate)}</td></tr>`; }).join('') || '<tr><td colspan="6" class="muted">Rota tanımlı değil</td></tr>'}
                 </tbody></table></div>
                 <h3 style="font-size:.9em;margin:16px 0 8px;">Geçmiş</h3>
                 <div class="timeline">${(w.history || []).map((h) => `<div class="ev"><b>${esc(h.action)}</b><span class="d">${esc(h.by)} · ${esc(U.dateTime(h.at))}</span></div>`).join('')}</div>`,
@@ -423,8 +428,10 @@
             });
         }
         if (!(await UI.confirm(`${w.no}: ${av.filter((a) => a.stocked).length} bileşen stoktan düşülecek ve ${U.qty(w.qty, 'ad')} ${w.kod} stoğa girecek.`, { title: 'İş emrini tamamla', okLabel: 'Tamamla' }))) return;
-        av.filter((a) => a.stocked).forEach((a) => M.move({ kod: a.kod, qty: -a.need, type: 'GI', ref: w.no }));
-        M.move({ kod: w.kod, qty: w.qty, type: 'FG', ref: w.no });
+        av.filter((a) => a.stocked).forEach((a) => M.move({ kod: a.kod, qty: -a.need, type: 'GI', loc: ['FABRIKA', 'MERKEZ'], ref: w.no }));
+        // Teslim alınmış fason hizmet bakiyesi varsa düşülür (hizmet alınmamışsa iş emri engellenmez)
+        av.filter((a) => !a.stocked).forEach((a) => { const q = Math.min(a.need, M.available(a.kod)); if (q > 1e-9) M.move({ kod: a.kod, qty: -q, type: 'GI', loc: ['FABRIKA', 'MERKEZ'], ref: w.no, note: 'Fason hizmet kullanımı' }); });
+        M.move({ kod: w.kod, qty: w.qty, type: 'FG', loc: 'MERKEZ', lot: w.no, ref: w.no });
         w.status = 'completed';
         w.completedAt = new Date().toISOString();
         woLog(w, 'Tamamlandı — sarf ve mamul girişi yapıldı');

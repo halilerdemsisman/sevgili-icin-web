@@ -44,6 +44,8 @@
                 ${H.kpi('Açık Sipariş Bakiyesi', U.compactCur(openPOValue()), `${st.pos.filter((p) => p.status === 'open' || p.status === 'partial').length} PO (KDV dahil)`, 'blue')}
                 ${H.kpi('Aktif İş Emri', activeWO, `${st.workOrders.filter((w) => w.status === 'completed').length} tamamlandı`, 'green')}
                 ${H.kpi('MRP Önerisi', run ? run.planned.length : '–', run ? `${run.summary.late} geç salım` : 'Çalıştırılmadı', run && run.summary.late ? 'red' : '')}
+                ${(() => { const c = MRP.capacity.summary(MRP.capacity.compute({ includePlanned: true })); return H.kpi('Kapasite Tepe Doluluk', `%${U.num(c.peak * 100, 0)}`, c.over ? `${c.over} aşırı yüklü hafta` : '8 hafta içinde aşım yok', c.over ? 'red' : 'green'); })()}
+                ${H.kpi('USD / EUR', `${U.num(st.fx.rates.USD, 2)} / ${U.num(st.fx.rates.EUR, 2)}`, st.fx.updatedAt ? `${st.fx.source} · ${U.date(st.fx.updatedAt)}` : 'Varsayılan kur — güncelleyin', st.fx.updatedAt ? 'cyan' : 'violet')}
             </div>`;
 
             html += `<div class="grid grid-2">
@@ -90,7 +92,7 @@
             const weeks = [...Array(8)].map((_, i) => U.addDays(start, i * 7));
             const run = st.lastRun;
             const inWeek = (p, w) => { const d = U.parseDate(p.release); return d >= (w === 0 ? new Date(0) : weeks[w]) && d < U.addDays(weeks[w], 7); };
-            const val = (type) => weeks.map((_, w) => run ? U.sum(run.planned.filter((p) => p.type === type && inWeek(p, w)), (p) => p.qty * (type === 'production' ? M.unitCost(p.kod) : p.price)) : 0);
+            const val = (type) => weeks.map((_, w) => run ? U.sum(run.planned.filter((p) => p.type === type && inWeek(p, w)), (p) => p.value) : 0);
             H.chart('chRelease', {
                 type: 'bar',
                 data: { labels: weeks.map((w, i) => (i === 0 ? 'Bu hafta*' : `H${U.isoWeek(w)}`)), datasets: [

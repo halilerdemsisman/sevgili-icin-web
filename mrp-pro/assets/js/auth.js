@@ -6,28 +6,28 @@
 (function (MRP) {
     'use strict';
 
-    const ALL_VIEWS = ['dashboard', 'bom', 'items', 'mrp', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'reports', 'audit'];
+    const ALL_VIEWS = ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'];
 
     const USERS = {
         admin: {
             username: 'admin', password: '1234', name: 'Sistem Yöneticisi', role: 'admin', roleName: 'Yönetici', avatar: 'SY',
             views: ALL_VIEWS,
-            can: { editProduct: true, editItem: true, runMRP: true, createRequest: true, approveRequest: true, approveLimit: Infinity, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: true, adjustStock: true, resetData: true }
+            can: { editProduct: true, editItem: true, editCost: true, runMRP: true, manageCapacity: true, createRequest: true, approveRequest: true, approveLimit: Infinity, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: true, adjustStock: true, resetData: true }
         },
         planlama: {
             username: 'planlama', password: 'plan123', name: 'Ahmet Yılmaz', role: 'planlama', roleName: 'Üretim Planlama', avatar: 'AY',
-            views: ['dashboard', 'bom', 'items', 'mrp', 'workorders', 'requests', 'stock', 'movements', 'reports'],
-            can: { editProduct: true, editItem: true, runMRP: true, createRequest: true, approveRequest: false, approveLimit: 0, createPO: false, receiveGoods: false, manageSuppliers: false, manageWO: true, adjustStock: false, resetData: false }
+            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'stock', 'movements', 'analysis', 'import', 'reports'],
+            can: { editProduct: true, editItem: true, editCost: true, runMRP: true, manageCapacity: true, createRequest: true, approveRequest: false, approveLimit: 0, createPO: false, receiveGoods: false, manageSuppliers: false, manageWO: true, adjustStock: false, resetData: false }
         },
         satinalma: {
             username: 'satinalma', password: 'satin123', name: 'Zeynep Kaya', role: 'satinalma', roleName: 'Satın Alma Uzmanı', avatar: 'ZK',
-            views: ['dashboard', 'bom', 'items', 'requests', 'po', 'suppliers', 'stock', 'movements', 'reports'],
-            can: { editProduct: false, editItem: false, runMRP: false, createRequest: false, approveRequest: true, approveLimit: 10000, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: false, adjustStock: true, resetData: false }
+            views: ['dashboard', 'bom', 'items', 'costing', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports'],
+            can: { editProduct: false, editItem: false, editCost: false, runMRP: false, manageCapacity: false, createRequest: false, approveRequest: true, approveLimit: 10000, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: false, adjustStock: true, resetData: false }
         },
         satinalma_muduru: {
             username: 'satinalma_muduru', password: 'mudur123', name: 'Murat Demir', role: 'satinalma_muduru', roleName: 'Satın Alma Müdürü', avatar: 'MD',
-            views: ['dashboard', 'bom', 'items', 'mrp', 'requests', 'po', 'suppliers', 'stock', 'movements', 'reports', 'audit'],
-            can: { editProduct: false, editItem: true, runMRP: false, createRequest: false, approveRequest: true, approveLimit: 500000, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: false, adjustStock: true, resetData: false }
+            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
+            can: { editProduct: false, editItem: true, editCost: true, runMRP: false, manageCapacity: false, createRequest: false, approveRequest: true, approveLimit: 500000, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: false, adjustStock: true, resetData: false }
         }
     };
 

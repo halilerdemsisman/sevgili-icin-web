@@ -157,27 +157,51 @@
     }
 
     // ---------------- PO oluşturma ----------------
+    /** Talep satırları için tedarikçi bazında teklif karşılaştırması */
+    function compareQuotes(r) {
+        const types = [...new Set(r.lines.map((l) => l.tur))];
+        return M.suggestSuppliers(types).map(({ s, match }) => {
+            let total = 0, priced = 0, maxLt = 0;
+            r.lines.forEach((l) => {
+                const o = M.offer(s.id, l.kod);
+                if (o) { priced++; total += l.qty * M.toTRY(o.price, o.currency); maxLt = Math.max(maxLt, o.leadTime); } else total += l.qty * l.price;
+            });
+            return { s, match, priced, total, maxLt, score: M.supplierScore(s), perf: M.supplierPerformance(s.id) };
+        }).filter((q) => q.priced || q.match).sort((a, b) => b.priced - a.priced || a.total - b.total);
+    }
+
     function openCreatePO(no) {
         if (!H.guard('createPO')) return;
         const r = findReq(no);
         if (!r || r.status !== 'approved') return;
-        const types = [...new Set(r.lines.map((l) => l.tur))];
-        const sugg = M.suggestSuppliers(types);
-        if (!sugg.length) return UI.toast('Aktif tedarikçi yok', 'Önce tedarikçi tanımlayın.', 'warn');
+        const quotes = compareQuotes(r);
+        const all = M.suggestSuppliers([...new Set(r.lines.map((l) => l.tur))]);
+        if (!all.length) return UI.toast('Aktif tedarikçi yok', 'Önce tedarikçi tanımlayın.', 'warn');
+        const best = quotes.length ? quotes[0].s.id : all[0].s.id;
+        const bestTotal = quotes.length ? Math.min(...quotes.filter((q) => q.priced === quotes[0].priced).map((q) => q.total)) : 0;
         const inp = (cls, v, step, w) => `<input class="input input-sm ${cls}" type="number" min="0" step="${step}" value="${v}" style="width:${w}px;text-align:right;">`;
         const ctx = UI.modal({
             title: `Satın Alma Siparişi — ${r.no}`, size: 'xl',
-            body: `<div class="form-grid">
-                    <div class="field"><label>Tedarikçi <span class="req">*</span></label><select id="poSup">${sugg.map(({ s, match }) =>
-                        `<option value="${esc(s.id)}">${esc(s.ad)} · ${s.puan.toFixed(1)}★${match ? ` · ${match}/${types.length} kategori uyumlu` : ''}</option>`).join('')}</select>
-                        <span class="hint">Talep kalemlerinin türüne uyan tedarikçiler üstte listelenir.</span></div>
+            body: `${quotes.length ? `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;"><h3 style="font-size:.9em;">Teklif karşılaştırma</h3>
+                    <button class="btn btn-violet btn-sm" id="poSplit" type="button">En uygun tedarikçilere böl (${splitPlan(r).length} sipariş)</button></div>
+                <div class="table-wrap" style="margin-bottom:16px;max-height:220px;"><table><thead><tr><th>Tedarikçi</th><th class="num">Fiyatlı kalem</th><th class="num">Tahmini tutar (KDV hariç)</th><th class="num">En uzun teslim</th><th class="num">Puan</th><th>Performans</th><th></th></tr></thead><tbody>
+                ${quotes.map((q) => `<tr class="${q.s.id === best ? 'r-new' : ''}"><td class="strong">${esc(q.s.ad)} ${q.s.id === best ? '<span class="badge badge-green plain">Önerilen</span>' : ''}</td>
+                    <td class="num">${q.priced}/${r.lines.length}</td><td class="num">${U.cur(q.total)}${q.priced === quotes[0].priced && q.total > bestTotal ? ` <span class="muted">(+%${U.num((q.total / bestTotal - 1) * 100, 1)})</span>` : ''}</td>
+                    <td class="num">${q.maxLt ? q.maxLt + ' gün' : '–'}</td><td class="num">${U.num(q.score, 1)}★</td>
+                    <td class="muted" style="font-size:.85em;">${q.perf ? `Zamanında %${U.num(q.perf.onTimePct * 100, 0)} · Kalite %${U.num(q.perf.qualityPct * 100, 0)}` : 'Teslimat verisi yok'}</td>
+                    <td><button class="btn btn-secondary btn-sm qt-pick" type="button" data-sup="${esc(q.s.id)}">Seç</button></td></tr>`).join('')}</tbody></table></div>` : ''}
+                <div class="form-grid">
+                    <div class="field"><label>Tedarikçi <span class="req">*</span></label><select id="poSup">${all.map(({ s, match }) =>
+                        `<option value="${esc(s.id)}" ${s.id === best ? 'selected' : ''}>${esc(s.ad)} · ${U.num(M.supplierScore(s), 1)}★${match ? ` · ${match} kategori uyumlu` : ''}</option>`).join('')}</select>
+                        <span class="hint">Seçilen tedarikçinin fiyat listesindeki fiyatlar satırlara güncel kurla TL olarak yazılır.</span></div>
                     <div class="field"><label>Teslim tarihi <span class="req">*</span></label><input id="poDate" type="date" value="${esc(r.deadline > U.iso(U.today()) ? r.deadline : U.iso(U.addDays(U.today(), 7)))}"></div>
                     <div class="field"><label>Ödeme vadesi</label><select id="poTerm">${[0, 30, 45, 60, 90].map((d) => `<option value="${d}">${d ? d + ' gün' : 'Peşin'}</option>`).join('')}</select></div>
                     <div class="field"><label>Teslim adresi</label><input id="poAddr" value="Merkez Depo — Fabrika"></div>
                 </div>
-                <div class="table-wrap" style="margin-top:16px;max-height:340px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th class="num">Miktar</th><th class="num">Birim Fiyat</th><th class="num">İsk. %</th><th class="num">KDV %</th><th class="num">Satır Toplamı</th></tr></thead>
+                <div class="table-wrap" style="margin-top:16px;max-height:340px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th class="num">Miktar</th><th class="num">Birim Fiyat ₺</th><th>Kaynak</th><th class="num">İsk. %</th><th class="num">KDV %</th><th class="num">Satır Toplamı</th></tr></thead>
                 <tbody id="poLines">${r.lines.map((l, i) => `<tr data-i="${i}"><td class="mono">${esc(l.kod)}</td><td>${esc(l.ad)}</td>
                     <td class="num">${inp('pl-qty', l.qty, 'any', 90)} <span class="muted">${esc(l.unit)}</span></td><td class="num">${inp('pl-price', U.round(l.price, 4), 'any', 110)}</td>
+                    <td class="pl-src muted" style="font-size:.8em;"></td>
                     <td class="num">${inp('pl-disc', 0, '0.1', 70)}</td><td class="num">${inp('pl-vat', 20, '1', 64)}</td><td class="num strong pl-total">0</td></tr>`).join('')}</tbody></table></div>
                 <div class="totals"><dl class="dl"><dt>Ara toplam</dt><dd id="poSub"></dd><dt>İskonto</dt><dd id="poDisc"></dd><dt>KDV</dt><dd id="poVat"></dd>
                     <dt class="grand">Genel toplam</dt><dd class="grand" id="poGrand"></dd></dl></div>`,
@@ -186,6 +210,7 @@
         const readLines = () => ctx.$$('#poLines tr').map((tr) => {
             const l = r.lines[+tr.dataset.i];
             return { kod: l.kod, ad: l.ad, tur: l.tur, unit: l.unit, qty: U.toNum(tr.querySelector('.pl-qty').value), price: U.toNum(tr.querySelector('.pl-price').value),
+                currency: tr.dataset.cur || 'TRY', origPrice: tr.dataset.orig ? +tr.dataset.orig : U.toNum(tr.querySelector('.pl-price').value), fxRate: tr.dataset.fx ? +tr.dataset.fx : 1,
                 disc: Math.min(100, Math.max(0, U.toNum(tr.querySelector('.pl-disc').value))), vat: Math.max(0, U.toNum(tr.querySelector('.pl-vat').value)), received: 0 };
         });
         const recalc = () => {
@@ -195,11 +220,67 @@
             ctx.$('#poSub').textContent = U.cur(t.sub); ctx.$('#poDisc').textContent = '−' + U.cur(t.disc);
             ctx.$('#poVat').textContent = U.cur(t.vat); ctx.$('#poGrand').textContent = U.cur(t.grand);
         };
-        const syncTerm = () => { const s = S().suppliers.find((x) => x.id === ctx.$('#poSup').value); if (s) ctx.$('#poTerm').value = String([0, 30, 45, 60, 90].includes(s.vade) ? s.vade : 30); };
-        ctx.$('#poLines').addEventListener('input', recalc);
-        ctx.$('#poSup').addEventListener('change', syncTerm);
+        /** Tedarikçi değişince vade ve fiyat listesindeki fiyatları uygula */
+        const applySupplier = () => {
+            const sid = ctx.$('#poSup').value;
+            const s = S().suppliers.find((x) => x.id === sid);
+            if (s) ctx.$('#poTerm').value = String([0, 30, 45, 60, 90].includes(s.vade) ? s.vade : 30);
+            ctx.$$('#poLines tr').forEach((tr) => {
+                const l = r.lines[+tr.dataset.i];
+                const o = M.offer(sid, l.kod);
+                const src = tr.querySelector('.pl-src');
+                if (o) {
+                    const fx = M.fxRate(o.currency);
+                    tr.querySelector('.pl-price').value = U.round(o.price * fx, 4);
+                    tr.dataset.cur = o.currency; tr.dataset.orig = o.price; tr.dataset.fx = fx;
+                    src.textContent = `Liste: ${M.fmtMoney(o.price, o.currency)}${o.currency !== 'TRY' ? ` × ${U.num(fx, 4)}` : ''} · ${o.leadTime} g`;
+                } else {
+                    tr.querySelector('.pl-price').value = U.round(l.price, 4);
+                    delete tr.dataset.cur; delete tr.dataset.orig; delete tr.dataset.fx;
+                    src.textContent = 'Kart fiyatı (listede yok)';
+                }
+            });
+            recalc();
+        };
+        ctx.$('#poLines').addEventListener('input', (e) => {
+            if (e.target.classList.contains('pl-price')) { const tr = e.target.closest('tr'); delete tr.dataset.cur; delete tr.dataset.orig; delete tr.dataset.fx; tr.querySelector('.pl-src').textContent = 'Elle girildi'; }
+            recalc();
+        });
+        ctx.$('#poSup').addEventListener('change', applySupplier);
+        ctx.$$('.qt-pick').forEach((b) => b.addEventListener('click', () => { ctx.$('#poSup').value = b.dataset.sup; applySupplier(); }));
         ctx.readLines = readLines;
-        syncTerm(); recalc();
+        if (ctx.$('#poSplit')) ctx.$('#poSplit').addEventListener('click', () => splitPO(r, ctx));
+        applySupplier();
+    }
+
+    /** Talep için sipariş oluşturur; bir talep birden çok tedarikçiye bölünebilir */
+    function createPO(r, sup, lines, { deliveryDate, paymentTerm, address }) {
+        const po = {
+            no: MRP.store.nextNo('PO'), requestNo: r.no, supplierId: sup.id, supplierName: sup.ad, supplierContact: sup.yetkili,
+            deliveryDate, paymentTerm, address, lines, status: 'open',
+            createdBy: me().name, createdAt: new Date().toISOString(), history: [], receipts: []
+        };
+        log(po, 'Oluşturuldu', `Talep ${r.no}`);
+        S().pos.unshift(po);
+        r.poNos = [...(r.poNos || (r.poNo ? [r.poNo] : [])), po.no];
+        r.poNo = r.poNos.join(', ');
+        r.status = 'ordered';
+        log(r, 'Siparişe dönüştürüldü', `${po.no} · ${sup.ad}`);
+        const t = poTotals(po);
+        MRP.store.audit('Satın alma siparişi oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`);
+        MRP.store.notify('po', 'Sipariş oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`, ['planlama', 'satinalma', 'satinalma_muduru', 'admin'], 'po');
+        return po;
+    }
+
+    /** Talebin durumunu bağlı siparişlerden türetir */
+    function syncRequest(r) {
+        if (!r) return;
+        const pos = (r.poNos || (r.poNo ? [r.poNo] : [])).map(findPO).filter(Boolean);
+        r.poNos = pos.filter((p) => p.status !== 'cancelled').map((p) => p.no);
+        r.poNo = r.poNos.join(', ') || null;
+        if (!r.poNos.length) { r.status = 'approved'; return; }
+        const active = pos.filter((p) => p.status !== 'cancelled');
+        if (active.every((p) => p.status === 'received') && r.status !== 'closed') { r.status = 'closed'; log(r, 'Kapandı', 'Tüm siparişler teslim alındı'); }
     }
 
     function submitPO(ctx, r) {
@@ -209,21 +290,58 @@
         if (!sup) { UI.toast('Tedarikçi seçin', '', 'warn'); return false; }
         if (!deliveryDate) { UI.toast('Teslim tarihi gerekli', '', 'warn'); return false; }
         if (lines.some((l) => l.qty <= 0)) { UI.toast('Geçersiz miktar', 'Tüm satırlarda miktar sıfırdan büyük olmalı.', 'warn'); return false; }
-        const po = {
-            no: MRP.store.nextNo('PO'), requestNo: r.no, supplierId: sup.id, supplierName: sup.ad, supplierContact: sup.yetkili,
-            deliveryDate, paymentTerm: +ctx.$('#poTerm').value, address: ctx.$('#poAddr').value.trim(), lines, status: 'open',
-            createdBy: me().name, createdAt: new Date().toISOString(), history: [], receipts: []
-        };
-        log(po, 'Oluşturuldu', `Talep ${r.no}`);
-        S().pos.unshift(po);
-        r.status = 'ordered';
-        r.poNo = po.no;
-        log(r, 'Siparişe dönüştürüldü', `${po.no} · ${sup.ad}`);
-        const t = poTotals(po);
-        MRP.store.audit('Satın alma siparişi oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`);
-        MRP.store.notify('po', 'Sipariş oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`, ['planlama', 'satinalma', 'satinalma_muduru', 'admin'], 'po');
+        const po = createPO(r, sup, lines, { deliveryDate, paymentTerm: +ctx.$('#poTerm').value, address: ctx.$('#poAddr').value.trim() });
         app().commit();
         UI.toast('Sipariş oluşturuldu', `${po.no} · ${sup.ad}`, 'success');
+    }
+
+    /** Her kalemi fiyat listesindeki en ucuz aktif tedarikçiye atar; teklifi olmayan kalem kategori uyumlu tedarikçiye gider */
+    function splitPlan(r) {
+        const groups = new Map();
+        r.lines.forEach((l) => {
+            const offer = M.offers(l.kod).find((o) => o.supplier.aktif);
+            let sup, line;
+            if (offer) {
+                sup = offer.supplier;
+                line = { kod: l.kod, ad: l.ad, tur: l.tur, unit: l.unit, qty: Math.max(l.qty, offer.moq || 0), price: U.round(offer.priceTRY, 4), currency: offer.currency, origPrice: offer.price, fxRate: M.fxRate(offer.currency), disc: 0, vat: 20, received: 0, lt: offer.leadTime };
+            } else {
+                const m = M.suggestSuppliers([l.tur])[0];
+                if (!m) return;
+                sup = m.s;
+                line = { kod: l.kod, ad: l.ad, tur: l.tur, unit: l.unit, qty: l.qty, price: U.round(l.price, 4), currency: 'TRY', origPrice: l.price, fxRate: 1, disc: 0, vat: 20, received: 0, lt: (M.rawItem(l.kod) || {}).leadTime || 7 };
+            }
+            if (!groups.has(sup.id)) groups.set(sup.id, { sup, lines: [] });
+            groups.get(sup.id).lines.push(line);
+        });
+        return [...groups.values()];
+    }
+
+    function splitPO(r, parentCtx) {
+        const plan = splitPlan(r);
+        if (!plan.length) return UI.toast('Uygun tedarikçi yok', '', 'warn');
+        const today = U.iso(U.today());
+        plan.forEach((g) => {
+            const lt = Math.max(...g.lines.map((l) => l.lt || 0));
+            const earliest = U.iso(U.addDays(U.today(), lt));
+            g.deliveryDate = r.deadline && r.deadline > earliest ? r.deadline : earliest;
+            g.total = poTotals({ lines: g.lines }).grand;
+            g.late = r.deadline && g.deliveryDate > r.deadline && r.deadline >= today;
+        });
+        UI.modal({
+            title: `${r.no} — tedarikçilere böl`, size: 'lg',
+            body: `<p class="muted" style="font-size:.86em;margin-bottom:12px;">Her kalem fiyat listesindeki en uygun (TL) aktif tedarikçiye atanır; listede olmayan kalemler kategori uyumlu ve puanı yüksek tedarikçiye kart fiyatıyla gider. Teslim tarihi, tedarikçinin teslim süresine göre hesaplanır.</p>
+                <div class="table-wrap"><table><thead><tr><th>Tedarikçi</th><th class="num">Kalem</th><th>Teslim</th><th class="num">Tutar (KDV dahil)</th></tr></thead><tbody>
+                ${plan.map((g) => `<tr><td class="strong">${esc(g.sup.ad)}</td><td class="num">${g.lines.length}</td><td>${esc(U.date(U.parseDate(g.deliveryDate)))} ${g.late ? '<span class="badge badge-amber">İhtiyaçtan sonra</span>' : ''}</td><td class="num">${U.cur(g.total)}</td></tr>`).join('')}
+                <tr class="total"><td>Toplam</td><td class="num">${U.sum(plan, (g) => g.lines.length)}</td><td></td><td class="num">${U.cur(U.sum(plan, (g) => g.total))}</td></tr></tbody></table></div>`,
+            buttons: [{ label: 'Vazgeç' }, {
+                label: `${plan.length} sipariş oluştur`, cls: 'btn-primary', icon: 'check', onClick: () => {
+                    const nos = plan.map((g) => createPO(r, g.sup, g.lines.map(({ lt, ...l }) => l), { deliveryDate: g.deliveryDate, paymentTerm: g.sup.vade, address: 'Merkez Depo — Fabrika' }).no);
+                    if (parentCtx) parentCtx.close();
+                    app().commit();
+                    UI.toast(`${nos.length} sipariş oluşturuldu`, nos.join(', '), 'success', 6000);
+                }
+            }]
+        });
     }
 
     Object.assign(MRP.actions, {
@@ -304,11 +422,11 @@
 
     async function cancelPO(no) {
         const p = findPO(no);
-        if (!(await UI.confirm(`${no} iptal edilecek; ilgili talep yeniden "Onaylı" durumuna dönecek.`, { title: 'Siparişi iptal et', okLabel: 'İptal Et', danger: true }))) return;
+        if (!(await UI.confirm(`${no} iptal edilecek; talebin başka açık siparişi yoksa talep yeniden "Onaylı" durumuna döner.`, { title: 'Siparişi iptal et', okLabel: 'İptal Et', danger: true }))) return;
         p.status = 'cancelled';
         log(p, 'İptal edildi');
         const r = findReq(p.requestNo);
-        if (r) { r.status = 'approved'; r.poNo = null; log(r, 'Sipariş iptal edildi', no); }
+        if (r) { log(r, 'Sipariş iptal edildi', no); syncRequest(r); }
         MRP.store.audit('Sipariş iptal edildi', no);
         app().commit();
         UI.toast('Sipariş iptal edildi', no, 'info');
@@ -324,6 +442,8 @@
                 <div class="form-grid">
                     <div class="field"><label>İrsaliye no <span class="req">*</span></label><input id="rcWaybill" autocomplete="off"></div>
                     <div class="field"><label>Kalite kontrol</label><select id="rcQuality"><option value="ok">Kabul — stoğa al</option><option value="rejected">Ret — iade (stoğa alınmaz)</option></select></div>
+                    <div class="field"><label>Giriş lokasyonu</label><select id="rcLoc">${Object.entries(M.LOCATIONS).filter(([k]) => k !== 'FASON').map(([k, l]) => `<option value="${k}">${esc(l.ad)}</option>`).join('')}</select></div>
+                    <div class="field"><label>Lot / parti no</label><input id="rcLot" placeholder="Boş bırakılırsa otomatik" autocomplete="off"><span class="hint">Tedarikçi parti numarası — izlenebilirlik için.</span></div>
                 </div>
                 <div class="table-wrap" style="margin-top:14px;max-height:320px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th class="num">Sipariş</th><th class="num">Önceki</th><th class="num">Kalan</th><th class="num">Bu Teslimat</th></tr></thead><tbody>
                 ${p.lines.map((l, i) => { const rem = Math.max(0, l.qty - (l.received || 0)); return `<tr><td class="mono">${esc(l.kod)}</td><td>${esc(l.ad)}</td>
@@ -340,6 +460,8 @@
         const waybill = ctx.$('#rcWaybill').value.trim();
         const quality = ctx.$('#rcQuality').value;
         const note = ctx.$('#rcNote').value.trim();
+        const loc = ctx.$('#rcLoc').value;
+        const lotBase = ctx.$('#rcLot').value.trim();
         if (!waybill) { UI.toast('İrsaliye no gerekli', '', 'warn'); return false; }
         const lines = ctx.$$('.rc-qty').map((inp) => ({ i: +inp.dataset.i, qty: U.toNum(inp.value) })).filter((x) => x.qty > 0);
         if (!lines.length) { UI.toast('Miktar girilmedi', 'En az bir kalem için teslim miktarı girin.', 'warn'); return false; }
@@ -359,15 +481,12 @@
                 const l = p.lines[x.i];
                 l.received = U.round((l.received || 0) + x.qty, 3);
                 const it = M.item(l.kod);
-                if (it && it.procurement !== 'service') M.move({ kod: l.kod, qty: x.qty, type: 'GR', ref: p.no, note: `İrsaliye ${waybill}` });
+                if (it) M.move({ kod: l.kod, qty: x.qty, type: 'GR', loc, lot: lotBase || '', ref: p.no, supplier: p.supplierName, note: it.procurement === 'service' ? `Fason hizmet teslimi · İrsaliye ${waybill}` : `İrsaliye ${waybill}` });
             });
             const done = p.lines.every((l) => (l.received || 0) >= l.qty - 1e-9);
             p.status = done ? 'received' : 'partial';
             log(p, done ? 'Tamamı teslim alındı' : 'Kısmi teslim alındı', `İrsaliye ${waybill}`);
-            if (done) {
-                const r = findReq(p.requestNo);
-                if (r) { r.status = 'closed'; log(r, 'Kapandı', `${p.no} teslim alındı`); }
-            }
+            if (done) syncRequest(findReq(p.requestNo));
             MRP.store.audit('Mal kabul', `${p.no} / ${waybill}: ${lines.length} kalem${done ? '' : ' (kısmi)'}`);
             MRP.store.notify('po', 'Mal kabul yapıldı', `${p.no} · ${lines.length} kalem${done ? '' : ' (kısmi)'}`, ['planlama', 'satinalma_muduru', 'admin'], 'po');
         }
@@ -428,17 +547,20 @@
         render() {
             const sup = S().suppliers;
             const active = sup.filter((s) => s.aktif);
-            const avg = sup.length ? U.sum(sup, (s) => s.puan) / sup.length : 0;
+            const avg = sup.length ? U.sum(sup, (s) => M.supplierScore(s)) / sup.length : 0;
             let html = `<div class="kpis">${H.kpi('Tedarikçi', sup.length, `${active.length} aktif`, 'green')}
                 ${H.kpi('Ortalama Puan', avg.toFixed(2), '5 üzerinden', '')}
                 ${H.kpi('Toplam Sipariş', S().pos.filter((p) => p.status !== 'cancelled').length, U.compactCur(U.sum(S().pos.filter((p) => p.status !== 'cancelled'), (p) => poTotals(p).grand)), 'blue')}</div>
                 <div class="toolbar"><span class="spacer"></span>${MRP.auth.can('manageSuppliers') ? `<button class="btn btn-primary" data-act="supplierEdit">${MRP.icon('plus')} Yeni Tedarikçi</button>` : ''}</div>`;
             html += `<div class="cards">${sup.map((s) => {
                 const pos = S().pos.filter((p) => p.supplierId === s.id && p.status !== 'cancelled');
-                const stars = '★'.repeat(Math.round(s.puan)) + '☆'.repeat(5 - Math.round(s.puan));
+                const score = M.supplierScore(s);
+                const perf = M.supplierPerformance(s.id);
+                const stars = '★'.repeat(Math.round(score)) + '☆'.repeat(5 - Math.round(score));
+                const nOffers = S().priceList.filter((o) => o.supplierId === s.id).length;
                 return `<div class="sup-card ${s.aktif ? '' : 'passive'}" data-act="supplierDetail" data-id="${esc(s.id)}">
-                    <h3><span>${esc(s.ad)}</span><span class="stars" title="${s.puan}/5">${stars}</span></h3>
-                    <div class="info"><span class="mono muted">${esc(s.id)}${s.aktif ? '' : ' · Pasif'}</span><span>${esc(s.yetkili || '–')} · ${esc(s.tel || '–')}</span><span>${esc(s.email || '–')}</span><span>Vade: ${s.vade} gün</span></div>
+                    <h3><span>${esc(s.ad)}</span><span class="stars" title="${U.num(score, 1)}/5 ${perf ? '(teslimat verisinden otomatik)' : '(elle girilen)'}">${stars}</span></h3>
+                    <div class="info"><span class="mono muted">${esc(s.id)}${s.aktif ? '' : ' · Pasif'}</span><span>${esc(s.yetkili || '–')} · ${esc(s.tel || '–')}</span><span>${esc(s.email || '–')}</span><span>Vade: ${s.vade} gün · ${nOffers} fiyatlı kalem</span>${perf ? `<span>Zamanında teslim %${U.num(perf.onTimePct * 100, 0)} · Kalite %${U.num(perf.qualityPct * 100, 0)}</span>` : ''}</div>
                     <div class="chips" style="margin-top:10px;gap:5px;">${s.kategoriler.map((k) => `<span class="badge badge-gray plain">${esc(k)}</span>`).join('')}</div>
                     <div class="muted" style="font-size:.8em;margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">${pos.length} sipariş · ${U.cur(U.sum(pos, (p) => poTotals(p).grand))}</div>
                 </div>`;
@@ -451,7 +573,11 @@
         const s = S().suppliers.find((x) => x.id === id);
         if (!s) return;
         const pos = S().pos.filter((p) => p.supplierId === id);
+        const perf = M.supplierPerformance(id);
+        const offers = S().priceList.filter((o) => o.supplierId === id).sort((a, b) => a.kod.localeCompare(b.kod));
+        const canEdit = MRP.auth.can('manageSuppliers');
         const buttons = [{ label: 'Kapat' }];
+        if (canEdit) buttons.push({ label: 'Fiyat Ekle', icon: 'plus', onClick: () => { setTimeout(() => editOffer(id)); } });
         if (MRP.auth.can('manageSuppliers')) {
             buttons.push({ label: s.aktif ? 'Pasife Al' : 'Aktifleştir', onClick: () => {
                 s.aktif = !s.aktif; MRP.store.audit('Tedarikçi durumu değişti', `${s.id}: ${s.aktif ? 'aktif' : 'pasif'}`); app().commit();
@@ -464,12 +590,65 @@
                 <dt>Kod</dt><dd class="mono">${esc(s.id)}</dd><dt>Durum</dt><dd>${s.aktif ? '<span class="badge badge-green">Aktif</span>' : '<span class="badge badge-gray">Pasif</span>'}</dd>
                 <dt>Yetkili</dt><dd>${esc(s.yetkili || '–')}</dd><dt>Telefon</dt><dd>${esc(s.tel || '–')}</dd>
                 <dt>E-posta</dt><dd>${esc(s.email || '–')}</dd><dt>Vergi no</dt><dd>${esc(s.vergiNo || '–')}</dd>
-                <dt>Vade</dt><dd>${s.vade} gün</dd><dt>Puan</dt><dd>${U.num(s.puan, 1)} / 5</dd>
+                <dt>Vade</dt><dd>${s.vade} gün</dd><dt>Puan</dt><dd>${U.num(M.supplierScore(s), 1)} / 5 <span class="muted">${perf ? 'otomatik' : 'elle'}</span></dd>
+                ${perf ? `<dt>Zamanında teslim</dt><dd>%${U.num(perf.onTimePct * 100, 0)} (${perf.orders} sipariş)</dd><dt>Kalite (kabul oranı)</dt><dd>%${U.num(perf.qualityPct * 100, 0)}</dd>` : ''}
                 <dt>Adres</dt><dd style="grid-column:span 3;text-align:left;">${esc(s.adres || '–')}</dd></dl>
                 <div class="chips" style="margin-bottom:14px;">${s.kategoriler.map((k) => `<span class="badge badge-gray plain">${esc(k)}</span>`).join('')}</div>
+                <h3 style="font-size:.9em;margin-bottom:8px;">Fiyat listesi (${offers.length})</h3>
+                ${offers.length ? `<div class="table-wrap" style="margin-bottom:14px;max-height:260px;"><table><thead><tr><th>Kod</th><th>Malzeme</th><th class="num">Fiyat</th><th class="num">₺ karşılığı</th><th class="num">Teslim</th><th class="num">Min. sipariş</th><th>Güncelleme</th><th></th></tr></thead><tbody>
+                    ${offers.map((o) => { const it = M.rawItem(o.kod); const bestO = M.offers(o.kod)[0]; return `<tr><td class="mono">${esc(o.kod)}</td><td>${esc(it ? it.ad : '?')}</td><td class="num">${esc(M.fmtMoney(o.price, o.currency))}</td>
+                        <td class="num strong">${U.num(M.toTRY(o.price, o.currency), 2)} ${bestO && bestO.supplierId === id ? '<span class="badge badge-green plain">en iyi</span>' : ''}</td><td class="num">${o.leadTime} g</td><td class="num">${o.moq || '–'}</td><td class="muted">${esc(U.date(o.updatedAt))}</td>
+                        <td>${canEdit ? `<button class="btn btn-ghost btn-sm of-edit" data-kod="${esc(o.kod)}" type="button">${MRP.icon('edit', 'sm')}</button>` : ''}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted" style="margin-bottom:14px;font-size:.85em;">Fiyat listesi boş.</p>'}
+                <h3 style="font-size:.9em;margin-bottom:8px;">Siparişler</h3>
                 ${pos.length ? `<div class="table-wrap"><table><thead><tr><th>Sipariş</th><th>Tarih</th><th>Teslim</th><th class="num">Tutar ₺</th><th>Durum</th></tr></thead><tbody>
                     ${pos.map((p) => `<tr><td class="mono">${esc(p.no)}</td><td>${esc(U.date(p.createdAt))}</td><td>${esc(U.date(U.parseDate(p.deliveryDate)))}</td><td class="num">${U.num(poTotals(p).grand)}</td><td>${H.badge(H.PO_STATUS, p.status)}</td></tr>`).join('')}
-                    </tbody></table></div>` : '<p class="muted">Henüz sipariş yok.</p>'}`
+                    </tbody></table></div>` : '<p class="muted">Henüz sipariş yok.</p>'}`,
+            onOpen: (ctx) => ctx.$$('.of-edit').forEach((b) => b.addEventListener('click', () => { ctx.close(); editOffer(id, b.dataset.kod); }))
+        });
+    }
+
+    /** Tedarikçi fiyat listesi satırı ekle/düzenle/sil */
+    function editOffer(supplierId, kod) {
+        if (!H.guard('manageSuppliers')) return;
+        const ex = kod ? M.offer(supplierId, kod) : null;
+        const sup = S().suppliers.find((x) => x.id === supplierId);
+        const items = M.items().filter((i) => i.procurement !== 'make');
+        UI.modal({
+            title: `${sup.ad} — ${ex ? 'Fiyatı düzenle' : 'Fiyat ekle'}`, size: 'md',
+            body: `<datalist id="ofItems">${items.map((i) => `<option value="${esc(i.kod)}">${esc(i.ad)}</option>`).join('')}</datalist>
+                <div class="form-grid">
+                <div class="field full"><label>Malzeme kodu <span class="req">*</span></label><input id="ofKod" list="ofItems" value="${esc(kod || '')}" ${ex ? 'readonly' : ''} autocomplete="off"><span class="hint" id="ofName"></span></div>
+                <div class="field"><label>Fiyat <span class="req">*</span></label><input id="ofPrice" type="number" min="0" step="any" value="${ex ? ex.price : ''}"></div>
+                <div class="field"><label>Para birimi</label><select id="ofCur">${Object.keys(MRP.data.CURRENCIES).map((c) => `<option ${ex && ex.currency === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+                <div class="field"><label>Teslim süresi (gün)</label><input id="ofLt" type="number" min="1" step="1" value="${ex ? ex.leadTime : 7}"></div>
+                <div class="field"><label>Min. sipariş</label><input id="ofMoq" type="number" min="0" step="any" value="${ex ? ex.moq : 0}"></div>
+            </div>`,
+            onOpen: (ctx) => {
+                const upd = () => {
+                    const it = M.rawItem(ctx.$('#ofKod').value.trim());
+                    ctx.$('#ofName').textContent = it ? `${it.ad} · kart fiyatı ${M.fmtMoney(it.price, it.currency)}` : 'Listeden bir malzeme seçin';
+                    if (it && !ex) ctx.$('#ofCur').value = it.currency;
+                };
+                ctx.$('#ofKod').addEventListener('input', upd); upd();
+            },
+            buttons: [{ label: 'Vazgeç' }, ...(ex ? [{ label: 'Sil', cls: 'btn-danger', onClick: () => {
+                S().priceList = S().priceList.filter((o) => o !== ex);
+                MRP.store.audit('Fiyat listesi satırı silindi', `${supplierId} / ${kod}`);
+                app().commit();
+            } }] : []), {
+                label: 'Kaydet', cls: 'btn-primary', onClick: (ctx) => {
+                    const k = ctx.$('#ofKod').value.trim().toUpperCase();
+                    const price = U.toNum(ctx.$('#ofPrice').value, NaN);
+                    if (!M.rawItem(k)) { UI.toast('Geçersiz malzeme', '', 'warn'); return false; }
+                    if (!(price > 0)) { UI.toast('Geçersiz fiyat', '', 'warn'); return false; }
+                    const rec = { supplierId, kod: k, price, currency: ctx.$('#ofCur').value, leadTime: Math.max(1, Math.round(U.toNum(ctx.$('#ofLt').value, 7))), moq: Math.max(0, U.toNum(ctx.$('#ofMoq').value)), updatedAt: new Date().toISOString() };
+                    const cur = M.offer(supplierId, k);
+                    if (cur) Object.assign(cur, rec); else S().priceList.push(rec);
+                    MRP.store.audit('Fiyat listesi güncellendi', `${supplierId} / ${k}: ${price} ${rec.currency}`);
+                    app().commit();
+                    UI.toast('Fiyat kaydedildi', `${k} · ${M.fmtMoney(price, rec.currency)}`, 'success');
+                }
+            }]
         });
     }
 
