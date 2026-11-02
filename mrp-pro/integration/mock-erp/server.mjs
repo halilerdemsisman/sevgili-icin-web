@@ -42,16 +42,16 @@ const COLLECTIONS = {
     workCenters:      { key: (r) => r.id,                      perms: ['manageCapacity', 'editCost'] },
     suppliers:        { key: (r) => r.id,                      perms: ['manageSuppliers'] },
     priceList:        { key: (r) => `${r.supplierId}|${r.kod}`, perms: ['manageSuppliers', 'editCost'] },
-    lots:             { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO'] },
-    movements:        { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO'], appendOnly: true },
+    lots:             { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock'] },
+    movements:        { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock'], appendOnly: true },
     demands:          { key: (r) => r.id,                      perms: ['runMRP'] },
     purchaseRequests: { key: (r) => r.no,                      perms: ['createRequest', 'approveRequest', 'createPO', 'receiveGoods'] },
     purchaseOrders:   { key: (r) => r.no,                      perms: ['createPO', 'receiveGoods'] },
     workOrders:       { key: (r) => r.no,                      perms: ['manageWO', 'runMRP'] },
-    subcontracts:     { key: (r) => r.no,                      perms: ['adjustStock'] },
+    subcontracts:     { key: (r) => r.no,                      perms: ['transferStock'] },
     notifications:    { key: (r) => r.id,                      perms: ['*'] },
     auditLog:         { key: (r) => r.id,                      perms: ['*'], appendOnly: true },
-    settings:         { key: () => 'main',                     perms: ['editCost'] },
+    settings:         { key: () => 'main',                     perms: ['editCost', 'manageUsers'] },
     mrpRun:           { key: () => 'last',                     perms: ['runMRP', 'createRequest', 'manageWO'] }
 };
 

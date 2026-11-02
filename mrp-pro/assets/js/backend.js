@@ -60,7 +60,7 @@
             if (def.kind === 'array') (st[def.path] || []).forEach((r) => m.set(String(keyOf(def, r)), r));
             else if (def.kind === 'map') Object.entries(st[def.path] || {}).forEach(([k, r]) => m.set(k, r));
             else if (def.kind === 'raw') Object.entries(st[def.path] || {}).forEach(([k, v]) => m.set(k, { [def.keyName]: k, [def.field]: v }));
-            else if (def.kind === 'settings') m.set('main', { fx: st.fx, costing: st.costing });
+            else if (def.kind === 'settings') m.set('main', { fx: st.fx, costing: st.costing, branding: st.branding });
             else if (def.kind === 'single' && st[def.path]) m.set(def.keyVal, st[def.path]);
             out[name] = m;
         });
@@ -84,6 +84,7 @@
         } else if (def.kind === 'settings') {
             if (data && data.fx) st.fx = { history: [], ...data.fx };
             if (data && data.costing) st.costing = data.costing;
+            if (data && data.branding) st.branding = data.branding;
         } else if (def.kind === 'single') {
             st[def.path] = data || null;
         }
@@ -161,7 +162,7 @@
         return {
             username: u.username, name: u.name || u.username, role: u.role || 'user', roleName: u.roleName || u.role || '',
             avatar: u.avatar || (u.name || u.username).split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase(),
-            views: u.views || [], can
+            views: u.views || [], home: u.home || (u.views || [])[0], can
         };
     }
 

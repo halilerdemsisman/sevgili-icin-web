@@ -75,14 +75,30 @@ Standart maliyet = (Malzeme + İşçilik) × (1 + Genel gider %)
 
 Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartları, ana plan ve fiyat listesi şablonları mevcut verilerle dolu gelir). Sütun başlıkları Türkçe karakter ve büyük/küçük harf duyarsız eşleşir; ERP çıktısındaki yaygın başlıklar (ör. "Stok Kodu", "Malzeme Adı", "Termin Tarihi") tanınır. Sayılar `1.234,56` veya `1234.56`, tarihler `gg.aa.yyyy`, `yyyy-aa-gg` ya da Excel tarih hücresi olabilir. Hatalı satırlar listelenir ve atlanır.
 
-## Demo hesaplar
+## Bölümler, roller ve demo hesaplar
 
-| Rol | Kullanıcı | Şifre | Not |
-|---|---|---|---|
-| Yönetici | `admin` | `1234` | Tüm yetkiler, veri sıfırlama / geri yükleme |
-| Üretim Planlama | `planlama` | `plan123` | MRP, kapasite, iş emri, maliyet, talep oluşturma |
-| Satın Alma Uzmanı | `satinalma` | `satin123` | Onay limiti 10.000 ₺, fiyat listesi, mal kabul |
-| Satın Alma Müdürü | `satinalma_muduru` | `mudur123` | Onay limiti 500.000 ₺, maliyet düzenleme, denetim kaydı |
+Her bölüm kendi rolüyle girer, **kendi açılış ekranında** başlar ve yalnızca işine yarayan ekranları görür.
+Ekranı görmek salt okunurdur; değiştirmek için rolün o işleme yetkisi olmalıdır.
+
+| Bölüm (rol) | Kullanıcı | Şifre | Açılış | Yapabildikleri |
+|---|---|---|---|---|
+| Sistem Yöneticisi | `admin` | `1234` | Gösterge Paneli | Her şey; kullanıcı, rol ve firma ayarları |
+| Genel Müdür | `yonetim` | `yon123` | Gösterge Paneli | Tüm ekranları görür, sınırsız talep onayı |
+| Üretim Planlama | `planlama` | `plan123` | MRP | Ürün/reçete, malzeme parametreleri, MRP, kapasite, iş emri, satın alma talebi |
+| Üretim Şefi | `uretim` | `uret123` | İş Emirleri | İş emri serbest bırakma/tamamlama, hatta malzeme transferi |
+| Satın Alma Uzmanı | `satinalma` | `satin123` | Talepler | 10.000 ₺'ye kadar onay, sipariş, tedarikçi ve fiyat listesi |
+| Satın Alma Müdürü | `satinalma_muduru` | `mudur123` | Talepler | 500.000 ₺'ye kadar onay, sipariş, tedarikçi, fiyat |
+| Depo Sorumlusu | `depo` | `depo123` | Stok Durumu | Mal kabul, sayım, transfer, fason sevk/dönüş, barkod |
+| Maliyet / Muhasebe | `maliyet` | `mal123` | Maliyet & Kur | Fiyat, kur, genel gider, saat ücretleri; analizler |
+
+Roller **Kullanıcılar & Roller** ekranından yönetilir (yönetici):
+- **Yetki matrisi:** hangi bölümün hangi ekranı gördüğü (○) veya düzenlediği (●)
+- **Roller:** ekranlar, işlem yetkileri, açılış ekranı ve onay limiti; yeni bölüm rolü (ör. Kalite Kontrol)
+- **Kullanıcılar:** ekleme, rol atama, parola belirleme (yalnızca SHA-256 özeti saklanır), pasife alma
+- **Firma Ayarları:** resmî logo dosyalarını (SVG / PNG / JPG, en fazla 3) ve firma adını yükleme
+
+> Varsayılan EXIT ve bg group logoları orijinallerin yaklaşık çizimleridir. Doğru görünüm için
+> **Firma Ayarları**'ndan resmî logo dosyalarını yükleyin; giriş ekranında ve menüde onlar gösterilir.
 
 > **Önemli:** Bağımsız modda kimlik doğrulama tarayıcıda yapılır ve veriler `localStorage`'da tutulur.
 > Çok kullanıcılı gerçek kullanım için ERP modunu kullanın: kimlik doğrulama, yetkilendirme ve veri

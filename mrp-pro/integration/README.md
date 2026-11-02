@@ -18,7 +18,7 @@ node mrp-pro/integration/mock-erp/server.mjs
 
 - Örnek ERP portalı (MRP Pro gömülü): <http://localhost:8787/mrp-pro/integration/host-demo.html>
 - MRP Pro tek başına, ERP modunda: <http://localhost:8787/mrp-pro/index.html?mode=erp>
-- Kullanıcılar: `admin/1234`, `planlama/plan123`, `satinalma/satin123`, `satinalma_muduru/mudur123`
+- Kullanıcılar (bölüm rolleri): `admin/1234`, `yonetim/yon123`, `planlama/plan123`, `uretim/uret123`, `satinalma/satin123`, `satinalma_muduru/mudur123`, `depo/depo123`, `maliyet/mal123`
 
 Portalda sağdaki panelden **ERP'de satış siparişi açın** veya **fiyat değiştirin**; birkaç saniye içinde MRP Pro'ya düşer. MRP Pro'da yapılan her işlem (talep, sipariş, mal kabul, iş emri) ERP'ye gider ve olay günlüğünde görünür.
 
@@ -83,7 +83,7 @@ Ayrıntılı tanımlar `openapi.yaml`'dadır. Özet:
 - `GET /auth/me` → `user` (token doğrulama; portaldan gelen SSO token'ı da buradan doğrulanır)
 - `POST /auth/logout`
 
-`user.permissions` MRP Pro'daki her eylemi yönetir (`editCost`, `runMRP`, `createPO`, `approveLimit`…); `user.views` hangi ekranların görüneceğini belirler. Rollerinizi bu alanlara eşleyin. `approveLimit: null` = sınırsız onay.
+`user.permissions` MRP Pro'daki her eylemi yönetir (`editCost`, `runMRP`, `createPO`, `receiveGoods`, `transferStock`, `approveLimit`…); `user.views` hangi ekranların görüneceğini, `user.home` açılış ekranını belirler. ERP'deki bölümlerinizi bu alanlara eşleyin; varsayılan 8 bölüm rolü `assets/js/auth.js` → `DEFAULT_ROLES`'tadır (örnek sunucu da aynılarını kullanır). `approveLimit: null` = sınırsız onay.
 
 ### 4.2 Veri
 - `GET /mrp/snapshot` → tüm koleksiyonlar + `cursor`

@@ -222,7 +222,7 @@
                     };
                     S().requests.unshift(req);
                     MRP.store.audit('Satın alma talebi oluşturuldu', `${req.no}: ${lines.length} kalem, ${U.cur(req.total)}`);
-                    MRP.store.notify('request', 'Yeni satın alma talebi', `${req.no} · ${lines.length} kalem · ${U.cur(req.total)} (${u.name})`, ['satinalma', 'satinalma_muduru', 'admin'], 'requests');
+                    MRP.store.notify('request', 'Yeni satın alma talebi', `${req.no} · ${lines.length} kalem · ${U.cur(req.total)} (${u.name})`, ['perm:approveRequest'], 'requests');
                     runMRP(true);
                     UI.toast('Talep gönderildi', `${req.no} satın alma birimine iletildi.`, 'success');
                 }
@@ -436,7 +436,7 @@
         w.completedAt = new Date().toISOString();
         woLog(w, 'Tamamlandı — sarf ve mamul girişi yapıldı');
         MRP.store.audit('İş emri tamamlandı', `${w.no}: ${w.kod} × ${w.qty}`);
-        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${w.qty}`, ['admin', 'planlama'], 'workorders');
+        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${w.qty}`, ['perm:runMRP', 'perm:manageWO'], 'workorders');
         app().commit();
         UI.toast('İş emri tamamlandı', 'Stoklar güncellendi.', 'success');
     }

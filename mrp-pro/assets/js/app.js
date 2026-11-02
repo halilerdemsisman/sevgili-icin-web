@@ -35,7 +35,8 @@
             { id: 'analysis', label: 'Analizler', icon: 'pie' },
             { id: 'import', label: 'Veri Aktarımı (Excel)', icon: 'upload' },
             { id: 'reports', label: 'Raporlar & Dışa Aktarım', icon: 'chart' },
-            { id: 'audit', label: 'Denetim Kaydı', icon: 'shield' }
+            { id: 'audit', label: 'Denetim Kaydı', icon: 'shield' },
+            { id: 'users', label: 'Kullanıcılar & Roller', icon: 'key' }
         ] }
     ];
 
@@ -113,6 +114,7 @@
             return;
         }
         MRP.model.init();
+        renderBrand();
         MRP.store.audit('Oturum açıldı', user.username);
         MRP.store.save();
         startApp();
@@ -191,6 +193,30 @@
         } catch (err) { UI.toast('Senkronlanamadı', err.message, 'error'); }
     }
 
+    // ---------------- Firma logoları ----------------
+    /** Yüklenmiş logolar varsa onları, yoksa varsayılan çizimleri gösterir */
+    function renderBrand() {
+        const br = (MRP.store.state && MRP.store.state.branding) || MRP.store.storedBranding();
+        const logos = (br.logos || []).filter((l) => l && /^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,/.test(l.src));
+        const html = logos.length
+            ? logos.map((l) => `<span class="brand-logo"><img src="${U.esc(l.src)}" alt="${U.esc(l.name || 'Logo')}"></span>`).join('')
+            : `<svg class="brand-logo" viewBox="0 0 300 100" role="img" aria-label="EXIT"><use href="#logo-exit"/></svg>
+               <svg class="brand-logo" viewBox="0 0 300 100" role="img" aria-label="bg group"><use href="#logo-bg"/></svg>`;
+        U.$$('[data-brand-logos]').forEach((el) => { el.innerHTML = html; });
+        const company = (br.company || '').trim();
+        U.$$('[data-brand-company]').forEach((el) => { el.textContent = company || el.dataset.brandCompany; });
+    }
+
+    /** Giriş ekranındaki demo hesaplar: yalnızca parolası hâlâ demo parolası olanlar */
+    function renderDemoAccounts() {
+        const users = (MRP.store.state.users || []).filter((u) => u.active !== false && u.demoPassword && u.passwordHash === A.hashPassword(u.username, u.demoPassword));
+        const roles = Object.fromEntries((MRP.store.state.roles || []).map((r) => [r.id, r.name]));
+        U.$('#demoAccounts').innerHTML = users.map((u) => `
+            <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.demoPassword)}">
+                <span class="r">${U.esc(roles[u.role] || u.role)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.demoPassword)}</span></button>`).join('');
+        U.$('#loginDemo').hidden = !users.length;
+    }
+
     // ---------------- Menü ----------------
     function renderNav() {
         U.$('#sbNav').innerHTML = NAV.map((g) => {
@@ -206,8 +232,10 @@
     // ---------------- Yönlendirme ----------------
     function route() {
         if (!A.current()) return showLogin();
-        let id = (location.hash.replace(/^#\/?/, '').split('?')[0]) || 'dashboard';
-        if (!MRP.views[id] || !A.canView(id)) id = A.current().views[0];
+        const me = A.current();
+        // Her bölüm kendi açılış ekranıyla başlar (rol.home); yetkisiz ekrana gidilirse oraya döner
+        let id = (location.hash.replace(/^#\/?/, '').split('?')[0]) || me.home || 'dashboard';
+        if (!MRP.views[id] || !A.canView(id)) id = A.canView(me.home) ? me.home : me.views[0];
         currentView = id;
         render();
         closeSidebar();
@@ -225,6 +253,7 @@
         document.title = `${v.title} · MRP Pro`;
         const host = U.$('#view');
         host.innerHTML = v.render();
+        if (host.querySelector('[data-brand-logos]')) renderBrand();
         if (v.after) v.after(host);
         renderNav();
         updateNotifBadge();
@@ -234,13 +263,25 @@
     function commit() {
         MRP.model.invalidate();
         MRP.store.save();
+        A.refresh();
+        if (!A.current()) { location.hash = ''; return showLogin(); }
+        renderBrand();
         render();
     }
 
     // ---------------- Bildirimler ----------------
+    /**
+     * Bildirim hedefi: rol kimliği, 'perm:<yetki>' (o yetkiye sahip herkes),
+     * 'user:<kullanıcı>' veya 'approve:<tutar>' (bu tutarı onaylayabilenler)
+     */
+    function isForMe(n, u) {
+        return (n.roles || []).some((t) => t === u.role || t === '*' || t === `user:${u.username}`
+            || (t.startsWith('perm:') && u.can[t.slice(5)])
+            || (t.startsWith('approve:') && u.can.approveRequest && u.can.approveLimit >= Number(t.slice(8))));
+    }
     const myNotifs = () => {
         const u = A.current();
-        return u ? MRP.store.state.notifications.filter((n) => n.roles.includes(u.role)) : [];
+        return u ? MRP.store.state.notifications.filter((n) => isForMe(n, u)) : [];
     };
     function updateNotifBadge() {
         const u = A.current();
@@ -324,7 +365,7 @@
         if (currentView) render();
     }
 
-    MRP.app = { render, commit, route, setTheme, resumeErp, logout: doLogout, currentView: () => currentView };
+    MRP.app = { render, commit, route, setTheme, resumeErp, renderBrand, logout: doLogout, currentView: () => currentView };
 
     window.addEventListener('hashchange', route);
     window.addEventListener('DOMContentLoaded', async () => {
@@ -333,12 +374,11 @@
         applyTheme(theme);
         MRP.store.load();
         MRP.model.init();
+        renderBrand();
         U.$('#loginForm').addEventListener('submit', doLogin);
 
         if (!C.erp) {
-            U.$('#demoAccounts').innerHTML = Object.values(A.USERS).map((u) => `
-                <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.password)}">
-                    <span class="r">${U.esc(u.roleName)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.password)}</span></button>`).join('');
+            renderDemoAccounts();
         } else {
             U.$('#loginDemo').hidden = true;
             U.$('#loginErpNote').hidden = false;

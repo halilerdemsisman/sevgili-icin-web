@@ -50,9 +50,15 @@
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
             notifications: [],
             audit: [],
-            seq: {}
+            seq: {},
+            roles: MRP.auth.defaultRoles(),
+            users: MRP.auth.defaultUsers(),
+            branding: defaultBranding()
         };
     }
+
+    /** Firma adı ve logolar (Kullanıcılar & Roller → Firma Ayarları) */
+    function defaultBranding() { return { company: '', logos: [] }; }
 
     /** v2 → v3: sayısal stok → lot kaydı, yeni alanlar varsayılanlarla eklenir */
     function migrateV2(old) {
@@ -76,7 +82,8 @@
             suppliers: [], priceList: [], workCenters: [],
             fx: { rates: { ...MRP.data.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] },
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
-            notifications: [], audit: [], seq: {}, seqBlocks: {}
+            notifications: [], audit: [], seq: {}, seqBlocks: {},
+            roles: [], users: [], branding: defaultBranding()
         };
     }
 
@@ -106,7 +113,13 @@
         return state;
     }
 
+    /** Giriş ekranı (oturum açmadan) için marka bilgisinin ayrı kopyası */
+    function mirrorBranding() {
+        try { localStorage.setItem('mrppro.branding', JSON.stringify(state.branding || defaultBranding())); } catch (e) { /* kota */ }
+    }
+
     function save() {
+        mirrorBranding();
         if (MRP.config.erp) {
             // ERP modunda geçmiş kırpılmaz (silme olarak senkronlanırdı); kalıcılık ve gönderim backend'de
             if (state.notifications.length > MAX_NOTIFS) state.notifications = state.notifications.slice(0, MAX_NOTIFS);
@@ -166,16 +179,21 @@
         });
     }
 
+    /** Demo verisini sıfırlar; kullanıcılar, roller ve firma ayarları korunur */
     function reset() {
+        const keep = state ? { roles: state.roles, users: state.users, branding: state.branding } : {};
         localStorage.removeItem(KEY);
-        state = defaultState();
+        state = Object.assign(defaultState(), keep);
         save();
     }
 
     function setState(s) { state = s; }
+    function storedBranding() {
+        try { return JSON.parse(localStorage.getItem('mrppro.branding') || 'null') || defaultBranding(); } catch (e) { return defaultBranding(); }
+    }
 
     MRP.store = {
-        load, save, nextNo, audit, notify, reset, restore, emptyState, setState,
+        load, save, nextNo, audit, notify, reset, restore, emptyState, setState, storedBranding, defaultBranding,
         get state() { return state; }
     };
 })(window.MRP);

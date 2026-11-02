@@ -107,7 +107,7 @@
             const u = me();
             r.comments = r.comments || [];
             r.comments.push({ by: u.name, role: u.role, roleName: u.roleName, avatar: u.avatar, text, at: new Date().toISOString() });
-            const targets = r.createdBy === u.username ? ['satinalma', 'satinalma_muduru'] : [MRP.auth.USERS[r.createdBy] ? MRP.auth.USERS[r.createdBy].role : 'planlama'];
+            const targets = r.createdBy === u.username ? ['perm:approveRequest'] : [`user:${r.createdBy}`];
             MRP.store.notify('comment', `${r.no} için yorum`, `${u.name}: ${text.slice(0, 80)}`, targets, 'requests');
             MRP.store.save();
             ctx.close();
@@ -126,7 +126,7 @@
             if (!r.escalated) {
                 r.escalated = true;
                 log(r, 'Müdür onayına yönlendirildi', `Tutar ${U.cur(r.total)} > limit ${U.cur(limit)}`);
-                MRP.store.notify('request', 'Onayınız gerekiyor', `${r.no} · ${U.cur(r.total)} — ${me().name} limitini aşıyor`, ['satinalma_muduru', 'admin'], 'requests');
+                MRP.store.notify('request', 'Onayınız gerekiyor', `${r.no} · ${U.cur(r.total)} — ${me().name} limitini aşıyor`, [`approve:${r.total}`], 'requests');
                 app().commit();
             }
             return UI.toast('Onay limiti aşıldı', `${U.cur(limit)} üzerindeki talep müdür onayına yönlendirildi.`, 'warn', 5500);
@@ -136,7 +136,7 @@
         r.approvedAt = new Date().toISOString();
         log(r, 'Onaylandı');
         MRP.store.audit('Talep onaylandı', `${r.no} (${U.cur(r.total)})`);
-        MRP.store.notify('request', 'Talep onaylandı', `${r.no} ${me().name} tarafından onaylandı.`, ['planlama', 'satinalma', 'admin'], 'requests');
+        MRP.store.notify('request', 'Talep onaylandı', `${r.no} ${me().name} tarafından onaylandı.`, [`user:${r.createdBy}`, 'perm:createPO'], 'requests');
         app().commit();
         UI.toast('Talep onaylandı', r.no, 'success');
     }
@@ -151,7 +151,7 @@
         r.rejectionReason = reason;
         log(r, 'Reddedildi', reason);
         MRP.store.audit('Talep reddedildi', `${r.no}: ${reason}`);
-        MRP.store.notify('request', 'Talep reddedildi', `${r.no}: ${reason}`, ['planlama', 'admin'], 'requests');
+        MRP.store.notify('request', 'Talep reddedildi', `${r.no}: ${reason}`, [`user:${r.createdBy}`, 'perm:runMRP'], 'requests');
         app().commit();
         UI.toast('Talep reddedildi', r.no, 'info');
     }
@@ -268,7 +268,7 @@
         log(r, 'Siparişe dönüştürüldü', `${po.no} · ${sup.ad}`);
         const t = poTotals(po);
         MRP.store.audit('Satın alma siparişi oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`);
-        MRP.store.notify('po', 'Sipariş oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`, ['planlama', 'satinalma', 'satinalma_muduru', 'admin'], 'po');
+        MRP.store.notify('po', 'Sipariş oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`, ['perm:receiveGoods', 'perm:runMRP', 'perm:createPO'], 'po');
         return po;
     }
 
@@ -475,7 +475,7 @@
         if (quality === 'rejected') {
             log(p, 'Teslimat reddedildi', `İrsaliye ${waybill}${note ? ' — ' + note : ''}`);
             MRP.store.audit('Teslimat reddedildi', `${p.no} / ${waybill}`);
-            MRP.store.notify('po', 'Teslimat reddedildi', `${p.no} · ${p.supplierName} · İrsaliye ${waybill}`, ['satinalma', 'satinalma_muduru', 'admin', 'planlama'], 'po');
+            MRP.store.notify('po', 'Teslimat reddedildi', `${p.no} · ${p.supplierName} · İrsaliye ${waybill}`, ['perm:createPO', 'perm:runMRP', 'perm:receiveGoods'], 'po');
         } else {
             lines.forEach((x) => {
                 const l = p.lines[x.i];
@@ -488,7 +488,7 @@
             log(p, done ? 'Tamamı teslim alındı' : 'Kısmi teslim alındı', `İrsaliye ${waybill}`);
             if (done) syncRequest(findReq(p.requestNo));
             MRP.store.audit('Mal kabul', `${p.no} / ${waybill}: ${lines.length} kalem${done ? '' : ' (kısmi)'}`);
-            MRP.store.notify('po', 'Mal kabul yapıldı', `${p.no} · ${lines.length} kalem${done ? '' : ' (kısmi)'}`, ['planlama', 'satinalma_muduru', 'admin'], 'po');
+            MRP.store.notify('po', 'Mal kabul yapıldı', `${p.no} · ${lines.length} kalem${done ? '' : ' (kısmi)'}`, ['perm:runMRP', 'perm:createPO', 'perm:manageWO'], 'po');
         }
         app().commit();
         UI.toast(quality === 'rejected' ? 'Teslimat reddedildi' : 'Mal kabul kaydedildi', quality === 'rejected' ? 'Stok değişmedi.' : 'Stoklar güncellendi.', quality === 'rejected' ? 'warn' : 'success');
@@ -687,7 +687,7 @@
                         const nid = MRP.store.nextNo('TED');
                         S().suppliers.push({ id: nid, ...data, aktif: true });
                         MRP.store.audit('Tedarikçi eklendi', `${nid} — ${ad}`);
-                        MRP.store.notify('supplier', 'Yeni tedarikçi', `${ad} (${nid})`, ['satinalma', 'satinalma_muduru', 'admin'], 'suppliers');
+                        MRP.store.notify('supplier', 'Yeni tedarikçi', `${ad} (${nid})`, ['perm:manageSuppliers', 'perm:createPO'], 'suppliers');
                     }
                     app().commit();
                     UI.toast('Tedarikçi kaydedildi', ad, 'success');

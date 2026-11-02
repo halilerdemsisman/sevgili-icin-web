@@ -25,24 +25,34 @@ export function hashPassword(pw, salt = crypto.randomBytes(16).toString('hex')) 
     return `${salt}:${crypto.scryptSync(pw, salt, 32).toString('hex')}`;
 }
 
-const ALL_VIEWS = ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'];
-const P = (o) => ({ editProduct: false, editItem: false, editCost: false, runMRP: false, manageCapacity: false, createRequest: false, approveRequest: false, approveLimit: 0, createPO: false, receiveGoods: false, manageSuppliers: false, manageWO: false, adjustStock: false, resetData: false, ...o });
+/**
+ * ERP'deki kullanıcılar: rol tanımları MRP Pro'nun varsayılan bölüm rolleriyle
+ * aynıdır (assets/js/auth.js → DEFAULT_ROLES). approveLimit null = sınırsız.
+ */
+function loadRoles() {
+    const ctx = { window: {}, console, URLSearchParams, location: { search: '', href: 'http://localhost/', origin: 'http://localhost' }, TextEncoder };
+    vm.createContext(ctx);
+    for (const f of ['utils.js', 'auth.js']) vm.runInContext(fs.readFileSync(path.join(jsDir, f), 'utf8'), ctx, { filename: f });
+    return ctx.window.MRP.auth.DEFAULT_ROLES;
+}
 
-/** ERP'deki kullanıcılar ve rollerin MRP yetkileri (approveLimit null = sınırsız) */
 export function seedUsers() {
+    const roles = Object.fromEntries(loadRoles().map((r) => [r.id, r]));
     return [
-        { username: 'admin', password: '1234', name: 'Sistem Yöneticisi', role: 'admin', roleName: 'Yönetici', views: ALL_VIEWS,
-            permissions: P({ editProduct: true, editItem: true, editCost: true, runMRP: true, manageCapacity: true, createRequest: true, approveRequest: true, approveLimit: null, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: true, adjustStock: true }) },
-        { username: 'planlama', password: 'plan123', name: 'Ahmet Yılmaz', role: 'planlama', roleName: 'Üretim Planlama',
-            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'stock', 'movements', 'analysis', 'import', 'reports'],
-            permissions: P({ editProduct: true, editItem: true, editCost: true, runMRP: true, manageCapacity: true, createRequest: true, manageWO: true }) },
-        { username: 'satinalma', password: 'satin123', name: 'Zeynep Kaya', role: 'satinalma', roleName: 'Satın Alma Uzmanı',
-            views: ['dashboard', 'bom', 'items', 'costing', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports'],
-            permissions: P({ approveRequest: true, approveLimit: 10000, createPO: true, receiveGoods: true, manageSuppliers: true, adjustStock: true }) },
-        { username: 'satinalma_muduru', password: 'mudur123', name: 'Murat Demir', role: 'satinalma_muduru', roleName: 'Satın Alma Müdürü',
-            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
-            permissions: P({ editItem: true, editCost: true, approveRequest: true, approveLimit: 500000, createPO: true, receiveGoods: true, manageSuppliers: true, adjustStock: true }) }
-    ].map(({ password, ...u }) => ({ ...u, passwordHash: hashPassword(password) }));
+        ['admin', '1234', 'Sistem Yöneticisi', 'admin'],
+        ['yonetim', 'yon123', 'Kemal Aydın', 'yonetim'],
+        ['planlama', 'plan123', 'Ahmet Yılmaz', 'planlama'],
+        ['uretim', 'uret123', 'Hüseyin Çelik', 'uretim'],
+        ['satinalma', 'satin123', 'Zeynep Kaya', 'satinalma'],
+        ['satinalma_muduru', 'mudur123', 'Murat Demir', 'satinalma_muduru'],
+        ['depo', 'depo123', 'Emre Koç', 'depo'],
+        ['maliyet', 'mal123', 'Elif Şahin', 'maliyet']
+    ].map(([username, password, name, roleId]) => {
+        const r = roles[roleId];
+        const permissions = { ...r.can, approveLimit: r.approveLimit };
+        delete permissions.resetData;                       // ERP modunda veri sıfırlama yok
+        return { username, name, role: r.id, roleName: r.name, home: r.home, views: r.views.filter((v) => v !== 'users' || roleId === 'admin'), permissions, passwordHash: hashPassword(password) };
+    });
 }
 
 /** Sözleşmedeki koleksiyonlar: { koleksiyon: { anahtar: kayıt } } */

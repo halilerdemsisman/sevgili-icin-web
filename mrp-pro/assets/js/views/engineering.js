@@ -457,7 +457,7 @@
         p.iroko = U.round(br['İroko Kereste'] || 0, 2);
         p.hammadde = U.round(p.toplam - p.fason, 2);
         MRP.store.audit('Ürün eklendi', `${kod} — ${ad} (${lines.length} bileşen, ${Object.keys(newItems).length} yeni kalem)`);
-        MRP.store.notify('product', 'Yeni ürün tanımlandı', `${kod} — ${ad}`, ['admin', 'planlama'], 'bom');
+        MRP.store.notify('product', 'Yeni ürün tanımlandı', `${kod} — ${ad}`, ['perm:editProduct', 'perm:editCost'], 'bom');
         bomState.cat = kategori; bomState.q = kod; bomState.page = 1;
         app().commit();
         UI.toast('Ürün kaydedildi', `${kod} · ${U.cur(p.toplam)}`, 'success');

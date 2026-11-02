@@ -19,16 +19,16 @@ info:
     | workCenters | `id` | İş merkezi | manageCapacity, editCost |
     | suppliers | `id` | Tedarikçi | manageSuppliers |
     | priceList | `supplierId\|kod` | Tedarikçi fiyatı | manageSuppliers, editCost |
-    | lots | `id` | Lot bakiyesi (stok = lotların toplamı) | adjustStock, receiveGoods, manageWO |
-    | movements | `id` | Stok hareketi (değişmez) | adjustStock, receiveGoods, manageWO |
+    | lots | `id` | Lot bakiyesi (stok = lotların toplamı) | adjustStock, receiveGoods, manageWO, transferStock |
+    | movements | `id` | Stok hareketi (değişmez) | adjustStock, receiveGoods, manageWO, transferStock |
     | demands | `id` | Bağımsız talep / satış siparişi (MPS) | runMRP |
     | purchaseRequests | `no` | Satın alma talebi | createRequest, approveRequest, createPO, receiveGoods |
     | purchaseOrders | `no` | Satın alma siparişi | createPO, receiveGoods |
     | workOrders | `no` | İş emri | manageWO, runMRP |
-    | subcontracts | `no` | Fason sevk fişi | adjustStock |
+    | subcontracts | `no` | Fason sevk fişi | transferStock |
     | notifications | `id` | Rol bazlı bildirim | (oturum açmış herkes) |
     | auditLog | `id` | Denetim kaydı (değişmez) | (oturum açmış herkes) |
-    | settings | `main` | Döviz kurları + maliyet parametreleri | editCost |
+    | settings | `main` | Döviz kurları, maliyet parametreleri, firma logoları | editCost, manageUsers |
     | mrpRun | `last` | Son MRP sonucu | runMRP, createRequest, manageWO |
 
     **Kural:** ERP her değişikliği kendi iş kurallarına göre doğrular; reddettiği değişiklik
@@ -236,10 +236,11 @@ components:
         role: { type: string, example: planlama }
         roleName: { type: string, example: Üretim Planlama }
         avatar: { type: string, maxLength: 3 }
+        home: { type: string, description: "Açılış ekranı (views içinden)", example: mrp }
         views:
           type: array
           description: Görebileceği ekranlar
-          items: { type: string, enum: [dashboard, bom, items, costing, mrp, capacity, workorders, requests, po, suppliers, stock, movements, analysis, import, reports, audit] }
+          items: { type: string, enum: [dashboard, bom, items, costing, mrp, capacity, workorders, requests, po, suppliers, stock, movements, analysis, import, reports, audit, users] }
         permissions:
           type: object
           properties:
@@ -255,7 +256,9 @@ components:
             receiveGoods: { type: boolean }
             manageSuppliers: { type: boolean }
             manageWO: { type: boolean }
-            adjustStock: { type: boolean }
+            adjustStock: { type: boolean, description: Sayım düzeltme }
+            transferStock: { type: boolean, description: Lokasyon transferi ve fason sevk/dönüş }
+            manageUsers: { type: boolean, description: "Firma ayarları (logo); ERP modunda kullanıcılar ERP'de yönetilir" }
     Change:
       type: object
       required: [collection, op, key]

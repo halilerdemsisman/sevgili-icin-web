@@ -134,7 +134,8 @@ a { color: var(--accent); }
     border-radius: 18px; padding: 34px 32px; box-shadow: var(--shadow);
 }
 .login-logos { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; padding-bottom: 20px; margin-bottom: 22px; border-bottom: 1px solid var(--border); }
-.brand-logo { height: 40px; width: auto; background: #fff; border-radius: 8px; padding: 5px 10px; }
+.brand-logo { height: 44px; width: 132px; background: #fff; border-radius: 8px; padding: 6px 10px; box-shadow: 0 1px 2px rgba(0,0,0,.15); display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; flex-shrink: 0; }
+.brand-logo img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 .login-title { text-align: center; margin-bottom: 22px; }
 .login-title h1 { font-size: 1.45em; font-weight: 800; letter-spacing: -.3px; }
 .login-title p { color: var(--text-3); font-size: .88em; margin-top: 4px; }
@@ -192,7 +193,7 @@ textarea { resize: vertical; min-height: 70px; }
 .sb-link .count { margin-left: auto; font-size: .74em; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--bg-hover); color: var(--text-2); }
 .sb-link .count.alert { background: var(--red); color: #fff; }
 .sb-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; justify-content: center; }
-.sb-foot .brand-logo { height: 26px; padding: 3px 7px; }
+.sb-foot .brand-logo { height: 34px; width: 100px; padding: 4px 8px; }
 
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .topbar {
@@ -211,6 +212,10 @@ textarea { resize: vertical; min-height: 70px; }
 .avatar.planlama { background: linear-gradient(135deg,#3b82f6,#1d4ed8); }
 .avatar.satinalma { background: linear-gradient(135deg,#8b5cf6,#6d28d9); }
 .avatar.satinalma_muduru { background: linear-gradient(135deg,#10b981,#059669); }
+.avatar.yonetim { background: linear-gradient(135deg,#0f2a5a,#1e40af); }
+.avatar.uretim { background: linear-gradient(135deg,#ef4444,#b91c1c); }
+.avatar.depo { background: linear-gradient(135deg,#06b6d4,#0e7490); }
+.avatar.maliyet { background: linear-gradient(135deg,#ec4899,#be185d); }
 .user-chip .n { font-size: .82em; font-weight: 600; line-height: 1.2; }
 .user-chip .r { font-size: .7em; color: var(--text-3); }
 .content { padding: 22px 24px 40px; max-width: 1640px; width: 100%; margin: 0 auto; }
@@ -461,21 +466,23 @@ body.no-nav .sidebar, body.no-nav .sb-backdrop, body.no-nav .menu-btn { display:
 <div id="toasts" class="toast-stack" aria-live="polite"></div>
 <div id="modalRoot"></div>
 
-<!-- Marka logoları (tekrar kullanım için) -->
+<!-- Varsayılan marka logoları (tekrar kullanım için).
+     Resmî logo dosyaları "Kullanıcılar & Roller → Firma Ayarları"ndan yüklenince bunların yerine geçer.
+     textLength ile metin genişliği sabitlenir: yazı tipi bilgisayara göre değişse de yerleşim bozulmaz. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <defs>
-        <symbol id="logo-exit" viewBox="0 0 330 110">
-            <polygon points="2,8 2,102 78,55" fill="#e63946"/>
-            <line x1="6" y1="96" x2="82" y2="60" stroke="#3a3a3a" stroke-width="3"/>
-            <text x="92" y="76" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="62" fill="#3a3a3a" letter-spacing="3">EXIT</text>
-            <text x="95" y="99" font-family="Helvetica, Arial, sans-serif" font-style="italic" font-weight="500" font-size="16" fill="#3a3a3a">Innovative Solutions</text>
+        <symbol id="logo-exit" viewBox="0 0 300 100">
+            <polygon points="6,10 6,90 74,50" fill="#e63946"/>
+            <line x1="10" y1="86" x2="78" y2="54" stroke="#3a3a3a" stroke-width="3" stroke-linecap="round"/>
+            <text x="92" y="64" textLength="196" lengthAdjust="spacingAndGlyphs" font-family="'Arial Black', Arial, Helvetica, 'Liberation Sans', sans-serif" font-weight="900" font-size="58" fill="#3a3a3a">EXIT</text>
+            <text x="94" y="87" textLength="192" lengthAdjust="spacingAndGlyphs" font-family="Arial, Helvetica, 'Liberation Sans', sans-serif" font-style="italic" font-size="15" fill="#3a3a3a">Innovative Solutions</text>
         </symbol>
-        <symbol id="logo-bg" viewBox="0 0 340 110">
-            <rect x="8" y="8" width="18" height="94" rx="2" fill="#f4c20d"/>
-            <circle cx="58" cy="52" r="30" fill="none" stroke="#f4c20d" stroke-width="20"/>
-            <rect x="8" y="88" width="82" height="14" rx="2" fill="#f4c20d"/>
-            <text x="112" y="72" font-family="'Arial Black', Arial, sans-serif" font-weight="900" font-size="62" fill="#3a3a3a" letter-spacing="-2">bg</text>
-            <text x="205" y="72" font-family="Helvetica, Arial, sans-serif" font-weight="300" font-size="52" fill="#3a3a3a">group</text>
+        <symbol id="logo-bg" viewBox="0 0 300 100">
+            <rect x="8" y="10" width="17" height="80" rx="2" fill="#f4c20d"/>
+            <circle cx="52" cy="55" r="25" fill="none" stroke="#f4c20d" stroke-width="17"/>
+            <rect x="8" y="76" width="70" height="14" rx="2" fill="#f4c20d"/>
+            <text x="98" y="70" textLength="70" lengthAdjust="spacingAndGlyphs" font-family="'Arial Black', Arial, Helvetica, 'Liberation Sans', sans-serif" font-weight="900" font-size="56" fill="#3a3a3a">bg</text>
+            <text x="176" y="70" textLength="116" lengthAdjust="spacingAndGlyphs" font-family="Arial, Helvetica, 'Liberation Sans', sans-serif" font-weight="300" font-size="48" fill="#3a3a3a">group</text>
         </symbol>
     </defs>
 </svg>
@@ -484,13 +491,10 @@ body.no-nav .sidebar, body.no-nav .sb-backdrop, body.no-nav .menu-btn { display:
 <section id="login" class="login" hidden>
     <button class="btn btn-secondary btn-icon theme-fab" data-act="toggleTheme" title="Tema değiştir" aria-label="Tema değiştir"><span data-theme-icon></span></button>
     <div class="login-card">
-        <div class="login-logos">
-            <svg class="brand-logo" viewBox="0 0 330 110" role="img" aria-label="EXIT"><use href="#logo-exit"/></svg>
-            <svg class="brand-logo" viewBox="0 0 340 110" role="img" aria-label="bg group"><use href="#logo-bg"/></svg>
-        </div>
+        <div class="login-logos" data-brand-logos></div>
         <div class="login-title">
             <h1>MRP Pro</h1>
-            <p>Ürün Ağacı · Malzeme İhtiyaç Planlama · Satın Alma · Stok</p>
+            <p data-brand-company="Ürün Ağacı · Malzeme İhtiyaç Planlama · Satın Alma · Stok">Ürün Ağacı · Malzeme İhtiyaç Planlama · Satın Alma · Stok</p>
         </div>
         <div class="login-error" id="loginError" role="alert">Kullanıcı adı veya şifre hatalı.</div>
         <form id="loginForm" class="stack" autocomplete="on">
@@ -527,13 +531,10 @@ body.no-nav .sidebar, body.no-nav .sb-backdrop, body.no-nav .menu-btn { display:
     <aside class="sidebar" id="sidebar">
         <div class="sb-brand">
             <div class="sb-mark">M</div>
-            <div><b>MRP Pro</b><small>Üretim Planlama Sistemi</small></div>
+            <div><b>MRP Pro</b><small data-brand-company="Üretim Planlama Sistemi">Üretim Planlama Sistemi</small></div>
         </div>
         <nav class="sb-nav" id="sbNav" aria-label="Ana menü"></nav>
-        <div class="sb-foot">
-            <svg class="brand-logo" viewBox="0 0 330 110" role="img" aria-label="EXIT"><use href="#logo-exit"/></svg>
-            <svg class="brand-logo" viewBox="0 0 340 110" role="img" aria-label="bg group"><use href="#logo-bg"/></svg>
-        </div>
+        <div class="sb-foot" data-brand-logos></div>
     </aside>
     <div class="sb-backdrop" id="sbBackdrop" data-act="closeSidebar"></div>
 
@@ -741,6 +742,42 @@ window.MRP = window.MRP || {};
         return '﻿' + [headers, ...rows].map((r) => r.map(cell).join(';')).join('\n');
     };
 
+    /** SHA-256 (hex) — eşzamanlı, bağımlılıksız; parola özetleri için */
+    U.sha256 = (str) => {
+        const K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+            0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+            0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+            0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+        const bytes = new TextEncoder().encode(String(str));
+        const len = bytes.length;
+        const total = ((len + 9 + 63) >> 6) << 6;
+        const m = new Uint8Array(total);
+        m.set(bytes); m[len] = 0x80;
+        const bits = len * 8;
+        const dv = new DataView(m.buffer);
+        dv.setUint32(total - 8, Math.floor(bits / 0x100000000)); dv.setUint32(total - 4, bits >>> 0);
+        const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+        const W = new Uint32Array(64);
+        const r = (x, n) => (x >>> n) | (x << (32 - n));
+        for (let o = 0; o < total; o += 64) {
+            for (let i = 0; i < 16; i++) W[i] = dv.getUint32(o + i * 4);
+            for (let i = 16; i < 64; i++) {
+                const s0 = r(W[i - 15], 7) ^ r(W[i - 15], 18) ^ (W[i - 15] >>> 3);
+                const s1 = r(W[i - 2], 17) ^ r(W[i - 2], 19) ^ (W[i - 2] >>> 10);
+                W[i] = (W[i - 16] + s0 + W[i - 7] + s1) >>> 0;
+            }
+            let [a, b, c, d, e, f, g, h] = H;
+            for (let i = 0; i < 64; i++) {
+                const t1 = (h + (r(e, 6) ^ r(e, 11) ^ r(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + W[i]) >>> 0;
+                const t2 = ((r(a, 2) ^ r(a, 13) ^ r(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+                h = g; g = f; f = e; e = (d + t1) >>> 0; d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+            }
+            H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+            H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+        }
+        return H.map((x) => x.toString(16).padStart(8, '0')).join('');
+    };
+
     MRP.U = U;
 
     // ======================================================================
@@ -784,6 +821,7 @@ window.MRP = window.MRP || {};
         pie: '<path d="M21.2 15.9A10 10 0 118 2.8"/><path d="M22 12A10 10 0 0012 2v10z"/>',
         upload: '<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
         barcode: '<path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14"/>',
+        key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L20 3M16 7l3 3M14 9l2 2"/>',
         layers: '<path d="M12 2l10 5-10 5L2 7z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>'
     };
     MRP.icon = (name, cls = '') => `<svg class="icon ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -1397,9 +1435,15 @@ window.MRP = window.MRP || {};
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
             notifications: [],
             audit: [],
-            seq: {}
+            seq: {},
+            roles: MRP.auth.defaultRoles(),
+            users: MRP.auth.defaultUsers(),
+            branding: defaultBranding()
         };
     }
+
+    /** Firma adı ve logolar (Kullanıcılar & Roller → Firma Ayarları) */
+    function defaultBranding() { return { company: '', logos: [] }; }
 
     /** v2 → v3: sayısal stok → lot kaydı, yeni alanlar varsayılanlarla eklenir */
     function migrateV2(old) {
@@ -1423,7 +1467,8 @@ window.MRP = window.MRP || {};
             suppliers: [], priceList: [], workCenters: [],
             fx: { rates: { ...MRP.data.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] },
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
-            notifications: [], audit: [], seq: {}, seqBlocks: {}
+            notifications: [], audit: [], seq: {}, seqBlocks: {},
+            roles: [], users: [], branding: defaultBranding()
         };
     }
 
@@ -1453,7 +1498,13 @@ window.MRP = window.MRP || {};
         return state;
     }
 
+    /** Giriş ekranı (oturum açmadan) için marka bilgisinin ayrı kopyası */
+    function mirrorBranding() {
+        try { localStorage.setItem('mrppro.branding', JSON.stringify(state.branding || defaultBranding())); } catch (e) { /* kota */ }
+    }
+
     function save() {
+        mirrorBranding();
         if (MRP.config.erp) {
             // ERP modunda geçmiş kırpılmaz (silme olarak senkronlanırdı); kalıcılık ve gönderim backend'de
             if (state.notifications.length > MAX_NOTIFS) state.notifications = state.notifications.slice(0, MAX_NOTIFS);
@@ -1513,16 +1564,21 @@ window.MRP = window.MRP || {};
         });
     }
 
+    /** Demo verisini sıfırlar; kullanıcılar, roller ve firma ayarları korunur */
     function reset() {
+        const keep = state ? { roles: state.roles, users: state.users, branding: state.branding } : {};
         localStorage.removeItem(KEY);
-        state = defaultState();
+        state = Object.assign(defaultState(), keep);
         save();
     }
 
     function setState(s) { state = s; }
+    function storedBranding() {
+        try { return JSON.parse(localStorage.getItem('mrppro.branding') || 'null') || defaultBranding(); } catch (e) { return defaultBranding(); }
+    }
 
     MRP.store = {
-        load, save, nextNo, audit, notify, reset, restore, emptyState, setState,
+        load, save, nextNo, audit, notify, reset, restore, emptyState, setState, storedBranding, defaultBranding,
         get state() { return state; }
     };
 })(window.MRP);
@@ -1530,57 +1586,142 @@ window.MRP = window.MRP || {};
 <script>
 /* assets/js/auth.js */
 /* ==========================================================================
-   MRP Pro — Kullanıcılar, roller ve yetkiler
-   NOT: Bu bir istemci tarafı demo uygulamasıdır. Gerçek kullanımda kimlik
-   doğrulama ve yetkilendirme mutlaka sunucu tarafında yapılmalıdır.
+   MRP Pro — Bölüm rolleri, kullanıcılar ve yetkiler
+   --------------------------------------------------------------------------
+   Her bölümün (planlama, üretim, satın alma, depo, maliyet, yönetim) bir rolü
+   vardır. Rol; görebileceği ekranları (views), yapabileceği işlemleri (can) ve
+   açılış ekranını (home) belirler. Bağımsız modda roller ve kullanıcılar
+   "Kullanıcılar & Roller" ekranından yönetilir; ERP modunda ERP'den gelir.
+   NOT: Bağımsız mod istemci tarafındadır; gerçek kullanımda kimlik doğrulama
+   ERP sunucusunda yapılmalıdır (bkz. integration/README.md).
    ========================================================================== */
 (function (MRP) {
     'use strict';
 
-    const ALL_VIEWS = ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'];
-
-    const USERS = {
-        admin: {
-            username: 'admin', password: '1234', name: 'Sistem Yöneticisi', role: 'admin', roleName: 'Yönetici', avatar: 'SY',
-            views: ALL_VIEWS,
-            can: { editProduct: true, editItem: true, editCost: true, runMRP: true, manageCapacity: true, createRequest: true, approveRequest: true, approveLimit: Infinity, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: true, adjustStock: true, resetData: true }
-        },
-        planlama: {
-            username: 'planlama', password: 'plan123', name: 'Ahmet Yılmaz', role: 'planlama', roleName: 'Üretim Planlama', avatar: 'AY',
-            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'stock', 'movements', 'analysis', 'import', 'reports'],
-            can: { editProduct: true, editItem: true, editCost: true, runMRP: true, manageCapacity: true, createRequest: true, approveRequest: false, approveLimit: 0, createPO: false, receiveGoods: false, manageSuppliers: false, manageWO: true, adjustStock: false, resetData: false }
-        },
-        satinalma: {
-            username: 'satinalma', password: 'satin123', name: 'Zeynep Kaya', role: 'satinalma', roleName: 'Satın Alma Uzmanı', avatar: 'ZK',
-            views: ['dashboard', 'bom', 'items', 'costing', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports'],
-            can: { editProduct: false, editItem: false, editCost: false, runMRP: false, manageCapacity: false, createRequest: false, approveRequest: true, approveLimit: 10000, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: false, adjustStock: true, resetData: false }
-        },
-        satinalma_muduru: {
-            username: 'satinalma_muduru', password: 'mudur123', name: 'Murat Demir', role: 'satinalma_muduru', roleName: 'Satın Alma Müdürü', avatar: 'MD',
-            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
-            can: { editProduct: false, editItem: true, editCost: true, runMRP: false, manageCapacity: false, createRequest: false, approveRequest: true, approveLimit: 500000, createPO: true, receiveGoods: true, manageSuppliers: true, manageWO: false, adjustStock: true, resetData: false }
-        }
+    /** Ekranlar (menü sırasıyla) */
+    const VIEWS = {
+        dashboard: 'Gösterge Paneli', bom: 'Ürün Ağacı', items: 'Malzeme Kartları', costing: 'Maliyet & Kur',
+        mrp: 'MRP Çalıştırma', capacity: 'Kapasite Planlama', workorders: 'İş Emirleri',
+        requests: 'Satın Alma Talepleri', po: 'Satın Alma Siparişleri', suppliers: 'Tedarikçiler',
+        stock: 'Stok Durumu', movements: 'Stok Hareketleri',
+        analysis: 'Analizler', import: 'Veri Aktarımı', reports: 'Raporlar', audit: 'Denetim Kaydı', users: 'Kullanıcılar & Roller'
     };
+
+    /** İşlem yetkileri — ekran görmek salt okunur erişimdir; değiştirmek bu yetkileri ister */
+    const PERMISSIONS = {
+        editProduct:     ['Mühendislik', 'Ürün ve reçete tanımlama / değiştirme'],
+        editItem:        ['Mühendislik', 'Malzeme kartı planlama parametreleri (LT, emniyet stoğu, parti)'],
+        editCost:        ['Maliyet', 'Fiyat, döviz kuru, genel gider ve saat ücretleri'],
+        runMRP:          ['Planlama', 'Ana üretim planı ve MRP çalıştırma'],
+        manageCapacity:  ['Planlama', 'İş merkezleri ve üretim rotaları'],
+        createRequest:   ['Planlama', 'MRP önerisinden satın alma talebi oluşturma'],
+        manageWO:        ['Üretim', 'İş emri oluşturma, serbest bırakma, tamamlama'],
+        approveRequest:  ['Satın Alma', 'Satın alma talebi onaylama / reddetme (limit dahilinde)'],
+        createPO:        ['Satın Alma', 'Satın alma siparişi oluşturma / iptal'],
+        manageSuppliers: ['Satın Alma', 'Tedarikçi kartları ve fiyat listeleri'],
+        receiveGoods:    ['Depo', 'Mal kabul (irsaliye, lot, kalite)'],
+        adjustStock:     ['Depo', 'Sayım düzeltme ve Excel ile sayım aktarımı'],
+        transferStock:   ['Depo', 'Lokasyon transferi ve fason sevk / dönüş'],
+        manageUsers:     ['Sistem', 'Kullanıcı, rol ve firma ayarları'],
+        resetData:       ['Sistem', 'Demo verilerini sıfırlama, yedekten geri yükleme']
+    };
+
+    const ALL_VIEWS = Object.keys(VIEWS);
+    const ALL = Object.fromEntries(Object.keys(PERMISSIONS).map((k) => [k, true]));
+    const NONE = Object.fromEntries(Object.keys(PERMISSIONS).map((k) => [k, false]));
+
+    /**
+     * Varsayılan bölüm rolleri. approveLimit: ₺, null = sınırsız.
+     * Ekran listesi "işine yarayan" kapsamı verir; yazma yetkileri bölümün sorumluluğuyla sınırlıdır.
+     */
+    const DEFAULT_ROLES = [
+        { id: 'admin', name: 'Sistem Yöneticisi', home: 'dashboard', views: ALL_VIEWS, can: { ...ALL }, approveLimit: null },
+        { id: 'yonetim', name: 'Genel Müdür', home: 'dashboard',
+            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'reports', 'audit'],
+            can: { ...NONE, approveRequest: true }, approveLimit: null },
+        { id: 'planlama', name: 'Üretim Planlama', home: 'mrp',
+            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'stock', 'movements', 'analysis', 'import', 'reports'],
+            can: { ...NONE, editProduct: true, editItem: true, runMRP: true, manageCapacity: true, createRequest: true, manageWO: true }, approveLimit: 0 },
+        { id: 'uretim', name: 'Üretim Şefi', home: 'workorders',
+            views: ['dashboard', 'bom', 'items', 'capacity', 'workorders', 'stock', 'movements', 'reports'],
+            can: { ...NONE, manageWO: true, transferStock: true }, approveLimit: 0 },
+        { id: 'satinalma', name: 'Satın Alma Uzmanı', home: 'requests',
+            views: ['dashboard', 'items', 'costing', 'mrp', 'requests', 'po', 'suppliers', 'stock', 'analysis', 'import', 'reports'],
+            can: { ...NONE, approveRequest: true, createPO: true, manageSuppliers: true }, approveLimit: 10000 },
+        { id: 'satinalma_muduru', name: 'Satın Alma Müdürü', home: 'requests',
+            views: ['dashboard', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
+            can: { ...NONE, approveRequest: true, createPO: true, manageSuppliers: true, editCost: true }, approveLimit: 500000 },
+        { id: 'depo', name: 'Depo Sorumlusu', home: 'stock',
+            views: ['dashboard', 'items', 'workorders', 'po', 'stock', 'movements', 'import', 'reports'],
+            can: { ...NONE, receiveGoods: true, adjustStock: true, transferStock: true }, approveLimit: 0 },
+        { id: 'maliyet', name: 'Maliyet / Muhasebe', home: 'costing',
+            views: ['dashboard', 'bom', 'items', 'costing', 'capacity', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
+            can: { ...NONE, editCost: true }, approveLimit: 0 }
+    ];
+
+    const pw = (username, password) => MRP.U.sha256(`mrppro:${username}:${password}`);
+
+    /** Varsayılan kullanıcılar (demo) — parolalar yalnızca özet olarak saklanır */
+    const DEMO_USERS = [
+        ['admin', '1234', 'Sistem Yöneticisi', 'admin'],
+        ['yonetim', 'yon123', 'Kemal Aydın', 'yonetim'],
+        ['planlama', 'plan123', 'Ahmet Yılmaz', 'planlama'],
+        ['uretim', 'uret123', 'Hüseyin Çelik', 'uretim'],
+        ['satinalma', 'satin123', 'Zeynep Kaya', 'satinalma'],
+        ['satinalma_muduru', 'mudur123', 'Murat Demir', 'satinalma_muduru'],
+        ['depo', 'depo123', 'Emre Koç', 'depo'],
+        ['maliyet', 'mal123', 'Elif Şahin', 'maliyet']
+    ];
+    function defaultUsers() {
+        return DEMO_USERS.map(([username, password, name, role]) => ({ username, name, role, active: true, passwordHash: pw(username, password), demoPassword: password }));
+    }
+    function defaultRoles() { return JSON.parse(JSON.stringify(DEFAULT_ROLES)); }
+
+    const initials = (name) => String(name).split(/\s+/).filter(Boolean).map((x) => x[0]).join('').slice(0, 2).toLocaleUpperCase('tr');
 
     let current = null;
     const SESSION_KEY = 'mrppro.session';
+    const S = () => MRP.store.state;
+
+    /** Kullanıcı kaydı + rol → oturumdaki kullanıcı nesnesi */
+    function build(userRec) {
+        const role = (S().roles || []).find((r) => r.id === userRec.role);
+        if (!role) return null;
+        const can = { ...NONE, ...role.can };
+        can.approveLimit = role.approveLimit == null ? Infinity : Number(role.approveLimit) || 0;
+        const views = role.views.filter((v) => VIEWS[v]);
+        return {
+            username: userRec.username, name: userRec.name, role: role.id, roleName: role.name, avatar: initials(userRec.name),
+            home: views.includes(role.home) ? role.home : views[0], views, can
+        };
+    }
 
     const auth = {
-        USERS,
+        VIEWS, PERMISSIONS, DEFAULT_ROLES, defaultRoles, defaultUsers, hashPassword: pw, initials,
         current: () => current,
+        /** Bağımsız mod girişi */
         login(username, password) {
-            const u = USERS[username];
-            if (!u || u.password !== password) return false;
-            current = u;
+            const u = (S().users || []).find((x) => x.username === username && x.active !== false);
+            if (!u || u.passwordHash !== pw(username, password)) return false;
+            const built = build(u);
+            if (!built) return false;
+            current = built;
             try { sessionStorage.setItem(SESSION_KEY, username); } catch (e) { /* yoksay */ }
             return true;
         },
         restore() {
             try {
-                const u = sessionStorage.getItem(SESSION_KEY);
-                if (u && USERS[u]) { current = USERS[u]; return true; }
+                const name = sessionStorage.getItem(SESSION_KEY);
+                const u = name && (S().users || []).find((x) => x.username === name && x.active !== false);
+                if (u) { current = build(u); return !!current; }
             } catch (e) { /* yoksay */ }
             return false;
+        },
+        /** Rol/kullanıcı değişikliğinden sonra oturumdaki yetkileri tazeler */
+        refresh() {
+            if (!current || MRP.config.erp) return;
+            const u = (S().users || []).find((x) => x.username === current.username);
+            current = u && u.active !== false ? build(u) : null;
         },
         logout() {
             current = null;
@@ -1588,6 +1729,11 @@ window.MRP = window.MRP || {};
         },
         /** ERP modunda kullanıcı ve yetkiler ERP'den gelir (bkz. backend.js) */
         setUser(u) { current = u; },
+        /** Bir kullanıcının rol kimliği (bildirim hedefleme için) */
+        roleOf(username) {
+            const u = (S().users || []).find((x) => x.username === username);
+            return u ? u.role : null;
+        },
         canView: (v) => !!current && current.views.includes(v),
         can: (a) => !!current && !!current.can[a]
     };
@@ -2261,7 +2407,7 @@ window.MRP = window.MRP || {};
             if (def.kind === 'array') (st[def.path] || []).forEach((r) => m.set(String(keyOf(def, r)), r));
             else if (def.kind === 'map') Object.entries(st[def.path] || {}).forEach(([k, r]) => m.set(k, r));
             else if (def.kind === 'raw') Object.entries(st[def.path] || {}).forEach(([k, v]) => m.set(k, { [def.keyName]: k, [def.field]: v }));
-            else if (def.kind === 'settings') m.set('main', { fx: st.fx, costing: st.costing });
+            else if (def.kind === 'settings') m.set('main', { fx: st.fx, costing: st.costing, branding: st.branding });
             else if (def.kind === 'single' && st[def.path]) m.set(def.keyVal, st[def.path]);
             out[name] = m;
         });
@@ -2285,6 +2431,7 @@ window.MRP = window.MRP || {};
         } else if (def.kind === 'settings') {
             if (data && data.fx) st.fx = { history: [], ...data.fx };
             if (data && data.costing) st.costing = data.costing;
+            if (data && data.branding) st.branding = data.branding;
         } else if (def.kind === 'single') {
             st[def.path] = data || null;
         }
@@ -2362,7 +2509,7 @@ window.MRP = window.MRP || {};
         return {
             username: u.username, name: u.name || u.username, role: u.role || 'user', roleName: u.roleName || u.role || '',
             avatar: u.avatar || (u.name || u.username).split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase(),
-            views: u.views || [], can
+            views: u.views || [], home: u.home || (u.views || [])[0], can
         };
     }
 
@@ -2744,7 +2891,8 @@ window.MRP = window.MRP || {};
             { id: 'analysis', label: 'Analizler', icon: 'pie' },
             { id: 'import', label: 'Veri Aktarımı (Excel)', icon: 'upload' },
             { id: 'reports', label: 'Raporlar & Dışa Aktarım', icon: 'chart' },
-            { id: 'audit', label: 'Denetim Kaydı', icon: 'shield' }
+            { id: 'audit', label: 'Denetim Kaydı', icon: 'shield' },
+            { id: 'users', label: 'Kullanıcılar & Roller', icon: 'key' }
         ] }
     ];
 
@@ -2822,6 +2970,7 @@ window.MRP = window.MRP || {};
             return;
         }
         MRP.model.init();
+        renderBrand();
         MRP.store.audit('Oturum açıldı', user.username);
         MRP.store.save();
         startApp();
@@ -2900,6 +3049,30 @@ window.MRP = window.MRP || {};
         } catch (err) { UI.toast('Senkronlanamadı', err.message, 'error'); }
     }
 
+    // ---------------- Firma logoları ----------------
+    /** Yüklenmiş logolar varsa onları, yoksa varsayılan çizimleri gösterir */
+    function renderBrand() {
+        const br = (MRP.store.state && MRP.store.state.branding) || MRP.store.storedBranding();
+        const logos = (br.logos || []).filter((l) => l && /^data:image\/(png|jpeg|webp|gif|svg\+xml);base64,/.test(l.src));
+        const html = logos.length
+            ? logos.map((l) => `<span class="brand-logo"><img src="${U.esc(l.src)}" alt="${U.esc(l.name || 'Logo')}"></span>`).join('')
+            : `<svg class="brand-logo" viewBox="0 0 300 100" role="img" aria-label="EXIT"><use href="#logo-exit"/></svg>
+               <svg class="brand-logo" viewBox="0 0 300 100" role="img" aria-label="bg group"><use href="#logo-bg"/></svg>`;
+        U.$$('[data-brand-logos]').forEach((el) => { el.innerHTML = html; });
+        const company = (br.company || '').trim();
+        U.$$('[data-brand-company]').forEach((el) => { el.textContent = company || el.dataset.brandCompany; });
+    }
+
+    /** Giriş ekranındaki demo hesaplar: yalnızca parolası hâlâ demo parolası olanlar */
+    function renderDemoAccounts() {
+        const users = (MRP.store.state.users || []).filter((u) => u.active !== false && u.demoPassword && u.passwordHash === A.hashPassword(u.username, u.demoPassword));
+        const roles = Object.fromEntries((MRP.store.state.roles || []).map((r) => [r.id, r.name]));
+        U.$('#demoAccounts').innerHTML = users.map((u) => `
+            <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.demoPassword)}">
+                <span class="r">${U.esc(roles[u.role] || u.role)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.demoPassword)}</span></button>`).join('');
+        U.$('#loginDemo').hidden = !users.length;
+    }
+
     // ---------------- Menü ----------------
     function renderNav() {
         U.$('#sbNav').innerHTML = NAV.map((g) => {
@@ -2915,8 +3088,10 @@ window.MRP = window.MRP || {};
     // ---------------- Yönlendirme ----------------
     function route() {
         if (!A.current()) return showLogin();
-        let id = (location.hash.replace(/^#\/?/, '').split('?')[0]) || 'dashboard';
-        if (!MRP.views[id] || !A.canView(id)) id = A.current().views[0];
+        const me = A.current();
+        // Her bölüm kendi açılış ekranıyla başlar (rol.home); yetkisiz ekrana gidilirse oraya döner
+        let id = (location.hash.replace(/^#\/?/, '').split('?')[0]) || me.home || 'dashboard';
+        if (!MRP.views[id] || !A.canView(id)) id = A.canView(me.home) ? me.home : me.views[0];
         currentView = id;
         render();
         closeSidebar();
@@ -2934,6 +3109,7 @@ window.MRP = window.MRP || {};
         document.title = `${v.title} · MRP Pro`;
         const host = U.$('#view');
         host.innerHTML = v.render();
+        if (host.querySelector('[data-brand-logos]')) renderBrand();
         if (v.after) v.after(host);
         renderNav();
         updateNotifBadge();
@@ -2943,13 +3119,25 @@ window.MRP = window.MRP || {};
     function commit() {
         MRP.model.invalidate();
         MRP.store.save();
+        A.refresh();
+        if (!A.current()) { location.hash = ''; return showLogin(); }
+        renderBrand();
         render();
     }
 
     // ---------------- Bildirimler ----------------
+    /**
+     * Bildirim hedefi: rol kimliği, 'perm:<yetki>' (o yetkiye sahip herkes),
+     * 'user:<kullanıcı>' veya 'approve:<tutar>' (bu tutarı onaylayabilenler)
+     */
+    function isForMe(n, u) {
+        return (n.roles || []).some((t) => t === u.role || t === '*' || t === `user:${u.username}`
+            || (t.startsWith('perm:') && u.can[t.slice(5)])
+            || (t.startsWith('approve:') && u.can.approveRequest && u.can.approveLimit >= Number(t.slice(8))));
+    }
     const myNotifs = () => {
         const u = A.current();
-        return u ? MRP.store.state.notifications.filter((n) => n.roles.includes(u.role)) : [];
+        return u ? MRP.store.state.notifications.filter((n) => isForMe(n, u)) : [];
     };
     function updateNotifBadge() {
         const u = A.current();
@@ -3033,7 +3221,7 @@ window.MRP = window.MRP || {};
         if (currentView) render();
     }
 
-    MRP.app = { render, commit, route, setTheme, resumeErp, logout: doLogout, currentView: () => currentView };
+    MRP.app = { render, commit, route, setTheme, resumeErp, renderBrand, logout: doLogout, currentView: () => currentView };
 
     window.addEventListener('hashchange', route);
     window.addEventListener('DOMContentLoaded', async () => {
@@ -3042,12 +3230,11 @@ window.MRP = window.MRP || {};
         applyTheme(theme);
         MRP.store.load();
         MRP.model.init();
+        renderBrand();
         U.$('#loginForm').addEventListener('submit', doLogin);
 
         if (!C.erp) {
-            U.$('#demoAccounts').innerHTML = Object.values(A.USERS).map((u) => `
-                <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.password)}">
-                    <span class="r">${U.esc(u.roleName)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.password)}</span></button>`).join('');
+            renderDemoAccounts();
         } else {
             U.$('#loginDemo').hidden = true;
             U.$('#loginErpNote').hidden = false;
@@ -3742,7 +3929,7 @@ window.MRP = window.MRP || {};
         p.iroko = U.round(br['İroko Kereste'] || 0, 2);
         p.hammadde = U.round(p.toplam - p.fason, 2);
         MRP.store.audit('Ürün eklendi', `${kod} — ${ad} (${lines.length} bileşen, ${Object.keys(newItems).length} yeni kalem)`);
-        MRP.store.notify('product', 'Yeni ürün tanımlandı', `${kod} — ${ad}`, ['admin', 'planlama'], 'bom');
+        MRP.store.notify('product', 'Yeni ürün tanımlandı', `${kod} — ${ad}`, ['perm:editProduct', 'perm:editCost'], 'bom');
         bomState.cat = kategori; bomState.q = kod; bomState.page = 1;
         app().commit();
         UI.toast('Ürün kaydedildi', `${kod} · ${U.cur(p.toplam)}`, 'success');
@@ -4034,7 +4221,7 @@ window.MRP = window.MRP || {};
                     };
                     S().requests.unshift(req);
                     MRP.store.audit('Satın alma talebi oluşturuldu', `${req.no}: ${lines.length} kalem, ${U.cur(req.total)}`);
-                    MRP.store.notify('request', 'Yeni satın alma talebi', `${req.no} · ${lines.length} kalem · ${U.cur(req.total)} (${u.name})`, ['satinalma', 'satinalma_muduru', 'admin'], 'requests');
+                    MRP.store.notify('request', 'Yeni satın alma talebi', `${req.no} · ${lines.length} kalem · ${U.cur(req.total)} (${u.name})`, ['perm:approveRequest'], 'requests');
                     runMRP(true);
                     UI.toast('Talep gönderildi', `${req.no} satın alma birimine iletildi.`, 'success');
                 }
@@ -4248,7 +4435,7 @@ window.MRP = window.MRP || {};
         w.completedAt = new Date().toISOString();
         woLog(w, 'Tamamlandı — sarf ve mamul girişi yapıldı');
         MRP.store.audit('İş emri tamamlandı', `${w.no}: ${w.kod} × ${w.qty}`);
-        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${w.qty}`, ['admin', 'planlama'], 'workorders');
+        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${w.qty}`, ['perm:runMRP', 'perm:manageWO'], 'workorders');
         app().commit();
         UI.toast('İş emri tamamlandı', 'Stoklar güncellendi.', 'success');
     }
@@ -4391,7 +4578,7 @@ window.MRP = window.MRP || {};
             const u = me();
             r.comments = r.comments || [];
             r.comments.push({ by: u.name, role: u.role, roleName: u.roleName, avatar: u.avatar, text, at: new Date().toISOString() });
-            const targets = r.createdBy === u.username ? ['satinalma', 'satinalma_muduru'] : [MRP.auth.USERS[r.createdBy] ? MRP.auth.USERS[r.createdBy].role : 'planlama'];
+            const targets = r.createdBy === u.username ? ['perm:approveRequest'] : [`user:${r.createdBy}`];
             MRP.store.notify('comment', `${r.no} için yorum`, `${u.name}: ${text.slice(0, 80)}`, targets, 'requests');
             MRP.store.save();
             ctx.close();
@@ -4410,7 +4597,7 @@ window.MRP = window.MRP || {};
             if (!r.escalated) {
                 r.escalated = true;
                 log(r, 'Müdür onayına yönlendirildi', `Tutar ${U.cur(r.total)} > limit ${U.cur(limit)}`);
-                MRP.store.notify('request', 'Onayınız gerekiyor', `${r.no} · ${U.cur(r.total)} — ${me().name} limitini aşıyor`, ['satinalma_muduru', 'admin'], 'requests');
+                MRP.store.notify('request', 'Onayınız gerekiyor', `${r.no} · ${U.cur(r.total)} — ${me().name} limitini aşıyor`, [`approve:${r.total}`], 'requests');
                 app().commit();
             }
             return UI.toast('Onay limiti aşıldı', `${U.cur(limit)} üzerindeki talep müdür onayına yönlendirildi.`, 'warn', 5500);
@@ -4420,7 +4607,7 @@ window.MRP = window.MRP || {};
         r.approvedAt = new Date().toISOString();
         log(r, 'Onaylandı');
         MRP.store.audit('Talep onaylandı', `${r.no} (${U.cur(r.total)})`);
-        MRP.store.notify('request', 'Talep onaylandı', `${r.no} ${me().name} tarafından onaylandı.`, ['planlama', 'satinalma', 'admin'], 'requests');
+        MRP.store.notify('request', 'Talep onaylandı', `${r.no} ${me().name} tarafından onaylandı.`, [`user:${r.createdBy}`, 'perm:createPO'], 'requests');
         app().commit();
         UI.toast('Talep onaylandı', r.no, 'success');
     }
@@ -4435,7 +4622,7 @@ window.MRP = window.MRP || {};
         r.rejectionReason = reason;
         log(r, 'Reddedildi', reason);
         MRP.store.audit('Talep reddedildi', `${r.no}: ${reason}`);
-        MRP.store.notify('request', 'Talep reddedildi', `${r.no}: ${reason}`, ['planlama', 'admin'], 'requests');
+        MRP.store.notify('request', 'Talep reddedildi', `${r.no}: ${reason}`, [`user:${r.createdBy}`, 'perm:runMRP'], 'requests');
         app().commit();
         UI.toast('Talep reddedildi', r.no, 'info');
     }
@@ -4552,7 +4739,7 @@ window.MRP = window.MRP || {};
         log(r, 'Siparişe dönüştürüldü', `${po.no} · ${sup.ad}`);
         const t = poTotals(po);
         MRP.store.audit('Satın alma siparişi oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`);
-        MRP.store.notify('po', 'Sipariş oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`, ['planlama', 'satinalma', 'satinalma_muduru', 'admin'], 'po');
+        MRP.store.notify('po', 'Sipariş oluşturuldu', `${po.no} · ${sup.ad} · ${U.cur(t.grand)}`, ['perm:receiveGoods', 'perm:runMRP', 'perm:createPO'], 'po');
         return po;
     }
 
@@ -4759,7 +4946,7 @@ window.MRP = window.MRP || {};
         if (quality === 'rejected') {
             log(p, 'Teslimat reddedildi', `İrsaliye ${waybill}${note ? ' — ' + note : ''}`);
             MRP.store.audit('Teslimat reddedildi', `${p.no} / ${waybill}`);
-            MRP.store.notify('po', 'Teslimat reddedildi', `${p.no} · ${p.supplierName} · İrsaliye ${waybill}`, ['satinalma', 'satinalma_muduru', 'admin', 'planlama'], 'po');
+            MRP.store.notify('po', 'Teslimat reddedildi', `${p.no} · ${p.supplierName} · İrsaliye ${waybill}`, ['perm:createPO', 'perm:runMRP', 'perm:receiveGoods'], 'po');
         } else {
             lines.forEach((x) => {
                 const l = p.lines[x.i];
@@ -4772,7 +4959,7 @@ window.MRP = window.MRP || {};
             log(p, done ? 'Tamamı teslim alındı' : 'Kısmi teslim alındı', `İrsaliye ${waybill}`);
             if (done) syncRequest(findReq(p.requestNo));
             MRP.store.audit('Mal kabul', `${p.no} / ${waybill}: ${lines.length} kalem${done ? '' : ' (kısmi)'}`);
-            MRP.store.notify('po', 'Mal kabul yapıldı', `${p.no} · ${lines.length} kalem${done ? '' : ' (kısmi)'}`, ['planlama', 'satinalma_muduru', 'admin'], 'po');
+            MRP.store.notify('po', 'Mal kabul yapıldı', `${p.no} · ${lines.length} kalem${done ? '' : ' (kısmi)'}`, ['perm:runMRP', 'perm:createPO', 'perm:manageWO'], 'po');
         }
         app().commit();
         UI.toast(quality === 'rejected' ? 'Teslimat reddedildi' : 'Mal kabul kaydedildi', quality === 'rejected' ? 'Stok değişmedi.' : 'Stoklar güncellendi.', quality === 'rejected' ? 'warn' : 'success');
@@ -4971,7 +5158,7 @@ window.MRP = window.MRP || {};
                         const nid = MRP.store.nextNo('TED');
                         S().suppliers.push({ id: nid, ...data, aktif: true });
                         MRP.store.audit('Tedarikçi eklendi', `${nid} — ${ad}`);
-                        MRP.store.notify('supplier', 'Yeni tedarikçi', `${ad} (${nid})`, ['satinalma', 'satinalma_muduru', 'admin'], 'suppliers');
+                        MRP.store.notify('supplier', 'Yeni tedarikçi', `${ad} (${nid})`, ['perm:manageSuppliers', 'perm:createPO'], 'suppliers');
                     }
                     app().commit();
                     UI.toast('Tedarikçi kaydedildi', ad, 'success');
@@ -5018,6 +5205,7 @@ window.MRP = window.MRP || {};
             const q = stockState.q.toLocaleLowerCase('tr');
             const match = (x) => !q || x.kod.toLocaleLowerCase('tr').includes(q) || x.ad.toLocaleLowerCase('tr').includes(q);
             const canAdj = MRP.auth.can('adjustStock');
+            const canTrf = MRP.auth.can('transferStock');
 
             let html = `<div class="kpis">
                 ${H.kpi('Stok Değeri', U.compactCur(M.stockValue()), 'Güncel kur ve standart maliyetle', '')}
@@ -5032,7 +5220,7 @@ window.MRP = window.MRP || {};
 
             html += `<div class="toolbar"><input class="input" id="stockSearch" placeholder="Kod veya ad ile ara…" value="${esc(stockState.q)}" data-input="stockSearch">
                 <span class="spacer"></span>
-                ${canAdj ? `<button class="btn btn-secondary" data-act="stockTransfer">${MRP.icon('swap')} Transfer</button>
+                ${canTrf ? `<button class="btn btn-secondary" data-act="stockTransfer">${MRP.icon('swap')} Transfer</button>
                     <button class="btn btn-primary" data-act="fasonNew">${MRP.icon('truck')} Fasona Sevk</button>` : ''}</div>`;
 
             if (stockState.tab === 'fg') {
@@ -5062,7 +5250,7 @@ window.MRP = window.MRP || {};
                         <td class="num">${esc(U.qty(M.onOrder(i.kod)))}</td>
                         <td><span class="bar"><span style="width:${Math.max(0, fill)}%;background:${color};"></span></span></td>
                         <td>${H.stockBadge(s)}</td><td class="num">${U.num(Math.max(0, oh) * valueOf(i.kod))}</td>
-                        <td>${canAdj ? `<div class="row-actions"><button class="btn btn-ghost btn-sm" data-act="stockAdjust" data-id="${esc(i.kod)}">Sayım</button><button class="btn btn-ghost btn-sm" data-act="stockTransfer" data-id="${esc(i.kod)}" title="Transfer">${MRP.icon('swap', 'sm')}</button></div>` : ''}</td></tr>`;
+                        <td><div class="row-actions">${canAdj ? `<button class="btn btn-ghost btn-sm" data-act="stockAdjust" data-id="${esc(i.kod)}">Sayım</button>` : ''}${canTrf ? `<button class="btn btn-ghost btn-sm" data-act="stockTransfer" data-id="${esc(i.kod)}" title="Transfer">${MRP.icon('swap', 'sm')}</button>` : ''}</div></td></tr>`;
                 }).join('') || `<tr><td colspan="${9 + LOCS().length}">${H.empty('Kayıt yok')}</td></tr>`}</tbody></table></div></section>
                 <p class="muted" style="font-size:.78em;margin-top:10px;">Üretimde sarf, Fabrika ve Merkez Depo stoğundan FIFO ile yapılır; fasoncudaki stok MRP'de eldeki stok sayılır ancak sarf edilemez. Eksikler için öneriler MRP'de emniyet stoğu tamamlama olarak oluşur.</p>`;
             return html;
@@ -5115,7 +5303,7 @@ window.MRP = window.MRP || {};
 
     // ---------------- Lokasyonlar arası transfer ----------------
     function transfer(kod) {
-        if (!H.guard('adjustStock')) return;
+        if (!H.guard('transferStock')) return;
         const items = M.items().filter((i) => i.procurement !== 'service' && M.onHand(i.kod) > 0);
         UI.modal({
             title: 'Lokasyonlar Arası Transfer', size: 'md',
@@ -5155,7 +5343,7 @@ window.MRP = window.MRP || {};
     function renderFason() {
         const list = S().subcontracts.slice().reverse();
         const today = U.iso(U.today());
-        return `<div class="toolbar"><span class="spacer"></span>${MRP.auth.can('adjustStock') ? `<button class="btn btn-primary" data-act="fasonNew">${MRP.icon('truck')} Fasona Sevk</button>` : ''}</div>
+        return `<div class="toolbar"><span class="spacer"></span>${MRP.auth.can('transferStock') ? `<button class="btn btn-primary" data-act="fasonNew">${MRP.icon('truck')} Fasona Sevk</button>` : ''}</div>
             <section class="card"><div class="table-wrap"><table><thead><tr><th>Sevk No</th><th>Fasoncu</th><th>Sevk</th><th>Beklenen dönüş</th><th class="num">Kalem</th><th>Dönüş</th><th>Durum</th><th></th></tr></thead><tbody>
             ${list.map((x) => {
                 const sent = U.sum(x.lines, (l) => l.qty), back = U.sum(x.lines, (l) => l.returned || 0);
@@ -5164,14 +5352,14 @@ window.MRP = window.MRP || {};
                     <td>${esc(U.date(U.parseDate(x.expectedAt)))} ${late ? '<span class="badge badge-red">Gecikti</span>' : ''}</td><td class="num">${x.lines.length}</td>
                     <td><span class="bar"><span style="width:${sent ? back / sent * 100 : 0}%;background:var(--green);"></span></span> <span class="muted">%${U.num(sent ? back / sent * 100 : 0, 0)}</span></td>
                     <td>${x.status === 'open' ? '<span class="badge badge-amber">Fasonda</span>' : '<span class="badge badge-green">Döndü</span>'}</td>
-                    <td><div class="row-actions">${x.status === 'open' && MRP.auth.can('adjustStock') ? `<button class="btn btn-success btn-sm" data-act="fasonReturn" data-id="${esc(x.no)}">Dönüş Al</button>` : ''}
+                    <td><div class="row-actions">${x.status === 'open' && MRP.auth.can('transferStock') ? `<button class="btn btn-success btn-sm" data-act="fasonReturn" data-id="${esc(x.no)}">Dönüş Al</button>` : ''}
                         <button class="btn btn-ghost btn-sm" data-act="fasonDetail" data-id="${esc(x.no)}">Detay</button></div></td></tr>`;
             }).join('') || `<tr><td colspan="8">${H.empty('Fason sevki yok', 'Boya, polisaj vb. için fasoncuya giden malzemeleri buradan takip edin.')}</td></tr>`}
             </tbody></table></div></section>`;
     }
 
     function fasonNew() {
-        if (!H.guard('adjustStock')) return;
+        if (!H.guard('transferStock')) return;
         const subs = S().suppliers.filter((s) => s.aktif && s.kategoriler.includes('Fason İşçilik'));
         if (!subs.length) return UI.toast('Fasoncu tanımlı değil', '"Fason İşçilik" kategorili aktif tedarikçi ekleyin.', 'warn');
         const items = M.items().filter((i) => i.procurement !== 'service' && M.available(i.kod) > 0);
@@ -5217,7 +5405,7 @@ window.MRP = window.MRP || {};
     }
 
     function fasonReturn(no) {
-        if (!H.guard('adjustStock')) return;
+        if (!H.guard('transferStock')) return;
         const x = S().subcontracts.find((s) => s.no === no);
         UI.modal({
             title: `Fasondan Dönüş — ${x.no}`, size: 'lg',
@@ -5313,7 +5501,7 @@ window.MRP = window.MRP || {};
             const act = (a, id, label, cls = 'btn-secondary') => `<button class="btn ${cls} btn-sm" data-act="${a}" data-id="${esc(id)}">${esc(label)}</button>`;
             if (it) {
                 out.innerHTML = `<div class="card card-body"><b class="mono">${esc(it.kod)}</b> — ${esc(it.ad)}<div class="muted" style="font-size:.85em;margin:6px 0 10px;">Stok: ${LOCS().map((l) => `${esc(locName(l))} ${esc(U.qty(M.onHand(it.kod, l), it.unit))}`).join(' · ')}</div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;">${act(it.isProduct ? 'productDetail' : 'itemDetail', it.kod, 'Detay')}${MRP.auth.can('adjustStock') && it.procurement !== 'service' ? act('stockAdjust', it.kod, 'Sayım') + act('stockTransfer', it.kod, 'Transfer') : ''}</div></div>`;
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">${act(it.isProduct ? 'productDetail' : 'itemDetail', it.kod, 'Detay')}${MRP.auth.can('adjustStock') && it.procurement !== 'service' ? act('stockAdjust', it.kod, 'Sayım') : ''}${MRP.auth.can('transferStock') && it.procurement !== 'service' ? act('stockTransfer', it.kod, 'Transfer') : ''}</div></div>`;
             } else if (po) {
                 out.innerHTML = `<div class="card card-body"><b class="mono">${esc(po.no)}</b> — ${esc(po.supplierName)} ${H.badge(H.PO_STATUS, po.status)}<div style="display:flex;gap:6px;margin-top:10px;">${act('poDetail', po.no, 'Detay')}${(po.status === 'open' || po.status === 'partial') && MRP.auth.can('receiveGoods') ? act('poReceive', po.no, 'Mal Kabul', 'btn-success') : ''}</div></div>`;
             } else if (wo) {
@@ -6697,6 +6885,285 @@ window.MRP = window.MRP || {};
     };
     const rerender = U.debounce(() => MRP.app.render(), 250);
     MRP.actions.auSearch = (v) => { auState.q = v; rerender(); };
+})(window.MRP);
+</script>
+<script>
+/* assets/js/views/users.js */
+/* ==========================================================================
+   MRP Pro — Kullanıcılar & Roller, bölüm yetki matrisi, firma ayarları (logo)
+   ========================================================================== */
+(function (MRP) {
+    'use strict';
+    const U = MRP.U, UI = MRP.UI, H = MRP.H, A = MRP.auth;
+    const esc = U.esc;
+    const S = () => MRP.store.state;
+    const app = () => MRP.app;
+    const C = MRP.config;
+
+    const MAX_LOGO_BYTES = 300 * 1024;
+    const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif'];
+    const uState = { tab: 'matrix' };
+
+    const roles = () => S().roles || [];
+    const users = () => S().users || [];
+    const roleName = (id) => (roles().find((r) => r.id === id) || {}).name || id;
+    const permGroups = () => {
+        const g = {};
+        Object.entries(A.PERMISSIONS).forEach(([k, [grp, label]]) => { (g[grp] = g[grp] || []).push([k, label]); });
+        return g;
+    };
+    const limitText = (r) => (!r.can.approveRequest ? '–' : r.approveLimit == null ? 'Sınırsız' : U.cur(r.approveLimit, 0));
+    const editable = () => !C.erp && A.can('manageUsers');
+
+    MRP.views.users = {
+        title: 'Kullanıcılar & Roller',
+        subtitle: 'Bölüm rolleri, ekran erişimi, işlem yetkileri ve firma ayarları',
+        render() {
+            const tabs = [['matrix', 'Yetki Matrisi'], ['roles', 'Roller', roles().length], ['users', 'Kullanıcılar', users().length], ['brand', 'Firma Ayarları']];
+            let html = H.tabs(tabs, uState.tab, 'usrTab');
+            if (C.erp && uState.tab !== 'brand') {
+                html += H.banner('blue', 'info', 'Kullanıcılar ve roller ERP\'de yönetiliyor', 'ERP modunda oturum ve yetkiler ERP\'den gelir (GET /auth/me). Aşağıda yalnızca sizin yetkileriniz gösterilir; değişiklikleri ERP\'nin kullanıcı yönetiminden yapın.');
+                return html + myPermissions();
+            }
+            if (uState.tab === 'matrix') html += matrix();
+            else if (uState.tab === 'roles') html += roleList();
+            else if (uState.tab === 'users') html += userList();
+            else html += branding();
+            return html;
+        }
+    };
+
+    function myPermissions() {
+        const me = A.current();
+        return H.card(`${me.name} — ${me.roleName}`, `Açılış ekranı: ${A.VIEWS[me.home] || me.home}`, `<div class="card-body grid grid-2">
+            <div><h3 style="font-size:.85em;margin-bottom:8px;">Erişilen ekranlar</h3><div class="chips">${me.views.map((v) => `<span class="badge badge-blue plain">${esc(A.VIEWS[v] || v)}</span>`).join('')}</div></div>
+            <div><h3 style="font-size:.85em;margin-bottom:8px;">İşlem yetkileri</h3><div class="chips">${Object.entries(A.PERMISSIONS).filter(([k]) => me.can[k]).map(([, [, l]]) => `<span class="badge badge-green plain">${esc(l)}</span>`).join('') || '<span class="muted">Salt okunur</span>'}</div>
+            ${me.can.approveRequest ? `<p style="margin-top:10px;font-size:.85em;">Onay limiti: <b>${me.can.approveLimit === Infinity ? 'Sınırsız' : U.cur(me.can.approveLimit, 0)}</b></p>` : ''}</div></div>`);
+    }
+
+    // ---------------- Yetki matrisi ----------------
+    function matrix() {
+        const rs = roles();
+        const yes = '<span style="color:var(--green);font-weight:800;">●</span>';
+        const ro = '<span style="color:var(--text-3);" title="Salt okunur">○</span>';
+        // Bir ekranda "yazma" sayılan yetkiler — matriste ● (düzenler) / ○ (görür) ayrımı için
+        const WRITE = {
+            bom: ['editProduct'], items: ['editItem', 'editCost'], costing: ['editCost'], mrp: ['runMRP', 'createRequest'], capacity: ['manageCapacity'],
+            workorders: ['manageWO'], requests: ['approveRequest', 'createRequest'], po: ['createPO', 'receiveGoods'], suppliers: ['manageSuppliers'],
+            stock: ['adjustStock', 'transferStock'], import: ['editItem', 'editProduct', 'adjustStock', 'runMRP', 'manageSuppliers'], users: ['manageUsers']
+        };
+        return `<p class="muted" style="font-size:.82em;margin-bottom:10px;">● ekranı görür ve kendi sorumluluğundaki işlemleri yapar · ○ yalnızca görür · boş: erişemez. Rolleri değiştirmek için "Roller" sekmesi.</p>
+            <section class="card"><div class="table-wrap"><table>
+            <thead><tr><th>Ekran</th>${rs.map((r) => `<th class="num" style="text-align:center;">${esc(r.name)}</th>`).join('')}</tr></thead>
+            <tbody>${Object.entries(A.VIEWS).map(([v, label]) => `<tr><td class="strong">${esc(label)}</td>${rs.map((r) => {
+                if (!r.views.includes(v)) return '<td></td>';
+                const w = (WRITE[v] || []).some((p) => r.can[p]);
+                return `<td style="text-align:center;">${w ? yes : ro}${r.home === v ? ' <span class="badge badge-amber plain" title="Açılış ekranı">ana</span>' : ''}</td>`;
+            }).join('')}</tr>`).join('')}
+            <tr class="total"><td>Satın alma onay limiti</td>${rs.map((r) => `<td style="text-align:center;">${limitText(r)}</td>`).join('')}</tr>
+            <tr class="total"><td>Kullanıcı sayısı</td>${rs.map((r) => `<td style="text-align:center;">${users().filter((u) => u.role === r.id && u.active !== false).length}</td>`).join('')}</tr>
+            </tbody></table></div></section>`;
+    }
+
+    // ---------------- Roller ----------------
+    function roleList() {
+        const can = editable();
+        return `<div class="toolbar"><span class="spacer"></span>${can ? `<button class="btn btn-primary" data-act="roleEdit">${MRP.icon('plus')} Yeni Rol</button>` : ''}</div>
+            <div class="cards">${roles().map((r) => `<article class="doc-card" style="--doc-c:var(--accent);">
+                <div class="h"><div><b style="font-family:inherit;font-size:1em;">${esc(r.name)}</b><div class="muted mono" style="font-size:.78em;margin-top:3px;">${esc(r.id)}</div></div>
+                    <span class="badge badge-gray plain">${users().filter((u) => u.role === r.id && u.active !== false).length} kullanıcı</span></div>
+                <div class="meta"><div><span>Açılış ekranı</span>${esc(A.VIEWS[r.home] || r.home)}</div><div><span>Ekran</span>${r.views.length}</div>
+                    <div><span>İşlem yetkisi</span>${Object.keys(A.PERMISSIONS).filter((k) => r.can[k]).length}</div><div><span>Onay limiti</span>${limitText(r)}</div></div>
+                <div class="chips" style="gap:4px;">${Object.entries(A.PERMISSIONS).filter(([k]) => r.can[k]).map(([, [, l]]) => `<span class="badge badge-green plain" style="font-size:.68em;">${esc(l)}</span>`).join('') || '<span class="muted" style="font-size:.8em;">Salt okunur rol</span>'}</div>
+                ${can ? `<div class="acts"><button class="btn btn-secondary btn-sm" data-act="roleEdit" data-id="${esc(r.id)}">${MRP.icon('edit', 'sm')} Düzenle</button>
+                    ${r.id !== 'admin' ? `<button class="btn btn-ghost btn-sm" data-act="roleDelete" data-id="${esc(r.id)}">${MRP.icon('trash', 'sm')}</button>` : ''}</div>` : ''}
+            </article>`).join('')}</div>`;
+    }
+
+    function roleEdit(id) {
+        if (!editable()) return H.guard('manageUsers');
+        const isNew = !id;
+        const r = isNew ? { id: '', name: '', home: 'dashboard', views: ['dashboard'], can: {}, approveLimit: 0 } : roles().find((x) => x.id === id);
+        const lockAdmin = r.id === 'admin';
+        const groups = permGroups();
+        UI.modal({
+            title: isNew ? 'Yeni Rol' : `Rol — ${r.name}`, size: 'lg',
+            body: `<div class="form-grid">
+                <div class="field"><label>Rol kodu <span class="req">*</span></label><input id="rlId" value="${esc(r.id)}" ${isNew ? '' : 'readonly'} placeholder="kalite" maxlength="24"></div>
+                <div class="field"><label>Rol / bölüm adı <span class="req">*</span></label><input id="rlName" value="${esc(r.name)}" placeholder="Kalite Kontrol"></div>
+                <div class="field"><label>Açılış ekranı</label><select id="rlHome">${Object.entries(A.VIEWS).map(([v, l]) => `<option value="${v}" ${r.home === v ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+                <div class="field"><label>Onay limiti (₺)</label><input id="rlLimit" type="number" min="0" step="1000" value="${r.approveLimit == null ? '' : r.approveLimit}" placeholder="Boş = sınırsız"><span class="hint">Yalnızca "talep onaylama" yetkisiyle geçerlidir.</span></div>
+            </div>
+            <div class="form-section"><h3>Görebileceği ekranlar</h3><div class="chips">${Object.entries(A.VIEWS).map(([v, l]) => `<label class="check-chip"><input type="checkbox" class="rl-view" value="${v}" ${r.views.includes(v) ? 'checked' : ''} ${lockAdmin && v === 'users' ? 'disabled' : ''}> ${esc(l)}</label>`).join('')}</div></div>
+            <div class="form-section"><h3>İşlem yetkileri</h3>
+                ${Object.entries(groups).map(([g, list]) => `<div style="margin-bottom:10px;"><div class="muted" style="font-size:.76em;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;">${esc(g)}</div>
+                    <div class="chips">${list.map(([k, l]) => `<label class="check-chip"><input type="checkbox" class="rl-perm" value="${k}" ${r.can[k] ? 'checked' : ''} ${lockAdmin && k === 'manageUsers' ? 'disabled' : ''}> ${esc(l)}</label>`).join('')}</div></div>`).join('')}
+            </div>
+            ${lockAdmin ? '<p class="muted" style="font-size:.8em;">Sistem yöneticisi rolünden kullanıcı yönetimi kaldırılamaz (kilitlenmeyi önlemek için).</p>' : ''}`,
+            buttons: [{ label: 'Vazgeç' }, {
+                label: 'Kaydet', cls: 'btn-primary', onClick: (ctx) => {
+                    const rid = ctx.$('#rlId').value.trim().toLowerCase();
+                    const name = ctx.$('#rlName').value.trim();
+                    if (!/^[a-z0-9_]{2,24}$/.test(rid)) { UI.toast('Geçersiz rol kodu', 'Küçük harf, rakam ve _ (2–24 karakter).', 'warn'); return false; }
+                    if (!name) { UI.toast('Rol adı gerekli', '', 'warn'); return false; }
+                    if (isNew && roles().some((x) => x.id === rid)) { UI.toast('Rol kodu kullanımda', rid, 'warn'); return false; }
+                    const views = ctx.$$('.rl-view:checked').map((c) => c.value).concat(lockAdmin ? ['users'] : []);
+                    if (!views.length) { UI.toast('En az bir ekran seçin', '', 'warn'); return false; }
+                    const can = Object.fromEntries(Object.keys(A.PERMISSIONS).map((k) => [k, false]));
+                    ctx.$$('.rl-perm:checked').forEach((c) => { can[c.value] = true; });
+                    if (lockAdmin) can.manageUsers = true;
+                    let home = ctx.$('#rlHome').value;
+                    if (!views.includes(home)) home = views[0];
+                    const limRaw = ctx.$('#rlLimit').value.trim();
+                    const rec = { id: rid, name, home, views: [...new Set(views)], can, approveLimit: limRaw === '' ? null : Math.max(0, U.toNum(limRaw)) };
+                    if (isNew) S().roles.push(rec); else Object.assign(r, rec);
+                    MRP.store.audit(isNew ? 'Rol eklendi' : 'Rol güncellendi', `${rid}: ${views.length} ekran, ${Object.values(can).filter(Boolean).length} yetki, limit ${rec.approveLimit == null ? 'sınırsız' : rec.approveLimit}`);
+                    app().commit();
+                    UI.toast('Rol kaydedildi', name, 'success');
+                }
+            }]
+        });
+    }
+
+    async function roleDelete(id) {
+        if (!editable()) return H.guard('manageUsers');
+        const n = users().filter((u) => u.role === id).length;
+        if (n) return UI.toast('Rol silinemez', `${n} kullanıcı bu role atanmış; önce başka role taşıyın.`, 'warn');
+        if (!(await UI.confirm(`"${roleName(id)}" rolü silinecek.`, { title: 'Rolü sil', okLabel: 'Sil', danger: true }))) return;
+        S().roles = roles().filter((r) => r.id !== id);
+        MRP.store.audit('Rol silindi', id);
+        app().commit();
+    }
+
+    // ---------------- Kullanıcılar ----------------
+    function userList() {
+        const can = editable();
+        return `<div class="toolbar"><span class="spacer"></span>${can ? `<button class="btn btn-primary" data-act="userEdit">${MRP.icon('plus')} Yeni Kullanıcı</button>` : ''}</div>
+            <section class="card"><div class="table-wrap"><table><thead><tr><th>Kullanıcı adı</th><th>Ad soyad</th><th>Rol / bölüm</th><th>Açılış ekranı</th><th>Durum</th><th>Parola</th><th></th></tr></thead><tbody>
+            ${users().map((u) => {
+                const r = roles().find((x) => x.id === u.role);
+                const demo = u.demoPassword && u.passwordHash === A.hashPassword(u.username, u.demoPassword);
+                return `<tr class="${u.active === false ? 'r-warn' : ''}"><td class="mono">${esc(u.username)}</td><td class="strong">${esc(u.name)}</td><td>${esc(roleName(u.role))}</td>
+                    <td>${esc(r ? A.VIEWS[r.home] || r.home : '–')}</td>
+                    <td>${u.active === false ? '<span class="badge badge-gray">Pasif</span>' : '<span class="badge badge-green">Aktif</span>'}</td>
+                    <td>${demo ? '<span class="badge badge-amber" title="Varsayılan demo parolası — değiştirin">Demo parolası</span>' : '<span class="badge badge-green plain">Özel</span>'}</td>
+                    <td>${can ? `<button class="btn btn-ghost btn-sm" data-act="userEdit" data-id="${esc(u.username)}">${MRP.icon('edit', 'sm')}</button>` : ''}</td></tr>`;
+            }).join('')}</tbody></table></div></section>
+            <p class="muted" style="font-size:.78em;margin-top:10px;">Parolalar yalnızca SHA-256 özeti olarak saklanır. Bağımsız mod tek tarayıcıda çalışan bir demo kurulumudur; çok kullanıcılı gerçek kullanımda ERP modunda kimlik doğrulama sunucuda yapılır.</p>`;
+    }
+
+    function userEdit(username) {
+        if (!editable()) return H.guard('manageUsers');
+        const isNew = !username;
+        const u = isNew ? { username: '', name: '', role: roles()[1] ? roles()[1].id : 'admin', active: true } : users().find((x) => x.username === username);
+        const isMe = !isNew && u.username === A.current().username;
+        UI.modal({
+            title: isNew ? 'Yeni Kullanıcı' : `Kullanıcı — ${u.username}`, size: 'md',
+            body: `<div class="form-grid">
+                <div class="field"><label>Kullanıcı adı <span class="req">*</span></label><input id="usName" value="${esc(u.username)}" ${isNew ? '' : 'readonly'} autocomplete="off" maxlength="40"></div>
+                <div class="field"><label>Ad soyad <span class="req">*</span></label><input id="usFull" value="${esc(u.name)}"></div>
+                <div class="field"><label>Rol / bölüm</label><select id="usRole" ${isMe ? 'disabled' : ''}>${roles().map((r) => `<option value="${esc(r.id)}" ${u.role === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select>
+                    ${isMe ? '<span class="hint">Kendi rolünüzü değiştiremezsiniz.</span>' : ''}</div>
+                <div class="field"><label>Durum</label><select id="usActive" ${isMe ? 'disabled' : ''}><option value="1" ${u.active !== false ? 'selected' : ''}>Aktif</option><option value="0" ${u.active === false ? 'selected' : ''}>Pasif (giriş yapamaz)</option></select></div>
+                <div class="field full"><label>${isNew ? 'Parola <span class="req">*</span>' : 'Yeni parola (boş = değişmez)'}</label><input id="usPass" type="password" autocomplete="new-password" minlength="6"><span class="hint">En az 6 karakter.</span></div>
+            </div>`,
+            buttons: [{ label: 'Vazgeç' }, {
+                label: 'Kaydet', cls: 'btn-primary', onClick: (ctx) => {
+                    const uname = ctx.$('#usName').value.trim().toLowerCase();
+                    const name = ctx.$('#usFull').value.trim();
+                    const pass = ctx.$('#usPass').value;
+                    if (!/^[a-z0-9._-]{3,40}$/.test(uname)) { UI.toast('Geçersiz kullanıcı adı', 'Küçük harf, rakam, . _ - (3–40).', 'warn'); return false; }
+                    if (!name) { UI.toast('Ad soyad gerekli', '', 'warn'); return false; }
+                    if (isNew && users().some((x) => x.username === uname)) { UI.toast('Kullanıcı adı kullanımda', uname, 'warn'); return false; }
+                    if ((isNew || pass) && pass.length < 6) { UI.toast('Parola en az 6 karakter olmalı', '', 'warn'); return false; }
+                    const role = isMe ? u.role : ctx.$('#usRole').value;
+                    const active = isMe ? true : ctx.$('#usActive').value === '1';
+                    // En az bir aktif kullanıcı yönetici yetkisine sahip kalmalı
+                    const after = users().map((x) => (x.username === uname ? { ...x, role, active } : x)).concat(isNew ? [{ username: uname, role, active }] : []);
+                    const admins = after.filter((x) => x.active !== false && (roles().find((r) => r.id === x.role) || { can: {} }).can.manageUsers);
+                    if (!admins.length) { UI.toast('İşlem engellendi', 'Kullanıcı yönetimi yetkisine sahip en az bir aktif kullanıcı kalmalı.', 'warn'); return false; }
+                    const rec = isNew ? { username: uname, name, role, active, passwordHash: A.hashPassword(uname, pass) } : u;
+                    if (!isNew) {
+                        Object.assign(u, { name, role, active });
+                        if (pass) { u.passwordHash = A.hashPassword(uname, pass); delete u.demoPassword; }
+                    } else S().users.push(rec);
+                    MRP.store.audit(isNew ? 'Kullanıcı eklendi' : 'Kullanıcı güncellendi', `${uname} → ${roleName(role)}${active ? '' : ' (pasif)'}${pass ? ', parola değişti' : ''}`);
+                    app().commit();
+                    UI.toast('Kullanıcı kaydedildi', `${uname} · ${roleName(role)}`, 'success');
+                }
+            }]
+        });
+    }
+
+    // ---------------- Firma ayarları (logo) ----------------
+    function branding() {
+        const br = S().branding || MRP.store.defaultBranding();
+        const can = A.can('manageUsers');
+        const logos = br.logos || [];
+        return `<div class="grid grid-2">
+            ${H.card('Firma logoları', 'Giriş ekranında ve menünün altında gösterilir', `<div class="card-body">
+                ${H.banner(logos.length ? 'green' : 'amber', logos.length ? 'check' : 'alert', logos.length ? `${logos.length} resmî logo kullanılıyor` : 'Varsayılan logo çizimleri kullanılıyor',
+                    logos.length ? 'Logolar yüklediğiniz dosyalardan gösteriliyor.' : 'Varsayılan çizimler orijinal logoların yaklaşık kopyasıdır. Doğru görünüm için firmanızın resmî logo dosyalarını (tercihen SVG veya şeffaf PNG) yükleyin.')}
+                <div class="login-logos" style="border:0;margin:0 0 14px;padding:14px;background:var(--bg-elev-2);border-radius:10px;" data-brand-logos></div>
+                ${logos.length ? `<div class="table-wrap" style="margin-bottom:12px;"><table><thead><tr><th>Önizleme</th><th>Dosya</th><th class="num">Boyut</th><th></th></tr></thead><tbody>
+                    ${logos.map((l, i) => `<tr><td><span class="brand-logo" style="width:96px;height:34px;"><img src="${esc(l.src)}" alt=""></span></td><td>${esc(l.name)}</td><td class="num">${U.num(l.size / 1024, 1)} KB</td>
+                        <td>${can ? `<div class="row-actions">${i > 0 ? `<button class="btn btn-ghost btn-sm" data-act="logoUp" data-id="${i}" title="Öne al">↑</button>` : ''}<button class="btn btn-ghost btn-sm" data-act="logoDel" data-id="${i}" title="Kaldır">${MRP.icon('trash', 'sm')}</button></div>` : ''}</td></tr>`).join('')}
+                    </tbody></table></div>` : ''}
+                ${can ? `<label class="btn btn-primary" style="cursor:pointer;">${MRP.icon('upload')} Logo yükle (PNG / SVG / JPG)<input type="file" accept="${LOGO_TYPES.join(',')}" hidden multiple data-change="logoAdd"></label>
+                    ${logos.length ? `<button class="btn btn-ghost" data-act="logoReset" style="margin-left:6px;">Varsayılana dön</button>` : ''}
+                    <p class="muted" style="font-size:.78em;margin-top:10px;">En fazla 3 logo, her biri ${MAX_LOGO_BYTES / 1024} KB'a kadar. Logolar beyaz zemin üzerinde, oranları korunarak sığdırılır.</p>` : ''}
+            </div>`)}
+            ${H.card('Firma bilgisi', '', `<div class="card-body"><div class="field"><label>Firma / sistem adı</label><input id="brCompany" value="${esc(br.company || '')}" placeholder="Örn: EXIT · bg group Üretim" ${can ? '' : 'readonly'}>
+                <span class="hint">Menüde "MRP Pro" altında ve giriş ekranında görünür. Boş bırakılırsa varsayılan açıklama gösterilir.</span></div>
+                ${can ? '<button class="btn btn-primary" data-act="brandSave" style="margin-top:12px;">Kaydet</button>' : ''}</div>`)}
+        </div>`;
+    }
+
+    function readFile(f) {
+        return new Promise((resolve, reject) => {
+            const r = new FileReader();
+            r.onload = () => resolve(r.result);
+            r.onerror = () => reject(new Error('Dosya okunamadı'));
+            r.readAsDataURL(f);
+        });
+    }
+
+    Object.assign(MRP.actions, {
+        usrTab: (t) => { uState.tab = t; app().render(); },
+        roleEdit: (id) => roleEdit(id),
+        roleDelete: (id) => roleDelete(id),
+        userEdit: (u) => userEdit(u),
+        logoAdd: async (_, el) => {
+            if (!H.guard('manageUsers')) return;
+            const br = S().branding = S().branding || MRP.store.defaultBranding();
+            br.logos = br.logos || [];
+            for (const f of [...(el.files || [])]) {
+                if (br.logos.length >= 3) { UI.toast('En fazla 3 logo', '', 'warn'); break; }
+                if (!LOGO_TYPES.includes(f.type)) { UI.toast('Desteklenmeyen dosya', `${f.name}: PNG, SVG, JPG, WEBP veya GIF yükleyin.`, 'warn'); continue; }
+                if (f.size > MAX_LOGO_BYTES) { UI.toast('Dosya çok büyük', `${f.name}: en fazla ${MAX_LOGO_BYTES / 1024} KB`, 'warn'); continue; }
+                br.logos.push({ name: f.name, size: f.size, src: await readFile(f) });
+            }
+            MRP.store.audit('Firma logosu güncellendi', br.logos.map((l) => l.name).join(', '));
+            app().commit();
+        },
+        logoDel: (i) => { if (!H.guard('manageUsers')) return; S().branding.logos.splice(+i, 1); MRP.store.audit('Firma logosu kaldırıldı', ''); app().commit(); },
+        logoUp: (i) => { if (!H.guard('manageUsers')) return; const l = S().branding.logos; const [x] = l.splice(+i, 1); l.splice(+i - 1, 0, x); app().commit(); },
+        logoReset: async () => {
+            if (!H.guard('manageUsers')) return;
+            if (!(await UI.confirm('Yüklenen logolar kaldırılacak ve varsayılan çizimler gösterilecek.', { title: 'Varsayılana dön', okLabel: 'Kaldır' }))) return;
+            S().branding.logos = [];
+            MRP.store.audit('Firma logoları varsayılana döndü', '');
+            app().commit();
+        },
+        brandSave: () => {
+            if (!H.guard('manageUsers')) return;
+            S().branding = S().branding || MRP.store.defaultBranding();
+            S().branding.company = document.getElementById('brCompany').value.trim().slice(0, 80);
+            MRP.store.audit('Firma adı güncellendi', S().branding.company);
+            app().commit();
+            UI.toast('Firma bilgisi kaydedildi', '', 'success');
+        }
+    });
 })(window.MRP);
 </script>
 </body>

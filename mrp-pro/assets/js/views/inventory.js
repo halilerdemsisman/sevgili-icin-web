@@ -28,6 +28,7 @@
             const q = stockState.q.toLocaleLowerCase('tr');
             const match = (x) => !q || x.kod.toLocaleLowerCase('tr').includes(q) || x.ad.toLocaleLowerCase('tr').includes(q);
             const canAdj = MRP.auth.can('adjustStock');
+            const canTrf = MRP.auth.can('transferStock');
 
             let html = `<div class="kpis">
                 ${H.kpi('Stok Değeri', U.compactCur(M.stockValue()), 'Güncel kur ve standart maliyetle', '')}
@@ -42,7 +43,7 @@
 
             html += `<div class="toolbar"><input class="input" id="stockSearch" placeholder="Kod veya ad ile ara…" value="${esc(stockState.q)}" data-input="stockSearch">
                 <span class="spacer"></span>
-                ${canAdj ? `<button class="btn btn-secondary" data-act="stockTransfer">${MRP.icon('swap')} Transfer</button>
+                ${canTrf ? `<button class="btn btn-secondary" data-act="stockTransfer">${MRP.icon('swap')} Transfer</button>
                     <button class="btn btn-primary" data-act="fasonNew">${MRP.icon('truck')} Fasona Sevk</button>` : ''}</div>`;
 
             if (stockState.tab === 'fg') {
@@ -72,7 +73,7 @@
                         <td class="num">${esc(U.qty(M.onOrder(i.kod)))}</td>
                         <td><span class="bar"><span style="width:${Math.max(0, fill)}%;background:${color};"></span></span></td>
                         <td>${H.stockBadge(s)}</td><td class="num">${U.num(Math.max(0, oh) * valueOf(i.kod))}</td>
-                        <td>${canAdj ? `<div class="row-actions"><button class="btn btn-ghost btn-sm" data-act="stockAdjust" data-id="${esc(i.kod)}">Sayım</button><button class="btn btn-ghost btn-sm" data-act="stockTransfer" data-id="${esc(i.kod)}" title="Transfer">${MRP.icon('swap', 'sm')}</button></div>` : ''}</td></tr>`;
+                        <td><div class="row-actions">${canAdj ? `<button class="btn btn-ghost btn-sm" data-act="stockAdjust" data-id="${esc(i.kod)}">Sayım</button>` : ''}${canTrf ? `<button class="btn btn-ghost btn-sm" data-act="stockTransfer" data-id="${esc(i.kod)}" title="Transfer">${MRP.icon('swap', 'sm')}</button>` : ''}</div></td></tr>`;
                 }).join('') || `<tr><td colspan="${9 + LOCS().length}">${H.empty('Kayıt yok')}</td></tr>`}</tbody></table></div></section>
                 <p class="muted" style="font-size:.78em;margin-top:10px;">Üretimde sarf, Fabrika ve Merkez Depo stoğundan FIFO ile yapılır; fasoncudaki stok MRP'de eldeki stok sayılır ancak sarf edilemez. Eksikler için öneriler MRP'de emniyet stoğu tamamlama olarak oluşur.</p>`;
             return html;
@@ -125,7 +126,7 @@
 
     // ---------------- Lokasyonlar arası transfer ----------------
     function transfer(kod) {
-        if (!H.guard('adjustStock')) return;
+        if (!H.guard('transferStock')) return;
         const items = M.items().filter((i) => i.procurement !== 'service' && M.onHand(i.kod) > 0);
         UI.modal({
             title: 'Lokasyonlar Arası Transfer', size: 'md',
@@ -165,7 +166,7 @@
     function renderFason() {
         const list = S().subcontracts.slice().reverse();
         const today = U.iso(U.today());
-        return `<div class="toolbar"><span class="spacer"></span>${MRP.auth.can('adjustStock') ? `<button class="btn btn-primary" data-act="fasonNew">${MRP.icon('truck')} Fasona Sevk</button>` : ''}</div>
+        return `<div class="toolbar"><span class="spacer"></span>${MRP.auth.can('transferStock') ? `<button class="btn btn-primary" data-act="fasonNew">${MRP.icon('truck')} Fasona Sevk</button>` : ''}</div>
             <section class="card"><div class="table-wrap"><table><thead><tr><th>Sevk No</th><th>Fasoncu</th><th>Sevk</th><th>Beklenen dönüş</th><th class="num">Kalem</th><th>Dönüş</th><th>Durum</th><th></th></tr></thead><tbody>
             ${list.map((x) => {
                 const sent = U.sum(x.lines, (l) => l.qty), back = U.sum(x.lines, (l) => l.returned || 0);
@@ -174,14 +175,14 @@
                     <td>${esc(U.date(U.parseDate(x.expectedAt)))} ${late ? '<span class="badge badge-red">Gecikti</span>' : ''}</td><td class="num">${x.lines.length}</td>
                     <td><span class="bar"><span style="width:${sent ? back / sent * 100 : 0}%;background:var(--green);"></span></span> <span class="muted">%${U.num(sent ? back / sent * 100 : 0, 0)}</span></td>
                     <td>${x.status === 'open' ? '<span class="badge badge-amber">Fasonda</span>' : '<span class="badge badge-green">Döndü</span>'}</td>
-                    <td><div class="row-actions">${x.status === 'open' && MRP.auth.can('adjustStock') ? `<button class="btn btn-success btn-sm" data-act="fasonReturn" data-id="${esc(x.no)}">Dönüş Al</button>` : ''}
+                    <td><div class="row-actions">${x.status === 'open' && MRP.auth.can('transferStock') ? `<button class="btn btn-success btn-sm" data-act="fasonReturn" data-id="${esc(x.no)}">Dönüş Al</button>` : ''}
                         <button class="btn btn-ghost btn-sm" data-act="fasonDetail" data-id="${esc(x.no)}">Detay</button></div></td></tr>`;
             }).join('') || `<tr><td colspan="8">${H.empty('Fason sevki yok', 'Boya, polisaj vb. için fasoncuya giden malzemeleri buradan takip edin.')}</td></tr>`}
             </tbody></table></div></section>`;
     }
 
     function fasonNew() {
-        if (!H.guard('adjustStock')) return;
+        if (!H.guard('transferStock')) return;
         const subs = S().suppliers.filter((s) => s.aktif && s.kategoriler.includes('Fason İşçilik'));
         if (!subs.length) return UI.toast('Fasoncu tanımlı değil', '"Fason İşçilik" kategorili aktif tedarikçi ekleyin.', 'warn');
         const items = M.items().filter((i) => i.procurement !== 'service' && M.available(i.kod) > 0);
@@ -227,7 +228,7 @@
     }
 
     function fasonReturn(no) {
-        if (!H.guard('adjustStock')) return;
+        if (!H.guard('transferStock')) return;
         const x = S().subcontracts.find((s) => s.no === no);
         UI.modal({
             title: `Fasondan Dönüş — ${x.no}`, size: 'lg',
@@ -323,7 +324,7 @@
             const act = (a, id, label, cls = 'btn-secondary') => `<button class="btn ${cls} btn-sm" data-act="${a}" data-id="${esc(id)}">${esc(label)}</button>`;
             if (it) {
                 out.innerHTML = `<div class="card card-body"><b class="mono">${esc(it.kod)}</b> — ${esc(it.ad)}<div class="muted" style="font-size:.85em;margin:6px 0 10px;">Stok: ${LOCS().map((l) => `${esc(locName(l))} ${esc(U.qty(M.onHand(it.kod, l), it.unit))}`).join(' · ')}</div>
-                    <div style="display:flex;gap:6px;flex-wrap:wrap;">${act(it.isProduct ? 'productDetail' : 'itemDetail', it.kod, 'Detay')}${MRP.auth.can('adjustStock') && it.procurement !== 'service' ? act('stockAdjust', it.kod, 'Sayım') + act('stockTransfer', it.kod, 'Transfer') : ''}</div></div>`;
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">${act(it.isProduct ? 'productDetail' : 'itemDetail', it.kod, 'Detay')}${MRP.auth.can('adjustStock') && it.procurement !== 'service' ? act('stockAdjust', it.kod, 'Sayım') : ''}${MRP.auth.can('transferStock') && it.procurement !== 'service' ? act('stockTransfer', it.kod, 'Transfer') : ''}</div></div>`;
             } else if (po) {
                 out.innerHTML = `<div class="card card-body"><b class="mono">${esc(po.no)}</b> — ${esc(po.supplierName)} ${H.badge(H.PO_STATUS, po.status)}<div style="display:flex;gap:6px;margin-top:10px;">${act('poDetail', po.no, 'Detay')}${(po.status === 'open' || po.status === 'partial') && MRP.auth.can('receiveGoods') ? act('poReceive', po.no, 'Mal Kabul', 'btn-success') : ''}</div></div>`;
             } else if (wo) {
