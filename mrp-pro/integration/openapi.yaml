@@ -1,0 +1,481 @@
+openapi: 3.0.3
+info:
+  title: MRP Pro — ERP Entegrasyon API'si
+  version: "1.0"
+  description: |
+    MRP Pro'nun ERP modunda (`mode: 'erp'`) konuştuğu REST sözleşmesi.
+    Kendi ERP'niz bu uç noktaları sağladığında MRP Pro ERP'nin bir modülü olarak çalışır.
+
+    **Veri modeli:** Veriler *koleksiyonlar* hâlinde taşınır. Her kaydın benzersiz bir
+    anahtarı vardır (aşağıdaki tabloda). İstemci değişikliklerini `POST /mrp/sync` ile
+    gönderir, diğer istemcilerin ve ERP'nin değişikliklerini `GET /mrp/changes` ile alır.
+
+    | Koleksiyon | Anahtar | İçerik | Yazma yetkisi (herhangi biri) |
+    |---|---|---|---|
+    | items | `kod` | Malzeme kartı | editItem, editCost, editProduct |
+    | products | `kod` | Mamul | editProduct, editCost |
+    | boms | `parent` | Tek seviyeli reçete | editProduct |
+    | routings | `kod` | Üretim rotası | manageCapacity |
+    | workCenters | `id` | İş merkezi | manageCapacity, editCost |
+    | suppliers | `id` | Tedarikçi | manageSuppliers |
+    | priceList | `supplierId\|kod` | Tedarikçi fiyatı | manageSuppliers, editCost |
+    | lots | `id` | Lot bakiyesi (stok = lotların toplamı) | adjustStock, receiveGoods, manageWO |
+    | movements | `id` | Stok hareketi (değişmez) | adjustStock, receiveGoods, manageWO |
+    | demands | `id` | Bağımsız talep / satış siparişi (MPS) | runMRP |
+    | purchaseRequests | `no` | Satın alma talebi | createRequest, approveRequest, createPO, receiveGoods |
+    | purchaseOrders | `no` | Satın alma siparişi | createPO, receiveGoods |
+    | workOrders | `no` | İş emri | manageWO, runMRP |
+    | subcontracts | `no` | Fason sevk fişi | adjustStock |
+    | notifications | `id` | Rol bazlı bildirim | (oturum açmış herkes) |
+    | auditLog | `id` | Denetim kaydı (değişmez) | (oturum açmış herkes) |
+    | settings | `main` | Döviz kurları + maliyet parametreleri | editCost |
+    | mrpRun | `last` | Son MRP sonucu | runMRP, createRequest, manageWO |
+
+    **Kural:** ERP her değişikliği kendi iş kurallarına göre doğrular; reddettiği değişiklik
+    için gerekçe ve kaydın ERP'deki güncel hâlini döner — istemci kendi kopyasını düzeltir.
+    Böylece ERP her zaman tek doğru kaynaktır.
+servers:
+  - url: /api
+security:
+  - bearer: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Oturum aç
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string, format: password }
+                client: { type: string, description: İstemci adı (bilgi amaçlı) }
+      responses:
+        "200":
+          description: Başarılı
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, user]
+                properties:
+                  token: { type: string }
+                  expiresIn: { type: integer, description: saniye }
+                  user: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/me:
+    get:
+      summary: Geçerli kullanıcı ve yetkileri (token doğrulama / SSO)
+      responses:
+        "200": { description: Kullanıcı, content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /auth/logout:
+    post:
+      summary: Oturumu kapat
+      responses: { "204": { description: Kapatıldı } }
+
+  /mrp/snapshot:
+    get:
+      summary: Tüm koleksiyonların anlık görüntüsü (ilk yükleme)
+      description: |
+        Kullanıcının görmeye yetkili olduğu verileri döner. `cursor`, bu görüntünün hangi
+        değişiklik numarasına kadar güncel olduğunu belirtir; istemci sonrasını `/mrp/changes` ile alır.
+        Büyük ERP'lerde movements / auditLog için son N gün ile sınırlandırılması önerilir.
+      responses:
+        "200":
+          description: Anlık görüntü
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cursor, collections]
+                properties:
+                  version: { type: string }
+                  cursor: { type: integer, format: int64 }
+                  serverTime: { type: string, format: date-time }
+                  collections:
+                    type: object
+                    properties:
+                      items: { type: array, items: { $ref: "#/components/schemas/Item" } }
+                      products: { type: array, items: { $ref: "#/components/schemas/Product" } }
+                      boms: { type: array, items: { $ref: "#/components/schemas/Bom" } }
+                      routings: { type: array, items: { $ref: "#/components/schemas/Routing" } }
+                      workCenters: { type: array, items: { $ref: "#/components/schemas/WorkCenter" } }
+                      suppliers: { type: array, items: { $ref: "#/components/schemas/Supplier" } }
+                      priceList: { type: array, items: { $ref: "#/components/schemas/PriceListEntry" } }
+                      lots: { type: array, items: { $ref: "#/components/schemas/Lot" } }
+                      movements: { type: array, items: { $ref: "#/components/schemas/Movement" } }
+                      demands: { type: array, items: { $ref: "#/components/schemas/Demand" } }
+                      purchaseRequests: { type: array, items: { $ref: "#/components/schemas/PurchaseRequest" } }
+                      purchaseOrders: { type: array, items: { $ref: "#/components/schemas/PurchaseOrder" } }
+                      workOrders: { type: array, items: { $ref: "#/components/schemas/WorkOrder" } }
+                      subcontracts: { type: array, items: { $ref: "#/components/schemas/Subcontract" } }
+                      notifications: { type: array, items: { $ref: "#/components/schemas/Notification" } }
+                      auditLog: { type: array, items: { $ref: "#/components/schemas/AuditEntry" } }
+                      settings: { type: array, items: { $ref: "#/components/schemas/Settings" } }
+                      mrpRun: { type: array, items: { type: object, description: MRP motoru çıktısı (planlı siparişler, istisnalar) } }
+
+  /mrp/sync:
+    post:
+      summary: İstemcideki değişiklikleri ERP'ye uygula
+      description: |
+        Her değişiklik bağımsız doğrulanır. Kabul edilenler değişiklik günlüğüne yazılır ve diğer
+        istemcilere `/mrp/changes` ile dağıtılır. Reddedilenler `rejected` içinde gerekçe ve ERP'deki
+        güncel kayıtla döner. İstek tekrarlanabilir olmalıdır (aynı değişiklik ikinci kez gelirse
+        aynı sonuç). Önerilen eşzamanlılık kuralı: son yazan kazanır; kritik koleksiyonlarda
+        (purchaseOrders, lots) ERP iş kuralı ile çakışma reddedilir.
+      parameters:
+        - { in: header, name: X-Client-Id, required: true, schema: { type: string }, description: "İstemci kimliği; kendi değişiklikleri /mrp/changes'ta geri gönderilmez" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [changes]
+              properties:
+                clientId: { type: string }
+                baseCursor: { type: integer, description: İstemcinin en son aldığı imleç }
+                changes: { type: array, items: { $ref: "#/components/schemas/Change" } }
+      responses:
+        "200":
+          description: Sonuç
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  applied: { type: integer }
+                  cursor: { type: integer }
+                  rejected:
+                    type: array
+                    items:
+                      type: object
+                      required: [collection, key, reason]
+                      properties:
+                        collection: { type: string }
+                        key: { type: string }
+                        reason: { type: string, example: "Bu işlem için yetkiniz yok" }
+                        current: { type: object, nullable: true, description: Kaydın ERP'deki güncel hâli (yoksa null) }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /mrp/changes:
+    get:
+      summary: Verilen imleçten sonraki değişiklikler (diğer istemciler ve ERP)
+      parameters:
+        - { in: query, name: since, required: true, schema: { type: integer } }
+        - { in: header, name: X-Client-Id, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Değişiklikler (imleç sırasıyla)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cursor: { type: integer }
+                  changes: { type: array, items: { $ref: "#/components/schemas/ChangeLogEntry" } }
+        "410": { description: "İmleç günlükten eski — istemci /mrp/snapshot ile yeniden yükler" }
+
+  /mrp/sequences:
+    post:
+      summary: Belge numarası bloğu ayır (PO, İE, STT, HRK, LOT, MPS, FSV, TED)
+      description: Numaralar ERP'de tekildir; istemci bloğu yerelde tüketir, azalınca yenisini ister.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prefixes: { type: array, items: { type: string, example: PO } }
+                year: { type: integer, example: 2026 }
+                count: { type: integer, default: 50, maximum: 500 }
+      responses:
+        "200":
+          description: Ayrılan bloklar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blocks:
+                    type: object
+                    additionalProperties:
+                      type: object
+                      properties: { from: { type: integer }, to: { type: integer } }
+                    example: { "PO-2026": { from: 51, to: 100 } }
+
+  /health:
+    get:
+      summary: Sağlık kontrolü
+      security: []
+      responses: { "200": { description: OK } }
+
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  responses:
+    Unauthorized:
+      description: Oturum yok veya süresi doldu
+      content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } }
+  schemas:
+    Error:
+      type: object
+      properties: { error: { type: string }, message: { type: string } }
+    User:
+      type: object
+      required: [username, name, role, views, permissions]
+      properties:
+        username: { type: string }
+        name: { type: string }
+        role: { type: string, example: planlama }
+        roleName: { type: string, example: Üretim Planlama }
+        avatar: { type: string, maxLength: 3 }
+        views:
+          type: array
+          description: Görebileceği ekranlar
+          items: { type: string, enum: [dashboard, bom, items, costing, mrp, capacity, workorders, requests, po, suppliers, stock, movements, analysis, import, reports, audit] }
+        permissions:
+          type: object
+          properties:
+            editProduct: { type: boolean }
+            editItem: { type: boolean }
+            editCost: { type: boolean }
+            runMRP: { type: boolean }
+            manageCapacity: { type: boolean }
+            createRequest: { type: boolean }
+            approveRequest: { type: boolean }
+            approveLimit: { type: number, nullable: true, description: "TL; null = sınırsız" }
+            createPO: { type: boolean }
+            receiveGoods: { type: boolean }
+            manageSuppliers: { type: boolean }
+            manageWO: { type: boolean }
+            adjustStock: { type: boolean }
+    Change:
+      type: object
+      required: [collection, op, key]
+      properties:
+        collection: { type: string, enum: [items, products, boms, routings, workCenters, suppliers, priceList, lots, movements, demands, purchaseRequests, purchaseOrders, workOrders, subcontracts, notifications, auditLog, settings, mrpRun] }
+        op: { type: string, enum: [upsert, delete] }
+        key: { type: string }
+        data: { type: object, description: "upsert için kaydın tamamı (koleksiyon şeması)" }
+    ChangeLogEntry:
+      allOf:
+        - $ref: "#/components/schemas/Change"
+        - type: object
+          properties:
+            cursor: { type: integer }
+            user: { type: string }
+            at: { type: string, format: date-time }
+    Currency: { type: string, enum: [TRY, USD, EUR, GBP] }
+    Item:
+      type: object
+      required: [kod, ad, tur, unit, procurement]
+      properties:
+        kod: { type: string, example: HM.044 }
+        ad: { type: string, example: IROKO KERESTE }
+        tur: { type: string, example: İroko Kereste }
+        unit: { type: string, example: m³ }
+        price: { type: number, description: "Birim fiyat (currency cinsinden). Üretilen kalemde kullanılmaz" }
+        currency: { $ref: "#/components/schemas/Currency" }
+        procurement: { type: string, enum: [buy, make, service], description: "satın alma / üretim (yarı mamul) / fason-hizmet" }
+        leadTime: { type: integer, description: gün }
+        safetyStock: { type: number }
+        lotPolicy: { type: string, enum: [L4L, FOQ, MIN] }
+        lotSize: { type: number }
+    Product:
+      type: object
+      required: [kod, ad, kategori]
+      properties:
+        kod: { type: string }
+        ad: { type: string }
+        kategori: { type: string }
+        toplam: { type: number, description: "ERP'deki kayıtlı birim maliyet (TL) — sapma analizi için" }
+        fason: { type: number }
+        hammadde: { type: number }
+        iroko: { type: number }
+        bilesen: { type: integer }
+    Bom:
+      type: object
+      required: [parent, lines]
+      properties:
+        parent: { type: string, description: Mamul veya yarı mamul kodu }
+        lines:
+          type: array
+          items: { type: object, required: [kod, k], properties: { kod: { type: string }, k: { type: number, description: "1 birim üst kalem için miktar" } } }
+    Routing:
+      type: object
+      required: [kod, operations]
+      properties:
+        kod: { type: string }
+        operations:
+          type: array
+          items: { type: object, required: [wc, setup, run], properties: { wc: { type: string }, setup: { type: number, description: dk }, run: { type: number, description: dk/birim } } }
+    WorkCenter:
+      type: object
+      required: [id, ad, capacity, days]
+      properties:
+        id: { type: string }
+        ad: { type: string }
+        capacity: { type: number, description: dk/gün }
+        days: { type: integer, description: gün/hafta }
+        efficiency: { type: number, description: "%" }
+        rate: { type: number, description: TL/saat }
+    Supplier:
+      type: object
+      required: [id, ad, kategoriler, aktif]
+      properties:
+        id: { type: string }
+        ad: { type: string }
+        yetkili: { type: string }
+        tel: { type: string }
+        email: { type: string }
+        adres: { type: string }
+        vergiNo: { type: string }
+        kategoriler: { type: array, items: { type: string } }
+        vade: { type: integer, description: gün }
+        puan: { type: number }
+        aktif: { type: boolean }
+    PriceListEntry:
+      type: object
+      required: [supplierId, kod, price, currency]
+      properties:
+        supplierId: { type: string }
+        kod: { type: string }
+        price: { type: number }
+        currency: { $ref: "#/components/schemas/Currency" }
+        leadTime: { type: integer }
+        moq: { type: number }
+        updatedAt: { type: string, format: date-time }
+    Lot:
+      type: object
+      required: [id, lot, kod, loc, qty]
+      properties:
+        id: { type: string }
+        lot: { type: string, description: Lot / parti numarası }
+        kod: { type: string }
+        loc: { type: string, enum: [MERKEZ, FABRIKA, FASON] }
+        qty: { type: number, minimum: 0 }
+        at: { type: string, format: date-time, description: "Giriş zamanı (FIFO sırası)" }
+        ref: { type: string }
+        supplier: { type: string }
+    Movement:
+      type: object
+      required: [id, at, kod, type, qty]
+      properties:
+        id: { type: string }
+        at: { type: string, format: date-time }
+        kod: { type: string }
+        type: { type: string, enum: [GR, GI, FG, ADJ, TRF], description: "mal kabul / üretime sarf / üretimden giriş / sayım / transfer" }
+        qty: { type: number, description: "İşaretli (+ giriş, − çıkış); TRF'de taşınan miktar" }
+        balance: { type: number }
+        loc: { type: string }
+        toLoc: { type: string, nullable: true }
+        lots: { type: array, items: { type: object, properties: { lot: { type: string }, qty: { type: number } } } }
+        ref: { type: string, description: "Belge no (PO, İE, FSV, SAYIM)" }
+        note: { type: string }
+        user: { type: string }
+        value: { type: number, description: TL }
+    Demand:
+      type: object
+      required: [id, kod, qty, dueDate]
+      properties:
+        id: { type: string, example: SIP-1001 }
+        kod: { type: string }
+        qty: { type: number }
+        dueDate: { type: string, format: date }
+        note: { type: string }
+    DocLine:
+      type: object
+      properties:
+        kod: { type: string }
+        ad: { type: string }
+        tur: { type: string }
+        unit: { type: string }
+        qty: { type: number }
+        price: { type: number, description: TL }
+    PurchaseRequest:
+      type: object
+      required: [no, status, lines]
+      properties:
+        no: { type: string, example: STT-2026-0001 }
+        status: { type: string, enum: [pending, approved, rejected, ordered, closed] }
+        priority: { type: string, enum: [low, normal, high, urgent] }
+        lines: { type: array, items: { allOf: [{ $ref: "#/components/schemas/DocLine" }, { type: object, properties: { needDate: { type: string, format: date }, total: { type: number } } }] } }
+        total: { type: number }
+        deadline: { type: string, format: date }
+        poNos: { type: array, items: { type: string } }
+        createdBy: { type: string }
+        createdAt: { type: string, format: date-time }
+        history: { type: array, items: { type: object } }
+        comments: { type: array, items: { type: object } }
+    PurchaseOrder:
+      type: object
+      required: [no, supplierId, status, lines, deliveryDate]
+      properties:
+        no: { type: string, example: PO-2026-0001 }
+        requestNo: { type: string }
+        supplierId: { type: string }
+        supplierName: { type: string }
+        deliveryDate: { type: string, format: date }
+        paymentTerm: { type: integer }
+        status: { type: string, enum: [open, partial, received, cancelled] }
+        lines:
+          type: array
+          items:
+            allOf:
+              - $ref: "#/components/schemas/DocLine"
+              - type: object
+                properties:
+                  disc: { type: number }
+                  vat: { type: number }
+                  received: { type: number }
+                  currency: { $ref: "#/components/schemas/Currency" }
+                  origPrice: { type: number, description: Döviz cinsinden liste fiyatı }
+                  fxRate: { type: number, description: Siparişte kullanılan kur }
+        receipts: { type: array, items: { type: object, properties: { waybill: { type: string }, quality: { type: string, enum: [ok, rejected] }, at: { type: string }, lines: { type: array, items: { type: object } } } } }
+    WorkOrder:
+      type: object
+      required: [no, kod, qty, start, end, status]
+      properties:
+        no: { type: string, example: IE-2026-0001 }
+        kod: { type: string }
+        ad: { type: string }
+        qty: { type: number }
+        start: { type: string, format: date }
+        end: { type: string, format: date }
+        status: { type: string, enum: [planned, released, completed, cancelled] }
+        source: { type: string, description: MRP planlı sipariş no }
+    Subcontract:
+      type: object
+      required: [no, supplierId, status, lines]
+      properties:
+        no: { type: string, example: FSV-2026-0001 }
+        supplierId: { type: string }
+        expectedAt: { type: string, format: date }
+        status: { type: string, enum: [open, closed] }
+        lines: { type: array, items: { type: object, properties: { kod: { type: string }, qty: { type: number }, returned: { type: number } } } }
+    Notification:
+      type: object
+      properties: { id: { type: string }, type: { type: string }, title: { type: string }, message: { type: string }, roles: { type: array, items: { type: string } }, readBy: { type: array, items: { type: string } }, at: { type: string } }
+    AuditEntry:
+      type: object
+      properties: { id: { type: string }, at: { type: string }, user: { type: string }, username: { type: string }, action: { type: string }, detail: { type: string } }
+    Settings:
+      type: object
+      properties:
+        fx:
+          type: object
+          properties:
+            rates: { type: object, additionalProperties: { type: number }, example: { USD: 41.8, EUR: 48.6, GBP: 55.9 } }
+            updatedAt: { type: string, nullable: true }
+            source: { type: string }
+            history: { type: array, items: { type: object } }
+        costing:
+          type: object
+          properties: { overheadPct: { type: number }, includeLabor: { type: boolean }, stdLot: { type: integer } }

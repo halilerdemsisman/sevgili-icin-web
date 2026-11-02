@@ -25,9 +25,12 @@
 
     const M = { MOVE_TYPES, PROCUREMENT, LOT_POLICIES, LOCATIONS: D.LOCATIONS };
 
+    /** ERP modunda yerleşik demo verisi kullanılmaz; tüm ana veri ERP'den gelir */
+    const ERP = () => MRP.config.erp;
+
     M.init = () => {
-        staticProducts = D.buildProducts();
-        baseItems = D.buildItemMaster();
+        staticProducts = ERP() ? [] : D.buildProducts();
+        baseItems = ERP() ? {} : D.buildItemMaster();
         M.invalidate();
     };
     M.invalidate = () => { cache = {}; };
@@ -92,6 +95,7 @@
     M.bom = (kod) => {
         const custom = S().customBoms[kod];
         if (custom) return custom;
+        if (ERP()) return [];
         if (D.SUB_BOMS[kod]) return D.SUB_BOMS[kod].map(([c, k]) => ({ kod: c, k }));
         const p = M.product(kod);
         if (!p || p.custom) return [];
@@ -106,6 +110,7 @@
     /** Operasyon listesi [{wc, setup, run}] — özel rota yoksa kategori varsayılanı */
     M.routing = (kod) => {
         if (S().routings[kod]) return S().routings[kod];
+        if (ERP()) return [];
         const p = M.product(kod);
         let tpl = null;
         if (p) tpl = D.DEFAULT_ROUTINGS[p.kategori];
@@ -201,7 +206,7 @@
     /** Kalemin kullanıldığı ürünler (kategori bazında sayım) */
     M.whereUsed = (kod) => {
         const res = { products: 0, byCategory: {}, parents: [] };
-        Object.entries(D.SUB_BOMS).forEach(([ym, lines]) => { if (lines.some(([c]) => c === kod)) res.parents.push(ym); });
+        if (!ERP()) Object.entries(D.SUB_BOMS).forEach(([ym, lines]) => { if (lines.some(([c]) => c === kod)) res.parents.push(ym); });
         Object.entries(S().customBoms).forEach(([p, lines]) => { if (!M.isProduct(p) && lines.some((l) => l.kod === kod) && !res.parents.includes(p)) res.parents.push(p); });
         const direct = new Set([kod, ...res.parents]);
         M.products().forEach((p) => {

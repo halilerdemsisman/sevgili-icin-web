@@ -55,6 +55,8 @@
             current = null;
             try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* yoksay */ }
         },
+        /** ERP modunda kullanıcı ve yetkiler ERP'den gelir (bkz. backend.js) */
+        setUser(u) { current = u; },
         canView: (v) => !!current && current.views.includes(v),
         can: (a) => !!current && !!current.can[a]
     };

@@ -430,6 +430,23 @@ td.code { color: #1d4ed8; }
 
 /* Onay kutuları alan genişliğine yayılmasın */
 .field input[type="checkbox"], .check-chip input[type="checkbox"] { width: auto; flex-shrink: 0; }
+
+/* ---------- ERP bağlantısı ---------- */
+.avatar { background: linear-gradient(135deg, #64748b, #475569); }
+.sync-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--bg-elev); color: var(--text-2); font-size: .78em; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.sync-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+.sync-chip.ok i { background: var(--green); }
+.sync-chip.wait i { background: var(--amber); animation: pulse 1.2s infinite; }
+.sync-chip.bad { border-color: var(--red); color: var(--red); }
+.sync-chip.bad i { background: var(--red); }
+@keyframes pulse { 50% { opacity: .35; } }
+.boot-spinner { width: 34px; height: 34px; margin: 6px auto 18px; border-radius: 50%; border: 3px solid var(--border-strong); border-top-color: var(--accent); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 720px) { .sync-chip span { display: none; } }
+
+/* ---------- Gömülü mod ---------- */
+body.embedded .sb-foot, body.embedded .theme-fab { display: none; }
+body.no-nav .sidebar, body.no-nav .sb-backdrop, body.no-nav .menu-btn { display: none !important; }
 </style>
 
 <!-- Üçüncü parti kütüphaneler (sabit sürüm) -->
@@ -487,11 +504,21 @@ td.code { color: #1d4ed8; }
             </div>
             <button class="btn btn-primary" type="submit" style="width:100%;padding:11px;">Giriş Yap</button>
         </form>
-        <div class="login-demo">
+        <div class="login-demo" id="loginDemo">
             <h4>Demo hesaplar — tıklayarak doldurun</h4>
             <div id="demoAccounts"></div>
-            <p class="login-note">Demo sürümüdür; veriler yalnızca bu tarayıcıda saklanır.</p>
+            <p class="login-note">Bağımsız mod: veriler yalnızca bu tarayıcıda saklanır.</p>
         </div>
+        <p class="login-note" id="loginErpNote" hidden>ERP kullanıcı hesabınızla giriş yapın. Veriler ERP sunucusunda saklanır.</p>
+    </div>
+</section>
+
+<!-- ======================= ERP BAĞLANTI EKRANI ======================= -->
+<section id="boot" class="login" hidden>
+    <div class="login-card" style="text-align:center;">
+        <div class="login-title"><h1>MRP Pro</h1><p id="bootMsg">Yükleniyor…</p></div>
+        <div class="boot-spinner" aria-hidden="true"></div>
+        <button class="btn btn-primary" id="bootRetry" data-act="bootRetry" hidden>Tekrar dene</button>
     </div>
 </section>
 
@@ -518,6 +545,7 @@ td.code { color: #1d4ed8; }
                 <p id="pageSub"></p>
             </div>
             <div class="top-actions">
+                <button class="sync-chip" id="syncStatus" data-act="syncNow" hidden><i></i><span>ERP</span></button>
                 <button class="btn btn-secondary btn-icon" data-act="scanOpen" title="Barkod / hızlı arama" aria-label="Barkod okut">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14"/></svg>
                 </button>
@@ -549,6 +577,71 @@ td.code { color: #1d4ed8; }
 </div>
 
 <!-- Uygulama (tek dosya derlemesi: build-single.py) -->
+<script>
+/* assets/js/config.js */
+/* ==========================================================================
+   MRP Pro — Çalışma yapılandırması
+   --------------------------------------------------------------------------
+   İki çalışma modu vardır:
+     • standalone : Veriler tarayıcıda (localStorage) tutulur, demo kullanıcılar.
+     • erp        : Ana veri, kullanıcılar ve yetkiler ERP'den gelir; tüm
+                    değişiklikler ERP'nin REST API'sine senkronlanır.
+
+   Yapılandırma öncelik sırası:
+     1. index.html'den önce tanımlanan  window.MRP_CONFIG = { ... }
+     2. URL parametreleri (?mode=erp&embed=1 …) — güvenlik için API adresi
+        URL'den yalnızca aynı origin altında değiştirilebilir.
+
+   Örnek (ERP'nin sunduğu sayfada, uygulama betiklerinden önce):
+     window.MRP_CONFIG = { mode: 'erp', apiBase: '/api', embed: true,
+                           parentOrigin: 'https://erp.firma.com' };
+   ========================================================================== */
+window.MRP = window.MRP || {};
+
+(function (MRP) {
+    'use strict';
+
+    const defaults = {
+        mode: 'standalone',      // 'standalone' | 'erp'
+        apiBase: '/api',         // ERP REST API kök adresi
+        pollInterval: 30000,     // ERP'den değişiklik çekme aralığı (ms); 0 = kapalı
+        syncDelay: 600,          // değişikliklerin toplanıp gönderilmesi için bekleme (ms)
+        embed: false,            // true: başka bir sayfaya iframe ile gömülü çalışır
+        parentOrigin: null,      // gömülü modda mesaj kabul edilecek üst sayfa origin'i
+        hideNav: false,          // gömülü modda sol menüyü gizle (ERP kendi menüsünü kullanır)
+        token: null,             // ERP'nin önceden verdiği oturum anahtarı (SSO)
+        clientName: 'MRP Pro Web'
+    };
+
+    const cfg = Object.assign({}, defaults, window.MRP_CONFIG || {});
+    let params;
+    try { params = new URLSearchParams(location.search); } catch (e) { params = new URLSearchParams(); }
+
+    if (params.get('mode') === 'erp' || params.get('mode') === 'standalone') cfg.mode = params.get('mode');
+    if (params.has('embed')) cfg.embed = params.get('embed') !== '0';
+    if (params.has('hideNav')) cfg.hideNav = params.get('hideNav') !== '0';
+    if (params.has('poll')) cfg.pollInterval = Math.max(0, parseInt(params.get('poll'), 10) || 0);
+
+    // API adresi URL'den değiştirilebilir ama yalnızca aynı origin altında
+    // (aksi hâlde bir bağlantıyla kullanıcı parolası yabancı sunucuya gönderilebilir).
+    const apiParam = params.get('api');
+    if (apiParam) {
+        try {
+            const u = new URL(apiParam, location.href);
+            if (u.origin === location.origin) cfg.apiBase = u.pathname.replace(/\/$/, '');
+            else console.warn('MRP Pro: farklı origin\'e ait api parametresi yok sayıldı:', apiParam);
+        } catch (e) { /* geçersiz adres yok sayılır */ }
+    }
+    // parentOrigin URL'den yalnızca MRP_CONFIG izin veriyorsa alınır
+    if (params.get('parentOrigin') && Array.isArray(cfg.allowedParentOrigins) && cfg.allowedParentOrigins.includes(params.get('parentOrigin'))) {
+        cfg.parentOrigin = params.get('parentOrigin');
+    }
+
+    cfg.erp = cfg.mode === 'erp';
+    cfg.apiBase = String(cfg.apiBase).replace(/\/$/, '');
+    MRP.config = Object.freeze(cfg);
+})(window.MRP);
+</script>
 <script>
 /* assets/js/utils.js */
 /* ==========================================================================
@@ -1321,9 +1414,23 @@ window.MRP = window.MRP || {};
         return st;
     }
 
+    /** ERP modu için boş durum: ana veri ve işlemler ERP'den yüklenir */
+    function emptyState() {
+        return {
+            version: VERSION, createdAt: new Date().toISOString(),
+            itemOverrides: {}, customItems: {}, productOverrides: {}, customProducts: [], customBoms: {}, routings: {},
+            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [],
+            suppliers: [], priceList: [], workCenters: [],
+            fx: { rates: { ...MRP.data.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] },
+            costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
+            notifications: [], audit: [], seq: {}, seqBlocks: {}
+        };
+    }
+
     let state = null;
 
     function load() {
+        if (MRP.config.erp) { state = emptyState(); return state; }
         try {
             const raw = localStorage.getItem(KEY);
             if (raw) {
@@ -1347,6 +1454,12 @@ window.MRP = window.MRP || {};
     }
 
     function save() {
+        if (MRP.config.erp) {
+            // ERP modunda geçmiş kırpılmaz (silme olarak senkronlanırdı); kalıcılık ve gönderim backend'de
+            if (state.notifications.length > MAX_NOTIFS) state.notifications = state.notifications.slice(0, MAX_NOTIFS);
+            MRP.backend.scheduleSync();
+            return;
+        }
         try {
             if (state.movements.length > MAX_MOVEMENTS) state.movements = state.movements.slice(-MAX_MOVEMENTS);
             if (state.audit.length > MAX_AUDIT) state.audit = state.audit.slice(-MAX_AUDIT);
@@ -1370,13 +1483,27 @@ window.MRP = window.MRP || {};
     function nextNo(prefix) {
         const year = new Date().getFullYear();
         const key = `${prefix}-${year}`;
+        if (MRP.config.erp) {
+            // ERP'nin ayırdığı numara bloğundan; blok bitmek üzereyse arka planda yenisi istenir
+            state.seqBlocks = state.seqBlocks || {};
+            const b = state.seqBlocks[key];
+            if (b && b.next <= b.end) {
+                const n = b.next++;
+                if (b.end - b.next < 10) MRP.backend.ensureSequences([prefix]).catch(() => {});
+                return `${key}-${String(n).padStart(4, '0')}`;
+            }
+            MRP.backend.ensureSequences([prefix]).catch(() => {});
+            // Çevrimdışı geçici numara: istemciye özgü, ERP tarafında yeniden numaralandırılabilir
+            state.seq[key + '-T'] = (state.seq[key + '-T'] || 0) + 1;
+            return `${key}-T${Date.now().toString(36).slice(-4).toUpperCase()}${state.seq[key + '-T']}`;
+        }
         state.seq[key] = (state.seq[key] || 0) + 1;
         return `${key}-${String(state.seq[key]).padStart(4, '0')}`;
     }
 
     function audit(action, detail) {
         const u = MRP.auth.current();
-        state.audit.push({ at: new Date().toISOString(), user: u ? u.name : 'sistem', role: u ? u.roleName : '', action, detail });
+        state.audit.push({ id: U.uid('aud'), at: new Date().toISOString(), user: u ? u.name : 'sistem', username: u ? u.username : '', role: u ? u.roleName : '', action, detail });
     }
 
     function notify(type, title, message, roles, link) {
@@ -1392,8 +1519,10 @@ window.MRP = window.MRP || {};
         save();
     }
 
+    function setState(s) { state = s; }
+
     MRP.store = {
-        load, save, nextNo, audit, notify, reset, restore,
+        load, save, nextNo, audit, notify, reset, restore, emptyState, setState,
         get state() { return state; }
     };
 })(window.MRP);
@@ -1457,6 +1586,8 @@ window.MRP = window.MRP || {};
             current = null;
             try { sessionStorage.removeItem(SESSION_KEY); } catch (e) { /* yoksay */ }
         },
+        /** ERP modunda kullanıcı ve yetkiler ERP'den gelir (bkz. backend.js) */
+        setUser(u) { current = u; },
         canView: (v) => !!current && current.views.includes(v),
         can: (a) => !!current && !!current.can[a]
     };
@@ -1493,9 +1624,12 @@ window.MRP = window.MRP || {};
 
     const M = { MOVE_TYPES, PROCUREMENT, LOT_POLICIES, LOCATIONS: D.LOCATIONS };
 
+    /** ERP modunda yerleşik demo verisi kullanılmaz; tüm ana veri ERP'den gelir */
+    const ERP = () => MRP.config.erp;
+
     M.init = () => {
-        staticProducts = D.buildProducts();
-        baseItems = D.buildItemMaster();
+        staticProducts = ERP() ? [] : D.buildProducts();
+        baseItems = ERP() ? {} : D.buildItemMaster();
         M.invalidate();
     };
     M.invalidate = () => { cache = {}; };
@@ -1560,6 +1694,7 @@ window.MRP = window.MRP || {};
     M.bom = (kod) => {
         const custom = S().customBoms[kod];
         if (custom) return custom;
+        if (ERP()) return [];
         if (D.SUB_BOMS[kod]) return D.SUB_BOMS[kod].map(([c, k]) => ({ kod: c, k }));
         const p = M.product(kod);
         if (!p || p.custom) return [];
@@ -1574,6 +1709,7 @@ window.MRP = window.MRP || {};
     /** Operasyon listesi [{wc, setup, run}] — özel rota yoksa kategori varsayılanı */
     M.routing = (kod) => {
         if (S().routings[kod]) return S().routings[kod];
+        if (ERP()) return [];
         const p = M.product(kod);
         let tpl = null;
         if (p) tpl = D.DEFAULT_ROUTINGS[p.kategori];
@@ -1669,7 +1805,7 @@ window.MRP = window.MRP || {};
     /** Kalemin kullanıldığı ürünler (kategori bazında sayım) */
     M.whereUsed = (kod) => {
         const res = { products: 0, byCategory: {}, parents: [] };
-        Object.entries(D.SUB_BOMS).forEach(([ym, lines]) => { if (lines.some(([c]) => c === kod)) res.parents.push(ym); });
+        if (!ERP()) Object.entries(D.SUB_BOMS).forEach(([ym, lines]) => { if (lines.some(([c]) => c === kod)) res.parents.push(ym); });
         Object.entries(S().customBoms).forEach(([p, lines]) => { if (!M.isProduct(p) && lines.some((l) => l.kod === kod) && !res.parents.includes(p)) res.parents.push(p); });
         const direct = new Set([kod, ...res.parents]);
         M.products().forEach((p) => {
@@ -2062,6 +2198,514 @@ window.MRP = window.MRP || {};
 })(window.MRP);
 </script>
 <script>
+/* assets/js/backend.js */
+/* ==========================================================================
+   MRP Pro — ERP bağlantı katmanı (yalnızca mode: 'erp')
+   --------------------------------------------------------------------------
+   Sözleşme: mrp-pro/integration/openapi.yaml
+
+   • Oturum   : POST /auth/login, GET /auth/me, POST /auth/logout (Bearer token)
+   • İlk yükleme: GET /mrp/snapshot → tüm koleksiyonlar + değişiklik imleci
+   • Gönderme : POST /mrp/sync  → yerel değişiklik seti (upsert/delete)
+   • Çekme    : GET  /mrp/changes?since=<imleç> → başka istemcilerin/ERP'nin değişiklikleri
+   • Numaralar: POST /mrp/sequences → belge numarası blokları (PO, İE, …)
+
+   Değişiklik tespiti, her kaydın ERP'ye en son gönderilen JSON'u ("gölge")
+   ile karşılaştırılarak yapılır; gönderilemeyen değişiklik kaybolmaz, bağlantı
+   gelince otomatik gönderilir. Uygulama durumu çevrimdışı dayanıklılık için
+   tarayıcıda önbelleklenir (oturum kapatılınca silinir).
+   ========================================================================== */
+(function (MRP) {
+    'use strict';
+    const C = MRP.config;
+    const U = MRP.U;
+    const S = () => MRP.store.state;
+
+    const TOKEN_KEY = 'mrppro.erp.token';
+    const CLIENT_KEY = 'mrppro.erp.client';
+    const CACHE_KEY = 'mrppro.erp.cache.' + C.apiBase;
+    const SEQ_PREFIXES = ['STT', 'PO', 'IE', 'HRK', 'LOT', 'MPS', 'FSV', 'TED'];
+    const SEQ_BLOCK = 50;
+
+    // ======================================================================
+    // Koleksiyon sözleşmesi: ERP koleksiyonu ↔ uygulama durumu
+    // ======================================================================
+    const COLLECTIONS = {
+        items:            { kind: 'map', path: 'customItems' },                       // anahtar: kod
+        products:         { kind: 'array', path: 'customProducts', key: 'kod' },
+        boms:             { kind: 'raw', path: 'customBoms', keyName: 'parent', field: 'lines' },
+        routings:         { kind: 'raw', path: 'routings', keyName: 'kod', field: 'operations' },
+        workCenters:      { kind: 'array', path: 'workCenters', key: 'id' },
+        suppliers:        { kind: 'array', path: 'suppliers', key: 'id' },
+        priceList:        { kind: 'array', path: 'priceList', keyFn: (r) => `${r.supplierId}|${r.kod}` },
+        lots:             { kind: 'array', path: 'lots', key: 'id' },
+        movements:        { kind: 'array', path: 'movements', key: 'id' },
+        demands:          { kind: 'array', path: 'mps', key: 'id' },
+        purchaseRequests: { kind: 'array', path: 'requests', key: 'no' },
+        purchaseOrders:   { kind: 'array', path: 'pos', key: 'no' },
+        workOrders:       { kind: 'array', path: 'workOrders', key: 'no' },
+        subcontracts:     { kind: 'array', path: 'subcontracts', key: 'no' },
+        notifications:    { kind: 'array', path: 'notifications', key: 'id' },
+        auditLog:         { kind: 'array', path: 'audit', key: 'id' },
+        settings:         { kind: 'settings' },                                       // anahtar: 'main'
+        mrpRun:           { kind: 'single', path: 'lastRun', keyVal: 'last' }
+    };
+
+    const keyOf = (def, r) => (def.keyFn ? def.keyFn(r) : r[def.key]);
+
+    /** Uygulama durumundan { koleksiyon: Map(anahtar → kayıt) } üretir */
+    function records(st) {
+        const out = {};
+        Object.entries(COLLECTIONS).forEach(([name, def]) => {
+            const m = new Map();
+            if (def.kind === 'array') (st[def.path] || []).forEach((r) => m.set(String(keyOf(def, r)), r));
+            else if (def.kind === 'map') Object.entries(st[def.path] || {}).forEach(([k, r]) => m.set(k, r));
+            else if (def.kind === 'raw') Object.entries(st[def.path] || {}).forEach(([k, v]) => m.set(k, { [def.keyName]: k, [def.field]: v }));
+            else if (def.kind === 'settings') m.set('main', { fx: st.fx, costing: st.costing });
+            else if (def.kind === 'single' && st[def.path]) m.set(def.keyVal, st[def.path]);
+            out[name] = m;
+        });
+        return out;
+    }
+
+    /** Tek bir kaydı uygulama durumuna yazar (data null → siler) */
+    function applyRecord(st, name, key, data) {
+        const def = COLLECTIONS[name];
+        if (!def) return;
+        if (def.kind === 'array') {
+            const arr = st[def.path] = st[def.path] || [];
+            const i = arr.findIndex((r) => String(keyOf(def, r)) === key);
+            if (data == null) { if (i >= 0) arr.splice(i, 1); } else if (i >= 0) arr[i] = data; else arr.push(data);
+        } else if (def.kind === 'map') {
+            const o = st[def.path] = st[def.path] || {};
+            if (data == null) delete o[key]; else o[key] = data;
+        } else if (def.kind === 'raw') {
+            const o = st[def.path] = st[def.path] || {};
+            if (data == null) delete o[key]; else o[key] = data[def.field] || [];
+        } else if (def.kind === 'settings') {
+            if (data && data.fx) st.fx = { history: [], ...data.fx };
+            if (data && data.costing) st.costing = data.costing;
+        } else if (def.kind === 'single') {
+            st[def.path] = data || null;
+        }
+    }
+
+    // ======================================================================
+    // Durum
+    // ======================================================================
+    let token = null;
+    let user = null;
+    let cursor = 0;
+    let shadow = {};           // { koleksiyon: Map(anahtar → JSON) }
+    let clientId = null;
+    let syncing = null;
+    let syncTimer = null;
+    let pollTimer = null;
+    let retryDelay = 5000;
+    let cacheTimer = null;
+    const status = { state: 'idle', pending: 0, lastSync: null, error: null };
+    const listeners = new Set();
+
+    function setStatus(patch) {
+        Object.assign(status, patch);
+        listeners.forEach((fn) => { try { fn({ ...status }); } catch (e) { /* yoksay */ } });
+    }
+
+    class ApiError extends Error {
+        constructor(status, message, body) { super(message); this.status = status; this.body = body; }
+    }
+
+    function getClientId() {
+        try {
+            let id = localStorage.getItem(CLIENT_KEY);
+            if (!id) { id = 'web-' + U.uid('c').slice(2); localStorage.setItem(CLIENT_KEY, id); }
+            return id;
+        } catch (e) { return 'web-' + U.uid('c').slice(2); }
+    }
+
+    async function api(method, path, body) {
+        let res;
+        try {
+            res = await fetch(C.apiBase + path, {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Client-Id': clientId,
+                    'X-Client-Name': C.clientName,
+                    ...(token ? { Authorization: 'Bearer ' + token } : {})
+                },
+                body: body !== undefined ? JSON.stringify(body) : undefined
+            });
+        } catch (e) {
+            throw new ApiError(0, 'ERP sunucusuna ulaşılamıyor');
+        }
+        let data = null;
+        if (res.status !== 204) { try { data = await res.json(); } catch (e) { data = null; } }
+        if (res.status === 401 && path !== '/auth/login') onAuthExpired();
+        if (!res.ok) throw new ApiError(res.status, (data && (data.message || data.error)) || res.statusText, data);
+        return data;
+    }
+
+    function onAuthExpired() {
+        token = null;
+        try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) { /* yoksay */ }
+        stopPolling();
+        setStatus({ state: 'auth', error: 'Oturum süresi doldu' });
+        if (MRP.embed) MRP.embed.emit('auth-expired', {});
+        if (!C.embed) MRP.UI.toast('Oturum süresi doldu', 'Lütfen yeniden giriş yapın; bekleyen değişiklikler saklanıyor.', 'warn', 8000);
+    }
+
+    /** ERP kullanıcı nesnesini uygulamanın beklediği biçime getirir */
+    function normalizeUser(u) {
+        const can = { ...(u.permissions || u.can || {}) };
+        if (can.approveLimit == null) can.approveLimit = can.approveRequest ? Infinity : 0;
+        return {
+            username: u.username, name: u.name || u.username, role: u.role || 'user', roleName: u.roleName || u.role || '',
+            avatar: u.avatar || (u.name || u.username).split(/\s+/).map((x) => x[0]).join('').slice(0, 2).toUpperCase(),
+            views: u.views || [], can
+        };
+    }
+
+    // ======================================================================
+    // Oturum
+    // ======================================================================
+    async function login(username, password) {
+        const r = await api('POST', '/auth/login', { username, password, client: C.clientName });
+        token = r.token;
+        try { sessionStorage.setItem(TOKEN_KEY, token); } catch (e) { /* yoksay */ }
+        user = normalizeUser(r.user);
+        return user;
+    }
+
+    /** Kayıtlı veya üst uygulamanın verdiği token ile oturumu doğrular */
+    async function restoreSession() {
+        clientId = clientId || getClientId();
+        if (!token) { try { token = sessionStorage.getItem(TOKEN_KEY) || C.token; } catch (e) { token = C.token; } }
+        if (!token) return null;
+        try {
+            user = normalizeUser(await api('GET', '/auth/me'));
+            try { sessionStorage.setItem(TOKEN_KEY, token); } catch (e) { /* yoksay */ }
+            return user;
+        } catch (e) {
+            if (e.status === 401) return null;
+            throw e;
+        }
+    }
+
+    function setToken(t) { token = t || null; }
+
+    async function logout() {
+        try { await syncNow(); } catch (e) { /* çevrimdışı */ }
+        try { await api('POST', '/auth/logout'); } catch (e) { /* yoksay */ }
+        stopPolling();
+        token = null; user = null;
+        try { sessionStorage.removeItem(TOKEN_KEY); localStorage.removeItem(CACHE_KEY); } catch (e) { /* yoksay */ }
+    }
+
+    // ======================================================================
+    // Önbellek (çevrimdışı dayanıklılık)
+    // ======================================================================
+    function serializeShadow() {
+        const o = {};
+        Object.entries(shadow).forEach(([k, m]) => { o[k] = [...m.entries()]; });
+        return o;
+    }
+    function persist() {
+        clearTimeout(cacheTimer);
+        cacheTimer = setTimeout(() => {
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ v: 1, user: user && user.username, cursor, state: S(), shadow: serializeShadow(), at: new Date().toISOString() }));
+            } catch (e) { /* kota dolu: önbelleksiz devam */ }
+        }, 300);
+    }
+    function readCache() {
+        try {
+            const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+            if (!c || c.v !== 1 || !user || c.user !== user.username) return null;
+            return c;
+        } catch (e) { return null; }
+    }
+
+    // ======================================================================
+    // Veri yükleme
+    // ======================================================================
+    function shadowFromState() {
+        shadow = {};
+        const recs = records(S());
+        Object.entries(recs).forEach(([name, m]) => {
+            shadow[name] = new Map();
+            m.forEach((r, k) => shadow[name].set(k, JSON.stringify(r)));
+        });
+    }
+
+    async function loadSnapshot() {
+        const snap = await api('GET', '/mrp/snapshot');
+        const st = MRP.store.emptyState();
+        Object.entries(snap.collections || {}).forEach(([name, list]) => {
+            const def = COLLECTIONS[name];
+            if (!def) return;
+            (list || []).forEach((r) => {
+                const key = def.kind === 'array' ? String(keyOf(def, r)) : def.kind === 'map' ? r.kod : def.kind === 'raw' ? r[def.keyName] : def.kind === 'settings' ? 'main' : def.keyVal;
+                applyRecord(st, name, key, r);
+            });
+        });
+        MRP.store.setState(st);
+        cursor = snap.cursor || 0;
+        shadowFromState();
+        persist();
+    }
+
+    /** Oturum açıldıktan sonra: önbellek + bekleyenleri gönder + yenileri çek, yoksa tam yükleme */
+    async function loadData() {
+        const cache = readCache();
+        if (cache) {
+            MRP.store.setState(Object.assign(MRP.store.emptyState(), cache.state));
+            cursor = cache.cursor || 0;
+            shadow = {};
+            Object.entries(cache.shadow || {}).forEach(([k, entries]) => { shadow[k] = new Map(entries); });
+            try {
+                await syncNow();
+                await pullNow({ silent: true });
+            } catch (e) {
+                if (e.status === 410) await loadSnapshot();
+                else if (e.status !== 0) throw e;
+                else setStatus({ state: 'offline', error: e.message });
+            }
+        } else {
+            await loadSnapshot();
+        }
+        await ensureSequences().catch(() => { /* çevrimdışı: geçici numara kullanılır */ });
+        startPolling();
+        if (status.state !== 'offline') setStatus({ state: 'synced', pending: diff().length });
+    }
+
+    // ======================================================================
+    // Gönderme (değişiklik seti)
+    // ======================================================================
+    function diff() {
+        const cur = records(S());
+        const changes = [];
+        Object.entries(cur).forEach(([name, m]) => {
+            const sh = shadow[name] || new Map();
+            m.forEach((rec, key) => {
+                const json = JSON.stringify(rec);
+                if (sh.get(key) !== json) changes.push({ collection: name, op: 'upsert', key, data: rec, json });
+            });
+            sh.forEach((_, key) => { if (!m.has(key)) changes.push({ collection: name, op: 'delete', key }); });
+        });
+        return changes;
+    }
+
+    function scheduleSync() {
+        if (!user) return;
+        persist();
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => { syncNow().catch(() => { /* durum çubuğunda gösterilir */ }); }, C.syncDelay);
+        setStatus({ state: status.state === 'offline' ? 'offline' : 'pending', pending: diff().length });
+    }
+
+    async function syncNow() {
+        if (syncing) return syncing;
+        if (!token) return null;
+        const changes = diff();
+        if (!changes.length) { setStatus({ state: 'synced', pending: 0, lastSync: new Date().toISOString(), error: null }); return null; }
+        setStatus({ state: 'syncing', pending: changes.length });
+        syncing = (async () => {
+            try {
+                const res = await api('POST', '/mrp/sync', {
+                    clientId, baseCursor: cursor,
+                    changes: changes.map(({ collection, op, key, data }) => ({ collection, op, key, data }))
+                });
+                const rejected = new Map((res.rejected || []).map((r) => [`${r.collection}|${r.key}`, r]));
+                let touched = false;
+                changes.forEach((c) => {
+                    const sh = shadow[c.collection] = shadow[c.collection] || new Map();
+                    const rj = rejected.get(`${c.collection}|${c.key}`);
+                    if (rj) {
+                        applyRecord(S(), c.collection, c.key, rj.current ?? null);
+                        if (rj.current == null) sh.delete(c.key); else sh.set(c.key, JSON.stringify(rj.current));
+                        touched = true;
+                    } else if (c.op === 'delete') sh.delete(c.key);
+                    else sh.set(c.key, c.json);
+                });
+                if (rejected.size) {
+                    const first = [...rejected.values()][0];
+                    MRP.UI.toast(`ERP ${rejected.size} değişikliği reddetti`, `${first.collection}/${first.key}: ${first.reason}`, 'warn', 8000);
+                }
+                if (touched) { MRP.model.invalidate(); MRP.app.render(); }
+                if (MRP.embed) {
+                    const sent = changes.filter((c) => !rejected.has(`${c.collection}|${c.key}`));
+                    MRP.embed.emit('sync', { direction: 'out', changes: sent.map(({ collection, op, key }) => ({ collection, op, key })), rejected: [...rejected.values()].map(({ collection, key, reason }) => ({ collection, key, reason })) });
+                }
+                retryDelay = 5000;
+                persist();
+                setStatus({ state: 'synced', pending: diff().length, lastSync: new Date().toISOString(), error: null });
+                return res;
+            } catch (e) {
+                if (e.status === 0) {
+                    setStatus({ state: 'offline', error: e.message });
+                    clearTimeout(syncTimer);
+                    syncTimer = setTimeout(() => { syncNow().catch(() => {}); }, retryDelay);
+                    retryDelay = Math.min(60000, retryDelay * 2);
+                } else if (e.status !== 401) {
+                    setStatus({ state: 'error', error: e.message });
+                }
+                throw e;
+            } finally {
+                syncing = null;
+            }
+        })();
+        return syncing;
+    }
+
+    // ======================================================================
+    // Çekme (ERP ve diğer kullanıcıların değişiklikleri)
+    // ======================================================================
+    async function pullNow({ silent = false } = {}) {
+        if (!token) return 0;
+        const res = await api('GET', `/mrp/changes?since=${cursor}`);
+        const list = res.changes || [];
+        list.forEach((c) => {
+            applyRecord(S(), c.collection, String(c.key), c.op === 'delete' ? null : c.data);
+            const sh = shadow[c.collection] = shadow[c.collection] || new Map();
+            if (c.op === 'delete') sh.delete(String(c.key)); else sh.set(String(c.key), JSON.stringify(c.data));
+        });
+        cursor = res.cursor ?? cursor;
+        if (list.length) {
+            MRP.model.invalidate();
+            persist();
+            if (MRP.app && MRP.app.currentView()) MRP.app.render();
+            if (!silent) MRP.UI.toast('ERP\'den güncelleme', `${list.length} kayıt güncellendi`, 'info', 3000);
+            if (MRP.embed) MRP.embed.emit('sync', { direction: 'in', changes: list.map(({ collection, op, key }) => ({ collection, op, key })) });
+        }
+        return list.length;
+    }
+
+    async function tick() {
+        try {
+            await syncNow();
+            await pullNow();
+            if (status.state !== 'synced') setStatus({ state: 'synced', error: null });
+        } catch (e) {
+            if (e.status === 410) { await loadSnapshot(); MRP.model.invalidate(); MRP.app.render(); }
+        }
+    }
+    function startPolling() {
+        stopPolling();
+        if (C.pollInterval > 0) pollTimer = setInterval(tick, C.pollInterval);
+    }
+    function stopPolling() { clearInterval(pollTimer); pollTimer = null; }
+
+    // ======================================================================
+    // Belge numaraları (ERP'den blok hâlinde)
+    // ======================================================================
+    async function ensureSequences(prefixes = SEQ_PREFIXES) {
+        const st = S();
+        st.seqBlocks = st.seqBlocks || {};
+        const year = new Date().getFullYear();
+        const need = prefixes.filter((p) => { const b = st.seqBlocks[`${p}-${year}`]; return !b || b.end - b.next < 10; });
+        if (!need.length) return;
+        const res = await api('POST', '/mrp/sequences', { prefixes: need, year, count: SEQ_BLOCK });
+        Object.entries(res.blocks || {}).forEach(([key, b]) => { st.seqBlocks[key] = { next: b.from, end: b.to }; });
+        persist();
+    }
+
+    MRP.backend = {
+        COLLECTIONS, records, applyRecord, ApiError,
+        login, logout, restoreSession, setToken, loadData, loadSnapshot,
+        syncNow, pullNow, scheduleSync, persist, ensureSequences,
+        pendingCount: () => (user ? diff().length : 0),
+        status: () => ({ ...status }),
+        onStatus: (fn) => { listeners.add(fn); return () => listeners.delete(fn); },
+        user: () => user
+    };
+})(window.MRP);
+</script>
+<script>
+/* assets/js/embed.js */
+/* ==========================================================================
+   MRP Pro — Gömülü çalışma köprüsü (config.embed = true)
+   --------------------------------------------------------------------------
+   ERP portalı MRP Pro'yu bir iframe içinde açar ve window.postMessage ile
+   konuşur. Yalnızca config.parentOrigin'den (varsayılan: aynı origin) gelen
+   mesajlar kabul edilir. Üst sayfa tarafı için: integration/embed-sdk.js
+
+   Üst sayfa → MRP Pro   { target: 'mrp-pro', type, ... }
+     init      { token?, theme?, view?, hideNav? }   oturum ve başlangıç ayarı
+     token     { token }                            süresi dolan oturumu yenile
+     navigate  { view }                             ekrana git (ör. 'mrp', 'stock')
+     theme     { theme: 'light' | 'dark' }
+     refresh   {}                                   ERP'den hemen veri çek
+     logout    {}
+
+   MRP Pro → Üst sayfa   { source: 'mrp-pro', type, ... }
+     loaded        sayfa yüklendi, 'init' bekleniyor
+     ready         { user, view }                  uygulama kullanıma hazır
+     route         { view }                        ekran değişti
+     sync          { direction: 'in'|'out', changes, rejected? }
+     auth-expired  {}                              yeni token gerekiyor
+     error         { message }
+   ========================================================================== */
+(function (MRP) {
+    'use strict';
+    const C = MRP.config;
+    const noop = { init() {}, emit() {}, active: false };
+    if (!C.embed || window.parent === window) { MRP.embed = noop; return; }
+
+    const parentOrigin = C.parentOrigin || location.origin;
+    let initResolve;
+    const initReceived = new Promise((r) => { initResolve = r; });
+
+    function emit(type, payload = {}) {
+        try { window.parent.postMessage({ source: 'mrp-pro', type, ...payload }, parentOrigin); } catch (e) { /* yoksay */ }
+    }
+
+    function applyUi(o) {
+        if (o.theme === 'light' || o.theme === 'dark') MRP.app.setTheme(o.theme);
+        if (o.hideNav != null) document.body.classList.toggle('no-nav', !!o.hideNav);
+        if (o.view) location.hash = '#/' + String(o.view).replace(/[^a-z]/gi, '');
+    }
+
+    async function onMessage(e) {
+        if (e.origin !== parentOrigin || e.source !== window.parent) return;
+        const m = e.data;
+        if (!m || m.target !== 'mrp-pro' || typeof m.type !== 'string') return;
+        try {
+            switch (m.type) {
+                case 'init':
+                    applyUi(m);
+                    initResolve(m);
+                    break;
+                case 'token':
+                    if (C.erp && m.token) { MRP.backend.setToken(m.token); await MRP.app.resumeErp(); }
+                    break;
+                case 'navigate': applyUi({ view: m.view }); break;
+                case 'theme': applyUi({ theme: m.theme }); break;
+                case 'refresh': if (C.erp) { await MRP.backend.syncNow(); await MRP.backend.pullNow(); } break;
+                case 'logout': await MRP.app.logout(true); break;
+                default: break;
+            }
+        } catch (err) {
+            emit('error', { message: err.message });
+        }
+    }
+
+    MRP.embed = {
+        active: true,
+        emit,
+        /** Dinlemeyi başlatır; üst sayfanın 'init' mesajını en fazla timeout ms bekler */
+        init(timeout = 4000) {
+            window.addEventListener('message', onMessage);
+            document.body.classList.add('embedded');
+            if (C.hideNav) document.body.classList.add('no-nav');
+            window.addEventListener('hashchange', () => emit('route', { view: location.hash.replace(/^#\/?/, '') || 'dashboard' }));
+            emit('loaded', { version: 3, mode: C.mode });
+            return Promise.race([initReceived, new Promise((r) => setTimeout(() => r(null), timeout))]);
+        }
+    };
+})(window.MRP);
+</script>
+<script>
 /* assets/js/app.js */
 /* ==========================================================================
    MRP Pro — Uygulama kabuğu: giriş, yönlendirme (hash router), menü,
@@ -2119,31 +2763,95 @@ window.MRP = window.MRP || {};
     }
 
     // ---------------- Giriş ----------------
+    const C = MRP.config;
     function showLogin() {
+        U.$('#boot').hidden = true;
         U.$('#app').hidden = true;
         U.$('#login').hidden = false;
         U.$('#loginUser').focus();
     }
-    function doLogin(e) {
+    function showBoot(msg, retry = false) {
+        U.$('#login').hidden = true;
+        U.$('#app').hidden = true;
+        U.$('#boot').hidden = false;
+        U.$('#bootMsg').textContent = msg;
+        U.$('#bootRetry').hidden = !retry;
+    }
+    function loginError(msg) {
+        const err = U.$('#loginError');
+        err.textContent = msg;
+        err.classList.remove('show'); void err.offsetWidth; err.classList.add('show');
+        U.$('#loginPass').value = '';
+        U.$('#loginPass').focus();
+    }
+    async function doLogin(e) {
         if (e) e.preventDefault();
         const u = U.$('#loginUser').value.trim();
         const p = U.$('#loginPass').value;
+        if (C.erp) {
+            const btn = U.$('#loginForm button[type=submit]');
+            btn.disabled = true;
+            try {
+                const user = await MRP.backend.login(u, p);
+                U.$('#loginError').classList.remove('show');
+                U.$('#loginPass').value = '';
+                await enterErp(user);
+            } catch (err) {
+                loginError(err.status === 401 ? 'Kullanıcı adı veya şifre hatalı.' : `ERP'ye bağlanılamadı: ${err.message}`);
+            } finally { btn.disabled = false; }
+            return;
+        }
         if (A.login(u, p)) {
             U.$('#loginError').classList.remove('show');
             U.$('#loginPass').value = '';
             MRP.store.audit('Oturum açıldı', u);
             MRP.store.save();
             startApp();
-        } else {
-            const err = U.$('#loginError');
-            err.classList.remove('show'); void err.offsetWidth; err.classList.add('show');
-            U.$('#loginPass').value = '';
-            U.$('#loginPass').focus();
-        }
+        } else loginError('Kullanıcı adı veya şifre hatalı.');
     }
-    async function doLogout() {
-        if (!(await UI.confirm('Oturumu kapatmak istediğinize emin misiniz?', { title: 'Çıkış', okLabel: 'Çıkış Yap' }))) return;
-        MRP.store.audit('Oturum kapatıldı', A.current().username);
+
+    /** ERP oturumu doğrulandıktan sonra veriyi yükler ve uygulamayı açar */
+    async function enterErp(user) {
+        A.setUser(user);
+        showBoot('Veriler ERP\'den yükleniyor…');
+        try {
+            await MRP.backend.loadData();
+        } catch (err) {
+            showBoot(`ERP verileri yüklenemedi: ${err.message}`, true);
+            MRP.embed.emit('error', { message: err.message });
+            return;
+        }
+        MRP.model.init();
+        MRP.store.audit('Oturum açıldı', user.username);
+        MRP.store.save();
+        startApp();
+    }
+
+    /** Kayıtlı/üst uygulamadan gelen token ile oturumu sürdürür */
+    async function resumeErp() {
+        showBoot('ERP\'ye bağlanılıyor…');
+        let user = null;
+        try { user = await MRP.backend.restoreSession(); } catch (err) { return showBoot(`ERP'ye bağlanılamadı: ${err.message}`, true); }
+        if (user) return enterErp(user);
+        if (C.embed && MRP.embed.active) { MRP.embed.emit('auth-expired', {}); return showBoot('Üst uygulamadan oturum bekleniyor…'); }
+        showLogin();
+    }
+
+    async function doLogout(skipConfirm) {
+        if (skipConfirm !== true) {
+            const pending = C.erp ? MRP.backend.pendingCount() : 0;
+            const msg = pending ? `${pending} değişiklik henüz ERP'ye gönderilemedi. Çıkış yapılırsa önce gönderilmeye çalışılacak; başarısız olursa kaybolur. Devam edilsin mi?` : 'Oturumu kapatmak istediğinize emin misiniz?';
+            if (!(await UI.confirm(msg, { title: 'Çıkış', okLabel: 'Çıkış Yap', danger: !!pending }))) return;
+        }
+        MRP.store.audit('Oturum kapatıldı', A.current() ? A.current().username : '');
+        if (C.erp) {
+            MRP.store.save();
+            await MRP.backend.logout();
+            A.logout();
+            location.hash = '';
+            location.reload();
+            return;
+        }
         MRP.store.save();
         A.logout();
         location.hash = '';
@@ -2152,6 +2860,7 @@ window.MRP = window.MRP || {};
 
     function startApp() {
         const u = A.current();
+        U.$('#boot').hidden = true;
         U.$('#login').hidden = true;
         U.$('#app').hidden = false;
         U.$('#userAvatar').textContent = u.avatar;
@@ -2159,6 +2868,36 @@ window.MRP = window.MRP || {};
         U.$('#userName').textContent = u.name;
         U.$('#userRole').textContent = u.roleName;
         route();
+        MRP.embed.emit('ready', { user: { username: u.username, name: u.name, role: u.role }, view: currentView });
+    }
+
+    // ---------------- ERP senkron göstergesi ----------------
+    function renderSync(st) {
+        const el = U.$('#syncStatus');
+        if (!el) return;
+        const map = {
+            synced: ['ok', 'ERP ile senkron', st.lastSync ? `Son gönderim: ${U.dateTime(st.lastSync)}` : ''],
+            pending: ['wait', `${st.pending} değişiklik bekliyor`, 'Kısa süre içinde gönderilecek'],
+            syncing: ['wait', 'Gönderiliyor…', `${st.pending} değişiklik`],
+            offline: ['bad', 'Çevrimdışı', `${st.pending || ''} değişiklik bağlantı gelince gönderilecek`.trim()],
+            error: ['bad', 'Senkron hatası', st.error || ''],
+            auth: ['bad', 'Oturum gerekli', 'Yeniden giriş yapın'],
+            idle: ['wait', 'ERP', '']
+        };
+        const [cls, label, title] = map[st.state] || map.idle;
+        el.hidden = false;
+        el.className = `sync-chip ${cls}`;
+        el.title = title + (title ? ' · ' : '') + 'Tıklayın: şimdi senkronla';
+        el.querySelector('span').textContent = label;
+    }
+    async function syncClick() {
+        if (!C.erp) return;
+        if (MRP.backend.status().state === 'auth') return resumeErp();
+        try {
+            await MRP.backend.syncNow();
+            const n = await MRP.backend.pullNow({ silent: true });
+            UI.toast('ERP ile senkronlandı', n ? `${n} kayıt güncellendi` : 'Yeni değişiklik yok', 'success', 2500);
+        } catch (err) { UI.toast('Senkronlanamadı', err.message, 'error'); }
     }
 
     // ---------------- Menü ----------------
@@ -2241,7 +2980,7 @@ window.MRP = window.MRP || {};
 
     // ---------------- Genel eylemler ----------------
     Object.assign(MRP.actions, {
-        toggleTheme, logout: doLogout,
+        toggleTheme, logout: doLogout, syncNow: syncClick, bootRetry: () => resumeErp(),
         openSidebar, closeSidebar,
         toggleNotif: () => togglePopover('notifPop'),
         toggleUserMenu: () => togglePopover('userPop'),
@@ -2288,20 +3027,41 @@ window.MRP = window.MRP || {};
     });
 
     // ---------------- Başlangıç ----------------
-    MRP.app = { render, commit, route, currentView: () => currentView };
+    function setTheme(t) {
+        try { localStorage.setItem('mrppro.theme', t); } catch (e) { /* yoksay */ }
+        applyTheme(t);
+        if (currentView) render();
+    }
+
+    MRP.app = { render, commit, route, setTheme, resumeErp, logout: doLogout, currentView: () => currentView };
 
     window.addEventListener('hashchange', route);
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
         let theme = 'dark';
         try { theme = localStorage.getItem('mrppro.theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'); } catch (e) { /* yoksay */ }
         applyTheme(theme);
         MRP.store.load();
         MRP.model.init();
         U.$('#loginForm').addEventListener('submit', doLogin);
-        U.$('#demoAccounts').innerHTML = Object.values(A.USERS).map((u) => `
-            <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.password)}">
-                <span class="r">${U.esc(u.roleName)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.password)}</span></button>`).join('');
-        if (A.restore()) startApp(); else showLogin();
+
+        if (!C.erp) {
+            U.$('#demoAccounts').innerHTML = Object.values(A.USERS).map((u) => `
+                <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.password)}">
+                    <span class="r">${U.esc(u.roleName)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.password)}</span></button>`).join('');
+        } else {
+            U.$('#loginDemo').hidden = true;
+            U.$('#loginErpNote').hidden = false;
+            MRP.backend.onStatus(renderSync);
+        }
+
+        // Gömülü modda üst sayfanın başlangıç mesajını bekle (tema, ekran, oturum anahtarı)
+        if (MRP.embed.active) {
+            const init = await MRP.embed.init();
+            if (init && init.token && C.erp) MRP.backend.setToken(init.token);
+        }
+
+        if (!C.erp) { if (A.restore()) startApp(); else showLogin(); return; }
+        await resumeErp();
     });
 })(window.MRP);
 </script>
@@ -2561,8 +3321,8 @@ window.MRP = window.MRP || {};
             const rows = pageItems.map((p) => {
                 const bomCost = M.materialCost(p.kod);
                 const v = variance(p);
-                return `<tr class="${p.custom ? 'r-new' : ''}">
-                    <td>${H.productLink(p.kod)} ${p.custom ? '<span class="badge badge-green plain">ÖZEL</span>' : ''}</td>
+                return `<tr class="${p.custom && !MRP.config.erp ? 'r-new' : ''}">
+                    <td>${H.productLink(p.kod)} ${p.custom && !MRP.config.erp ? '<span class="badge badge-green plain">ÖZEL</span>' : ''}</td>
                     <td class="strong">${esc(p.ad)}</td>
                     <td class="num">${M.bom(p.kod).length}</td>
                     <td class="num">${U.num(p.toplam)}</td>
@@ -3023,7 +3783,7 @@ window.MRP = window.MRP || {};
                 <section class="card"><div class="table-wrap"><table>
                     <thead><tr><th>Kod</th><th>Malzeme</th><th>Tür</th><th>Tedarik</th><th class="num">Birim Maliyet</th><th class="num">LT (gün)</th>
                         <th class="num">Emniyet Stoğu</th><th>Parti Politikası</th><th class="num">Stok</th><th>Durum</th><th></th></tr></thead>
-                    <tbody>${list.map((i) => `<tr class="${S().customItems[i.kod] ? 'r-new' : ''}">
+                    <tbody>${list.map((i) => `<tr class="${S().customItems[i.kod] && !MRP.config.erp ? 'r-new' : ''}">
                         <td>${H.itemLink(i.kod)}</td><td class="strong">${esc(i.ad)}</td><td><span class="badge badge-gray plain">${esc(i.tur)}</span></td>
                         <td>${esc(M.PROCUREMENT[i.procurement])}</td>
                         <td class="num">${i.procurement === 'make' ? U.cur(lineUnit(i.kod)) : esc(M.fmtMoney(i.price, i.currency))} <span class="muted">/${esc(i.unit)}</span></td>
@@ -5703,7 +6463,7 @@ window.MRP = window.MRP || {};
                 }
             }
 
-            if (MRP.auth.can('resetData')) {
+            if (MRP.auth.can('resetData') && !MRP.config.erp) {
                 html += '<div style="height:16px;"></div>' + H.card('Yedekten geri yükle', 'Raporlar ekranından alınan JSON yedeği', `<div class="card-body"><label class="btn btn-secondary" style="cursor:pointer;">${MRP.icon('refresh')} Yedek dosyası seç (.json)<input type="file" accept=".json" hidden data-change="impRestore"></label>
                     <span class="muted" style="font-size:.8em;margin-left:8px;">Mevcut tüm veriler yedektekilerle değiştirilir.</span></div>`);
             }
@@ -5785,7 +6545,7 @@ window.MRP = window.MRP || {};
                 <div style="display:flex;gap:10px;align-items:center;">${MRP.icon(r.icon)}<h2 style="font-size:.98em;">${esc(r.title)}</h2></div>
                 <p class="muted" style="font-size:.85em;flex:1;">${esc(r.desc)}</p>
                 <button class="btn btn-secondary" data-act="${r.id}">${MRP.icon('download')} İndir</button></section>`).join('')}</div>`;
-            if (MRP.auth.can('resetData')) {
+            if (MRP.auth.can('resetData') && !MRP.config.erp) {
                 html += `<div style="height:20px;"></div>${H.card('Veri yönetimi', 'Yalnızca yönetici', `<div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                     <p class="muted" style="flex:1;min-width:240px;font-size:.85em;">Tüm hareketler, talepler, siparişler, iş emirleri ve özel ürünler silinir; demo veriler yeniden yüklenir. Bu işlem geri alınamaz.</p>
                     <button class="btn btn-secondary" data-act="backupJson">${MRP.icon('download')} Yedek al (JSON)</button>

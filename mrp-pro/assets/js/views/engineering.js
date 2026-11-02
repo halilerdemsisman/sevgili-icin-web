@@ -36,8 +36,8 @@
             const rows = pageItems.map((p) => {
                 const bomCost = M.materialCost(p.kod);
                 const v = variance(p);
-                return `<tr class="${p.custom ? 'r-new' : ''}">
-                    <td>${H.productLink(p.kod)} ${p.custom ? '<span class="badge badge-green plain">ÖZEL</span>' : ''}</td>
+                return `<tr class="${p.custom && !MRP.config.erp ? 'r-new' : ''}">
+                    <td>${H.productLink(p.kod)} ${p.custom && !MRP.config.erp ? '<span class="badge badge-green plain">ÖZEL</span>' : ''}</td>
                     <td class="strong">${esc(p.ad)}</td>
                     <td class="num">${M.bom(p.kod).length}</td>
                     <td class="num">${U.num(p.toplam)}</td>
@@ -498,7 +498,7 @@
                 <section class="card"><div class="table-wrap"><table>
                     <thead><tr><th>Kod</th><th>Malzeme</th><th>Tür</th><th>Tedarik</th><th class="num">Birim Maliyet</th><th class="num">LT (gün)</th>
                         <th class="num">Emniyet Stoğu</th><th>Parti Politikası</th><th class="num">Stok</th><th>Durum</th><th></th></tr></thead>
-                    <tbody>${list.map((i) => `<tr class="${S().customItems[i.kod] ? 'r-new' : ''}">
+                    <tbody>${list.map((i) => `<tr class="${S().customItems[i.kod] && !MRP.config.erp ? 'r-new' : ''}">
                         <td>${H.itemLink(i.kod)}</td><td class="strong">${esc(i.ad)}</td><td><span class="badge badge-gray plain">${esc(i.tur)}</span></td>
                         <td>${esc(M.PROCUREMENT[i.procurement])}</td>
                         <td class="num">${i.procurement === 'make' ? U.cur(lineUnit(i.kod)) : esc(M.fmtMoney(i.price, i.currency))} <span class="muted">/${esc(i.unit)}</span></td>

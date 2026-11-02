@@ -418,3 +418,20 @@ td.code { color: #1d4ed8; }
 
 /* Onay kutuları alan genişliğine yayılmasın */
 .field input[type="checkbox"], .check-chip input[type="checkbox"] { width: auto; flex-shrink: 0; }
+
+/* ---------- ERP bağlantısı ---------- */
+.avatar { background: linear-gradient(135deg, #64748b, #475569); }
+.sync-chip { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border-radius: 999px; border: 1px solid var(--border-strong); background: var(--bg-elev); color: var(--text-2); font-size: .78em; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.sync-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+.sync-chip.ok i { background: var(--green); }
+.sync-chip.wait i { background: var(--amber); animation: pulse 1.2s infinite; }
+.sync-chip.bad { border-color: var(--red); color: var(--red); }
+.sync-chip.bad i { background: var(--red); }
+@keyframes pulse { 50% { opacity: .35; } }
+.boot-spinner { width: 34px; height: 34px; margin: 6px auto 18px; border-radius: 50%; border: 3px solid var(--border-strong); border-top-color: var(--accent); animation: spin .9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 720px) { .sync-chip span { display: none; } }
+
+/* ---------- Gömülü mod ---------- */
+body.embedded .sb-foot, body.embedded .theme-fab { display: none; }
+body.no-nav .sidebar, body.no-nav .sb-backdrop, body.no-nav .menu-btn { display: none !important; }

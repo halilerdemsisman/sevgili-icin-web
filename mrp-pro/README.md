@@ -17,6 +17,17 @@ python3 build-single.py
 > Grafik, Excel ve PDF kütüphaneleri, yazı tipleri ve canlı döviz kuru internetten yüklenir.
 > Bağlantı yoksa uygulama çalışmaya devam eder; yalnızca bu özellikler uyarı verir (CSV içe aktarma ve elle kur girişi çevrimdışı da çalışır).
 
+## ERP entegrasyonu
+
+MRP Pro, kendi ERP'nizin bir modülü olarak çalışabilir (`mode: 'erp'`): kullanıcılar, yetkiler ve
+ana veri ERP'den gelir; tüm işlemler REST API ile ERP'ye senkronlanır; ERP portalına iframe ile gömülür.
+Sözleşme, veritabanı şeması, gömme SDK'sı ve çalışan örnek ERP sunucusu için:
+**[integration/README.md](integration/README.md)**
+
+```bash
+node mrp-pro/integration/mock-erp/server.mjs   # → http://localhost:8787
+```
+
 ## Modüller
 
 | Grup | Ekran | İçerik |
@@ -73,9 +84,9 @@ Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartlar�
 | Satın Alma Uzmanı | `satinalma` | `satin123` | Onay limiti 10.000 ₺, fiyat listesi, mal kabul |
 | Satın Alma Müdürü | `satinalma_muduru` | `mudur123` | Onay limiti 500.000 ₺, maliyet düzenleme, denetim kaydı |
 
-> **Önemli:** Bu bir istemci tarafı uygulamadır. Kimlik doğrulama tarayıcıda yapılır ve veriler
-> `localStorage`'da tutulur. Birden fazla kişinin aynı veriyle çalışması için kimlik doğrulama,
-> yetkilendirme ve veri saklama bir sunucu/veritabanı katmanına taşınmalıdır.
+> **Önemli:** Bağımsız modda kimlik doğrulama tarayıcıda yapılır ve veriler `localStorage`'da tutulur.
+> Çok kullanıcılı gerçek kullanım için ERP modunu kullanın: kimlik doğrulama, yetkilendirme ve veri
+> saklama ERP sunucusuna geçer (bkz. integration/README.md).
 > Önceki sürümün (v2) verileri ilk açılışta otomatik olarak yeni yapıya taşınır.
 
 ## Dosya yapısı
@@ -84,15 +95,19 @@ Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartlar�
 mrp-pro/
 ├── mrp-pro-tek-dosya.html   # tek dosya sürümü (build-single.py üretir)
 ├── build-single.py          # tek dosya derleyici
+├── integration/             # ERP sözleşmesi (OpenAPI), SQL şeması, gömme SDK'sı, örnek ERP sunucusu
 ├── index.html
 ├── assets/css/app.css
 └── assets/js/
+    ├── config.js       # çalışma modu (standalone / erp), API adresi, gömme ayarları
     ├── utils.js        # biçimlendirme, tarih, güvenli HTML, toast/modal
     ├── data.js         # ürünler, reçeteler, iş merkezleri, rotalar, kurlar, lokasyonlar
     ├── store.js        # kalıcı durum (v3), v2 geçişi, numaralandırma, bildirim, denetim
     ├── auth.js         # roller ve yetkiler
     ├── model.js        # ürün ağacı, döviz/maliyet, lot tabanlı stok, fiyat listesi, performans
     ├── mrp-engine.js   # MRP hesaplaması
+    ├── backend.js      # ERP bağlantısı: oturum, anlık görüntü, değişiklik gönder/çek, numara blokları
+    ├── embed.js        # gömülü mod: üst sayfayla postMessage köprüsü
     ├── app.js          # kabuk, yönlendirme, olay delegasyonu
     └── views/          # ekranlar (dashboard, engineering, costing, planning, capacity,
                         #           purchasing, inventory, analysis, import, system)

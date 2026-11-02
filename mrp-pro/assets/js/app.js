@@ -54,31 +54,95 @@
     }
 
     // ---------------- Giriş ----------------
+    const C = MRP.config;
     function showLogin() {
+        U.$('#boot').hidden = true;
         U.$('#app').hidden = true;
         U.$('#login').hidden = false;
         U.$('#loginUser').focus();
     }
-    function doLogin(e) {
+    function showBoot(msg, retry = false) {
+        U.$('#login').hidden = true;
+        U.$('#app').hidden = true;
+        U.$('#boot').hidden = false;
+        U.$('#bootMsg').textContent = msg;
+        U.$('#bootRetry').hidden = !retry;
+    }
+    function loginError(msg) {
+        const err = U.$('#loginError');
+        err.textContent = msg;
+        err.classList.remove('show'); void err.offsetWidth; err.classList.add('show');
+        U.$('#loginPass').value = '';
+        U.$('#loginPass').focus();
+    }
+    async function doLogin(e) {
         if (e) e.preventDefault();
         const u = U.$('#loginUser').value.trim();
         const p = U.$('#loginPass').value;
+        if (C.erp) {
+            const btn = U.$('#loginForm button[type=submit]');
+            btn.disabled = true;
+            try {
+                const user = await MRP.backend.login(u, p);
+                U.$('#loginError').classList.remove('show');
+                U.$('#loginPass').value = '';
+                await enterErp(user);
+            } catch (err) {
+                loginError(err.status === 401 ? 'Kullanıcı adı veya şifre hatalı.' : `ERP'ye bağlanılamadı: ${err.message}`);
+            } finally { btn.disabled = false; }
+            return;
+        }
         if (A.login(u, p)) {
             U.$('#loginError').classList.remove('show');
             U.$('#loginPass').value = '';
             MRP.store.audit('Oturum açıldı', u);
             MRP.store.save();
             startApp();
-        } else {
-            const err = U.$('#loginError');
-            err.classList.remove('show'); void err.offsetWidth; err.classList.add('show');
-            U.$('#loginPass').value = '';
-            U.$('#loginPass').focus();
-        }
+        } else loginError('Kullanıcı adı veya şifre hatalı.');
     }
-    async function doLogout() {
-        if (!(await UI.confirm('Oturumu kapatmak istediğinize emin misiniz?', { title: 'Çıkış', okLabel: 'Çıkış Yap' }))) return;
-        MRP.store.audit('Oturum kapatıldı', A.current().username);
+
+    /** ERP oturumu doğrulandıktan sonra veriyi yükler ve uygulamayı açar */
+    async function enterErp(user) {
+        A.setUser(user);
+        showBoot('Veriler ERP\'den yükleniyor…');
+        try {
+            await MRP.backend.loadData();
+        } catch (err) {
+            showBoot(`ERP verileri yüklenemedi: ${err.message}`, true);
+            MRP.embed.emit('error', { message: err.message });
+            return;
+        }
+        MRP.model.init();
+        MRP.store.audit('Oturum açıldı', user.username);
+        MRP.store.save();
+        startApp();
+    }
+
+    /** Kayıtlı/üst uygulamadan gelen token ile oturumu sürdürür */
+    async function resumeErp() {
+        showBoot('ERP\'ye bağlanılıyor…');
+        let user = null;
+        try { user = await MRP.backend.restoreSession(); } catch (err) { return showBoot(`ERP'ye bağlanılamadı: ${err.message}`, true); }
+        if (user) return enterErp(user);
+        if (C.embed && MRP.embed.active) { MRP.embed.emit('auth-expired', {}); return showBoot('Üst uygulamadan oturum bekleniyor…'); }
+        showLogin();
+    }
+
+    async function doLogout(skipConfirm) {
+        if (skipConfirm !== true) {
+            const pending = C.erp ? MRP.backend.pendingCount() : 0;
+            const msg = pending ? `${pending} değişiklik henüz ERP'ye gönderilemedi. Çıkış yapılırsa önce gönderilmeye çalışılacak; başarısız olursa kaybolur. Devam edilsin mi?` : 'Oturumu kapatmak istediğinize emin misiniz?';
+            if (!(await UI.confirm(msg, { title: 'Çıkış', okLabel: 'Çıkış Yap', danger: !!pending }))) return;
+        }
+        MRP.store.audit('Oturum kapatıldı', A.current() ? A.current().username : '');
+        if (C.erp) {
+            MRP.store.save();
+            await MRP.backend.logout();
+            A.logout();
+            location.hash = '';
+            location.reload();
+            return;
+        }
         MRP.store.save();
         A.logout();
         location.hash = '';
@@ -87,6 +151,7 @@
 
     function startApp() {
         const u = A.current();
+        U.$('#boot').hidden = true;
         U.$('#login').hidden = true;
         U.$('#app').hidden = false;
         U.$('#userAvatar').textContent = u.avatar;
@@ -94,6 +159,36 @@
         U.$('#userName').textContent = u.name;
         U.$('#userRole').textContent = u.roleName;
         route();
+        MRP.embed.emit('ready', { user: { username: u.username, name: u.name, role: u.role }, view: currentView });
+    }
+
+    // ---------------- ERP senkron göstergesi ----------------
+    function renderSync(st) {
+        const el = U.$('#syncStatus');
+        if (!el) return;
+        const map = {
+            synced: ['ok', 'ERP ile senkron', st.lastSync ? `Son gönderim: ${U.dateTime(st.lastSync)}` : ''],
+            pending: ['wait', `${st.pending} değişiklik bekliyor`, 'Kısa süre içinde gönderilecek'],
+            syncing: ['wait', 'Gönderiliyor…', `${st.pending} değişiklik`],
+            offline: ['bad', 'Çevrimdışı', `${st.pending || ''} değişiklik bağlantı gelince gönderilecek`.trim()],
+            error: ['bad', 'Senkron hatası', st.error || ''],
+            auth: ['bad', 'Oturum gerekli', 'Yeniden giriş yapın'],
+            idle: ['wait', 'ERP', '']
+        };
+        const [cls, label, title] = map[st.state] || map.idle;
+        el.hidden = false;
+        el.className = `sync-chip ${cls}`;
+        el.title = title + (title ? ' · ' : '') + 'Tıklayın: şimdi senkronla';
+        el.querySelector('span').textContent = label;
+    }
+    async function syncClick() {
+        if (!C.erp) return;
+        if (MRP.backend.status().state === 'auth') return resumeErp();
+        try {
+            await MRP.backend.syncNow();
+            const n = await MRP.backend.pullNow({ silent: true });
+            UI.toast('ERP ile senkronlandı', n ? `${n} kayıt güncellendi` : 'Yeni değişiklik yok', 'success', 2500);
+        } catch (err) { UI.toast('Senkronlanamadı', err.message, 'error'); }
     }
 
     // ---------------- Menü ----------------
@@ -176,7 +271,7 @@
 
     // ---------------- Genel eylemler ----------------
     Object.assign(MRP.actions, {
-        toggleTheme, logout: doLogout,
+        toggleTheme, logout: doLogout, syncNow: syncClick, bootRetry: () => resumeErp(),
         openSidebar, closeSidebar,
         toggleNotif: () => togglePopover('notifPop'),
         toggleUserMenu: () => togglePopover('userPop'),
@@ -223,19 +318,40 @@
     });
 
     // ---------------- Başlangıç ----------------
-    MRP.app = { render, commit, route, currentView: () => currentView };
+    function setTheme(t) {
+        try { localStorage.setItem('mrppro.theme', t); } catch (e) { /* yoksay */ }
+        applyTheme(t);
+        if (currentView) render();
+    }
+
+    MRP.app = { render, commit, route, setTheme, resumeErp, logout: doLogout, currentView: () => currentView };
 
     window.addEventListener('hashchange', route);
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
         let theme = 'dark';
         try { theme = localStorage.getItem('mrppro.theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'); } catch (e) { /* yoksay */ }
         applyTheme(theme);
         MRP.store.load();
         MRP.model.init();
         U.$('#loginForm').addEventListener('submit', doLogin);
-        U.$('#demoAccounts').innerHTML = Object.values(A.USERS).map((u) => `
-            <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.password)}">
-                <span class="r">${U.esc(u.roleName)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.password)}</span></button>`).join('');
-        if (A.restore()) startApp(); else showLogin();
+
+        if (!C.erp) {
+            U.$('#demoAccounts').innerHTML = Object.values(A.USERS).map((u) => `
+                <button type="button" class="demo-row" data-act="fillDemo" data-u="${U.esc(u.username)}" data-p="${U.esc(u.password)}">
+                    <span class="r">${U.esc(u.roleName)}</span><span class="c">${U.esc(u.username)} / ${U.esc(u.password)}</span></button>`).join('');
+        } else {
+            U.$('#loginDemo').hidden = true;
+            U.$('#loginErpNote').hidden = false;
+            MRP.backend.onStatus(renderSync);
+        }
+
+        // Gömülü modda üst sayfanın başlangıç mesajını bekle (tema, ekran, oturum anahtarı)
+        if (MRP.embed.active) {
+            const init = await MRP.embed.init();
+            if (init && init.token && C.erp) MRP.backend.setToken(init.token);
+        }
+
+        if (!C.erp) { if (A.restore()) startApp(); else showLogin(); return; }
+        await resumeErp();
     });
 })(window.MRP);

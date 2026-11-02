@@ -17,12 +17,15 @@
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
 
 <!-- Uygulama -->
+<script defer src="assets/js/config.js"></script>
 <script defer src="assets/js/utils.js"></script>
 <script defer src="assets/js/data.js"></script>
 <script defer src="assets/js/store.js"></script>
 <script defer src="assets/js/auth.js"></script>
 <script defer src="assets/js/model.js"></script>
 <script defer src="assets/js/mrp-engine.js"></script>
+<script defer src="assets/js/backend.js"></script>
+<script defer src="assets/js/embed.js"></script>
 <script defer src="assets/js/app.js"></script>
 <script defer src="assets/js/views/common.js"></script>
 <script defer src="assets/js/views/dashboard.js"></script>
@@ -84,11 +87,21 @@
             </div>
             <button class="btn btn-primary" type="submit" style="width:100%;padding:11px;">Giriş Yap</button>
         </form>
-        <div class="login-demo">
+        <div class="login-demo" id="loginDemo">
             <h4>Demo hesaplar — tıklayarak doldurun</h4>
             <div id="demoAccounts"></div>
-            <p class="login-note">Demo sürümüdür; veriler yalnızca bu tarayıcıda saklanır.</p>
+            <p class="login-note">Bağımsız mod: veriler yalnızca bu tarayıcıda saklanır.</p>
         </div>
+        <p class="login-note" id="loginErpNote" hidden>ERP kullanıcı hesabınızla giriş yapın. Veriler ERP sunucusunda saklanır.</p>
+    </div>
+</section>
+
+<!-- ======================= ERP BAĞLANTI EKRANI ======================= -->
+<section id="boot" class="login" hidden>
+    <div class="login-card" style="text-align:center;">
+        <div class="login-title"><h1>MRP Pro</h1><p id="bootMsg">Yükleniyor…</p></div>
+        <div class="boot-spinner" aria-hidden="true"></div>
+        <button class="btn btn-primary" id="bootRetry" data-act="bootRetry" hidden>Tekrar dene</button>
     </div>
 </section>
 
@@ -115,6 +128,7 @@
                 <p id="pageSub"></p>
             </div>
             <div class="top-actions">
+                <button class="sync-chip" id="syncStatus" data-act="syncNow" hidden><i></i><span>ERP</span></button>
                 <button class="btn btn-secondary btn-icon" data-act="scanOpen" title="Barkod / hızlı arama" aria-label="Barkod okut">
                     <svg class="icon" viewBox="0 0 24 24"><path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14"/></svg>
                 </button>

@@ -370,7 +370,7 @@
                 }
             }
 
-            if (MRP.auth.can('resetData')) {
+            if (MRP.auth.can('resetData') && !MRP.config.erp) {
                 html += '<div style="height:16px;"></div>' + H.card('Yedekten geri yükle', 'Raporlar ekranından alınan JSON yedeği', `<div class="card-body"><label class="btn btn-secondary" style="cursor:pointer;">${MRP.icon('refresh')} Yedek dosyası seç (.json)<input type="file" accept=".json" hidden data-change="impRestore"></label>
                     <span class="muted" style="font-size:.8em;margin-left:8px;">Mevcut tüm veriler yedektekilerle değiştirilir.</span></div>`);
             }

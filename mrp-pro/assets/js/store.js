@@ -67,9 +67,23 @@
         return st;
     }
 
+    /** ERP modu için boş durum: ana veri ve işlemler ERP'den yüklenir */
+    function emptyState() {
+        return {
+            version: VERSION, createdAt: new Date().toISOString(),
+            itemOverrides: {}, customItems: {}, productOverrides: {}, customProducts: [], customBoms: {}, routings: {},
+            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [],
+            suppliers: [], priceList: [], workCenters: [],
+            fx: { rates: { ...MRP.data.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] },
+            costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
+            notifications: [], audit: [], seq: {}, seqBlocks: {}
+        };
+    }
+
     let state = null;
 
     function load() {
+        if (MRP.config.erp) { state = emptyState(); return state; }
         try {
             const raw = localStorage.getItem(KEY);
             if (raw) {
@@ -93,6 +107,12 @@
     }
 
     function save() {
+        if (MRP.config.erp) {
+            // ERP modunda geçmiş kırpılmaz (silme olarak senkronlanırdı); kalıcılık ve gönderim backend'de
+            if (state.notifications.length > MAX_NOTIFS) state.notifications = state.notifications.slice(0, MAX_NOTIFS);
+            MRP.backend.scheduleSync();
+            return;
+        }
         try {
             if (state.movements.length > MAX_MOVEMENTS) state.movements = state.movements.slice(-MAX_MOVEMENTS);
             if (state.audit.length > MAX_AUDIT) state.audit = state.audit.slice(-MAX_AUDIT);
@@ -116,13 +136,27 @@
     function nextNo(prefix) {
         const year = new Date().getFullYear();
         const key = `${prefix}-${year}`;
+        if (MRP.config.erp) {
+            // ERP'nin ayırdığı numara bloğundan; blok bitmek üzereyse arka planda yenisi istenir
+            state.seqBlocks = state.seqBlocks || {};
+            const b = state.seqBlocks[key];
+            if (b && b.next <= b.end) {
+                const n = b.next++;
+                if (b.end - b.next < 10) MRP.backend.ensureSequences([prefix]).catch(() => {});
+                return `${key}-${String(n).padStart(4, '0')}`;
+            }
+            MRP.backend.ensureSequences([prefix]).catch(() => {});
+            // Çevrimdışı geçici numara: istemciye özgü, ERP tarafında yeniden numaralandırılabilir
+            state.seq[key + '-T'] = (state.seq[key + '-T'] || 0) + 1;
+            return `${key}-T${Date.now().toString(36).slice(-4).toUpperCase()}${state.seq[key + '-T']}`;
+        }
         state.seq[key] = (state.seq[key] || 0) + 1;
         return `${key}-${String(state.seq[key]).padStart(4, '0')}`;
     }
 
     function audit(action, detail) {
         const u = MRP.auth.current();
-        state.audit.push({ at: new Date().toISOString(), user: u ? u.name : 'sistem', role: u ? u.roleName : '', action, detail });
+        state.audit.push({ id: U.uid('aud'), at: new Date().toISOString(), user: u ? u.name : 'sistem', username: u ? u.username : '', role: u ? u.roleName : '', action, detail });
     }
 
     function notify(type, title, message, roles, link) {
@@ -138,8 +172,10 @@
         save();
     }
 
+    function setState(s) { state = s; }
+
     MRP.store = {
-        load, save, nextNo, audit, notify, reset, restore,
+        load, save, nextNo, audit, notify, reset, restore, emptyState, setState,
         get state() { return state; }
     };
 })(window.MRP);

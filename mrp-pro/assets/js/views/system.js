@@ -23,7 +23,7 @@
                 <div style="display:flex;gap:10px;align-items:center;">${MRP.icon(r.icon)}<h2 style="font-size:.98em;">${esc(r.title)}</h2></div>
                 <p class="muted" style="font-size:.85em;flex:1;">${esc(r.desc)}</p>
                 <button class="btn btn-secondary" data-act="${r.id}">${MRP.icon('download')} İndir</button></section>`).join('')}</div>`;
-            if (MRP.auth.can('resetData')) {
+            if (MRP.auth.can('resetData') && !MRP.config.erp) {
                 html += `<div style="height:20px;"></div>${H.card('Veri yönetimi', 'Yalnızca yönetici', `<div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
                     <p class="muted" style="flex:1;min-width:240px;font-size:.85em;">Tüm hareketler, talepler, siparişler, iş emirleri ve özel ürünler silinir; demo veriler yeniden yüklenir. Bu işlem geri alınamaz.</p>
                     <button class="btn btn-secondary" data-act="backupJson">${MRP.icon('download')} Yedek al (JSON)</button>
