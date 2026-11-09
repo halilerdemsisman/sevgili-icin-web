@@ -97,6 +97,8 @@ Ayrıntılı tanımlar `openapi.yaml`'dadır. Özet:
 - `movements`, `auditLog` değişmezdir (yalnızca ekleme)
 - Lot miktarı negatif olamaz; teslimatı olan sipariş silinemez
 - Onay limiti sunucuda da kontrol edilir (istemciye güvenilmez)
+- Talep yalnızca `approveRequest` yetkisi olan kullanıcı tarafından ve yalnızca bekleyen durumdan onaylanır/reddedilir
+- Talep toplamı kalem tutarlarının toplamına eşit olmalıdır; onaylanmış talebin tutarı sonradan artırılamaz
 
 Kendi kurallarınızı (muhasebe fişi, bütçe kontrolü, stok kilidi…) buraya ekleyin. Reddedilen her değişiklik için `{collection, key, reason, current}` döndürmeniz yeterli.
 

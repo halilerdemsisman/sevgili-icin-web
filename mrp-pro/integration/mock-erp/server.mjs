@@ -79,9 +79,23 @@ function validate(collection, op, key, data, user, db) {
             if (!Array.isArray(data.lines) || !data.lines.length) return 'Siparişte kalem yok';
             if (data.lines.some((l) => !(l.qty > 0) || !(l.price >= 0))) return 'Sipariş kaleminde geçersiz miktar/fiyat';
             break;
-        case 'purchaseRequests':
-            if (data.status === 'approved' && p.approveLimit != null && data.total > p.approveLimit && db.collections.purchaseRequests[key]?.status !== 'approved') return `Onay limitiniz (${p.approveLimit} ₺) aşıldı`;
+        case 'purchaseRequests': {
+            const prev = db.collections.purchaseRequests[key];
+            const lines = Array.isArray(data.lines) ? data.lines : [];
+            if (!lines.length) return 'Talepte kalem yok';
+            if (lines.some((l) => !(l.qty > 0) || !(Number(l.total) >= 0))) return 'Talep kaleminde geçersiz miktar/tutar';
+            const sum = lines.reduce((a, l) => a + Number(l.total), 0);
+            if (!(Math.abs(sum - Number(data.total)) <= Math.max(0.01, sum * 1e-6))) return 'Talep toplamı kalemlerle uyuşmuyor';
+            // Onay/red yalnızca onay yetkisiyle ve bekleyen talepten yapılır (ayrıca onay limiti)
+            const decided = (st) => st === 'approved' || st === 'rejected';
+            if (decided(data.status) && (!prev || prev.status === 'pending')) {
+                if (!p.approveRequest) return 'Talebi onaylama/reddetme yetkiniz yok';
+                if (data.status === 'approved' && p.approveLimit != null && data.total > p.approveLimit) return `Onay limitiniz (${p.approveLimit} ₺) aşıldı`;
+            }
+            // Onaylanmış talebin tutarı onaydan sonra artırılamaz
+            if (prev && prev.status !== 'pending' && Number(data.total) > Number(prev.total) + 0.01) return 'Onaylı talebin tutarı artırılamaz';
             break;
+        }
         case 'items': if (data.price != null && !(data.price >= 0)) return 'Fiyat negatif olamaz'; break;
         case 'demands': if (!(data.qty > 0) || !/^\d{4}-\d{2}-\d{2}$/.test(data.dueDate || '')) return 'Talep miktarı/termini geçersiz'; break;
         default: break;
