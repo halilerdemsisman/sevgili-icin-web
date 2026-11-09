@@ -45,9 +45,10 @@ const COLLECTIONS = {
     lots:             { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock', 'inspectQuality'] },
     movements:        { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock', 'inspectQuality'], appendOnly: true },
     demands:          { key: (r) => r.id,                      perms: ['runMRP'] },
+    salesOrders:      { key: (r) => r.no,                      perms: [], erpOwned: true },   // yalnızca ERP yazar (/erp/sales-orders)
     purchaseRequests: { key: (r) => r.no,                      perms: ['createRequest', 'approveRequest', 'createPO', 'receiveGoods', 'inspectQuality'] },
     purchaseOrders:   { key: (r) => r.no,                      perms: ['createPO', 'receiveGoods', 'inspectQuality'] },
-    workOrders:       { key: (r) => r.no,                      perms: ['manageWO', 'runMRP', 'reportProduction'] },
+    workOrders:       { key: (r) => r.no,                      perms: ['manageWO', 'runMRP'] },
     subcontracts:     { key: (r) => r.no,                      perms: ['transferStock'] },
     inspections:      { key: (r) => r.no,                      perms: ['receiveGoods', 'inspectQuality'] },
     notifications:    { key: (r) => r.id,                      perms: ['*'] },
@@ -65,6 +66,7 @@ function validate(collection, op, key, data, user, db) {
     const def = COLLECTIONS[collection];
     if (!def) return 'Bilinmeyen koleksiyon';
     const p = user.permissions || {};
+    if (def.erpOwned) return 'Satış siparişleri ERP\'de yönetilir; MRP\'den değiştirilemez';
     if (!def.perms.includes('*') && !def.perms.some((x) => p[x])) return 'Bu işlem için yetkiniz yok';
     if (op === 'delete') {
         if (def.appendOnly) return 'Bu kayıtlar silinemez (değişmez kayıt)';
@@ -97,25 +99,6 @@ function validate(collection, op, key, data, user, db) {
             if (prev && prev.status !== 'pending' && Number(data.total) > Number(prev.total) + 0.01) return 'Onaylı talebin tutarı artırılamaz';
             break;
         }
-        case 'workOrders': {
-            const prev = db.collections.workOrders[key];
-            const strip = (w) => { const { ops, history, ...rest } = w || {}; return JSON.stringify(rest); };
-            // Atölye bildirimi yapan (iş emri yönetimi yetkisi olmayan) kullanıcı yalnızca operasyon kayıtlarını değiştirebilir
-            if (!p.manageWO && !p.runMRP) {
-                if (!prev) return 'İş emri açma yetkiniz yok';
-                if (prev.status !== 'released') return 'Yalnızca serbest bırakılmış iş emrine bildirim yapılabilir';
-                if (strip(prev) !== strip(data)) return 'Atölye bildirimi iş emri bilgilerini değiştiremez';
-            }
-            if (Array.isArray(data.ops)) {
-                for (let i = 0; i < data.ops.length; i++) {
-                    const o = data.ops[i];
-                    const input = i === 0 ? data.qty : data.ops[i - 1].good;
-                    if (!(o.good >= 0) || !(o.scrap >= 0)) return `Op ${o.seq}: miktar geçersiz`;
-                    if (o.good + o.scrap > input + 1e-6) return `Op ${o.seq}: sağlam + fire girdiyi (${input}) aşıyor`;
-                }
-            }
-            break;
-        }
         case 'inspections': {
             // Muayene kaydını depo açar (pending); kararı yalnızca kalite verir
             const prev = db.collections.inspections[key];
@@ -142,9 +125,28 @@ function validate(collection, op, key, data, user, db) {
 // Veri deposu (JSON dosyası)
 // ---------------------------------------------------------------------------
 let db;
+/** Satış siparişi iş kuralları (ERP tarafı) */
+function checkSalesOrder(o) {
+    if (!o.customer || !String(o.customer).trim()) return 'Müşteri gerekli';
+    if (!Array.isArray(o.lines) || !o.lines.length) return 'Siparişte satır yok';
+    for (const l of o.lines) {
+        if (!db.collections.products[l.kod]) return `Tanımsız mamul: ${l.kod}`;
+        if (!(l.qty > 0)) return `${l.kod}: miktar geçersiz`;
+        if (!(l.shipped >= 0) || l.shipped > l.qty) return `${l.kod}: sevk miktarı geçersiz`;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(l.dueDate || ''))) return `${l.kod}: termin tarihi gerekli (YYYY-AA-GG)`;
+    }
+    return null;
+}
+/** Planlama ve üretime bildirim (MRP Pro bildirim kutusuna düşer) */
+function notifyPlanning(title, message) {
+    const id = `n_erp_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+    applyChange({ collection: 'notifications', op: 'upsert', key: id, data: { id, type: 'sales', title, message, roles: ['perm:runMRP', 'perm:manageWO'], link: 'sales', readBy: [], at: new Date().toISOString() } }, 'erp', 'erp');
+}
+
 function loadDb() {
     if (!process.env.RESET && fs.existsSync(DATA_FILE)) {
         db = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+        for (const k of Object.keys(COLLECTIONS)) db.collections[k] = db.collections[k] || {};   // sonradan eklenen koleksiyonlar
         return;
     }
     db = { version: API_VERSION, cursor: 0, minCursor: 0, log: [], sequences: {}, users: seedUsers(), collections: seedCollections() };
@@ -291,18 +293,56 @@ async function handleApi(req, res, url) {
 
         // ---- ERP tarafı örnek işlemler: ERP'de oluşan kaydın MRP'ye akışını gösterir ----
         case 'POST /erp/sales-orders': {
+            // ERP'de satış siparişi açıldı → kayıt MRP'ye (salesOrders) ve planlamaya bildirim
             if (!user.permissions.runMRP && user.role !== 'admin') return err(res, 403, 'Yetki yok', req);
             const b = await readBody(req);
-            if (!db.collections.products[b.kod]) return err(res, 422, `Tanımsız mamul: ${b.kod}`, req);
-            const id = `SIP-${1000 + db.cursor + 1}`;
-            const rec = { id, kod: b.kod, qty: Math.max(1, Math.round(Number(b.qty) || 1)), dueDate: b.dueDate, note: b.note || `ERP satış siparişi (${b.customer || 'müşteri'})` };
-            const reason = validate('demands', 'upsert', id, rec, { permissions: { runMRP: true } }, db);
+            const at = new Date().toISOString();
+            const rawLines = Array.isArray(b.lines) ? b.lines : [{ kod: b.kod, qty: b.qty, dueDate: b.dueDate }];
+            const lines = rawLines.map((l, i) => ({ line: i + 1, kod: String(l.kod || '').trim(), qty: Math.round(Number(l.qty) || 0), shipped: 0, dueDate: l.dueDate || b.dueDate }));
+            const reason = checkSalesOrder({ customer: b.customer, lines });
             if (reason) return err(res, 422, reason, req);
-            applyChange({ collection: 'demands', op: 'upsert', key: id, data: rec }, 'erp', user.username);
+            const year = new Date().getFullYear();
+            const seqKey = `SS-${year}`;
+            let no;
+            do { db.sequences[seqKey] = (db.sequences[seqKey] || 0) + 1; no = `${seqKey}-${String(db.sequences[seqKey]).padStart(4, '0')}`; } while (db.collections.salesOrders[no]);
+            const rec = { no, erpRef: b.erpRef || '', customer: String(b.customer).trim(), orderDate: b.orderDate || at.slice(0, 10), status: 'open',
+                note: b.note || '', source: 'erp', receivedAt: at, updatedAt: at, lines };
+            applyChange({ collection: 'salesOrders', op: 'upsert', key: no, data: rec }, 'erp', user.username);
+            notifyPlanning('Yeni satış siparişi', `${no} · ${rec.customer} · ${lines.map((l) => `${l.kod} × ${l.qty}`).join(', ')}`);
             saveDb();
             return send(res, 201, rec, req);
         }
         default: break;
+    }
+    const soMatch = /^PATCH \/erp\/sales-orders\/(.+)$/.exec(route);
+    if (soMatch) {
+        // ERP'de sipariş değişti: miktar / termin, sevkiyat, iptal veya kapanış
+        const no = decodeURIComponent(soMatch[1]);
+        const cur = db.collections.salesOrders[no];
+        if (!cur) return err(res, 404, 'Satış siparişi bulunamadı', req);
+        const b = await readBody(req);
+        const next = JSON.parse(JSON.stringify(cur));
+        for (const f of ['customer', 'erpRef', 'note', 'status']) if (b[f] !== undefined) next[f] = b[f];
+        if (Array.isArray(b.lines)) {
+            b.lines.forEach((u) => {
+                const l = next.lines.find((x) => x.line === u.line);
+                if (!l) next.lines.push({ line: u.line || next.lines.length + 1, kod: u.kod, qty: Math.round(Number(u.qty) || 0), shipped: 0, dueDate: u.dueDate });
+                else for (const f of ['kod', 'qty', 'shipped', 'dueDate']) if (u[f] !== undefined) l[f] = f === 'kod' || f === 'dueDate' ? u[f] : Number(u[f]);
+            });
+        }
+        if (!['open', 'partial', 'closed', 'cancelled'].includes(next.status)) return err(res, 422, 'Geçersiz durum', req);
+        if (next.status === 'open' || next.status === 'partial') {
+            const shipped = next.lines.reduce((a, l) => a + (l.shipped || 0), 0);
+            next.status = next.lines.every((l) => (l.shipped || 0) >= l.qty) ? 'closed' : shipped > 0 ? 'partial' : 'open';
+        }
+        const reason = checkSalesOrder(next);
+        if (reason) return err(res, 422, reason, req);
+        next.updatedAt = new Date().toISOString();
+        applyChange({ collection: 'salesOrders', op: 'upsert', key: no, data: next }, 'erp', user.username);
+        if (next.status !== cur.status && next.status === 'cancelled') notifyPlanning('Satış siparişi iptal edildi', `${no} · ${next.customer}`);
+        else if (JSON.stringify(next.lines.map((l) => [l.kod, l.qty, l.dueDate])) !== JSON.stringify(cur.lines.map((l) => [l.kod, l.qty, l.dueDate]))) notifyPlanning('Satış siparişi değişti', `${no} · ${next.customer}`);
+        saveDb();
+        return send(res, 200, next, req);
     }
     const itemMatch = /^PATCH \/erp\/items\/(.+)$/.exec(route);
     if (itemMatch) {

@@ -40,6 +40,7 @@
         lots:             { kind: 'array', path: 'lots', key: 'id' },
         movements:        { kind: 'array', path: 'movements', key: 'id' },
         demands:          { kind: 'array', path: 'mps', key: 'id' },
+        salesOrders:      { kind: 'array', path: 'salesOrders', key: 'no' },        // ERP'ye ait, salt okunur
         purchaseRequests: { kind: 'array', path: 'requests', key: 'no' },
         purchaseOrders:   { kind: 'array', path: 'pos', key: 'no' },
         workOrders:       { kind: 'array', path: 'workOrders', key: 'no' },

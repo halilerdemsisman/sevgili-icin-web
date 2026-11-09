@@ -18,10 +18,10 @@
             { id: 'costing', label: 'Maliyet & Kur', icon: 'coin' }
         ] },
         { group: 'Planlama', items: [
+            { id: 'sales', label: 'Satış Siparişleri', icon: 'doc', count: () => (MRP.sales ? MRP.sales.newCount() : 0) },
             { id: 'mrp', label: 'MRP Çalıştırma', icon: 'calc', count: () => (MRP.store.state.lastRun ? MRP.store.state.lastRun.summary.critical : 0), alert: true },
             { id: 'capacity', label: 'Kapasite Planlama', icon: 'gauge' },
-            { id: 'workorders', label: 'İş Emirleri', icon: 'factory', count: () => MRP.store.state.workOrders.filter((w) => w.status === 'planned' || w.status === 'released').length },
-            { id: 'shopfloor', label: 'Atölye Takibi', icon: 'play', count: () => (MRP.shopfloor ? MRP.shopfloor.activeCount() : 0) }
+            { id: 'workorders', label: 'İş Emirleri', icon: 'factory', count: () => MRP.store.state.workOrders.filter((w) => w.status === 'planned' || w.status === 'released').length }
         ] },
         { group: 'Satın Alma', items: [
             { id: 'requests', label: 'Satın Alma Talepleri', icon: 'cart', count: () => MRP.store.state.requests.filter((r) => r.status === 'pending').length },

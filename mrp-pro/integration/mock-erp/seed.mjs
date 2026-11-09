@@ -43,7 +43,6 @@ export function seedUsers() {
         ['yonetim', 'yon123', 'Kemal Aydın', 'yonetim'],
         ['planlama', 'plan123', 'Ahmet Yılmaz', 'planlama'],
         ['uretim', 'uret123', 'Hüseyin Çelik', 'uretim'],
-        ['operator', 'op123', 'Mehmet Öztürk', 'operator'],
         ['satinalma', 'satin123', 'Zeynep Kaya', 'satinalma'],
         ['satinalma_muduru', 'mudur123', 'Murat Demir', 'satinalma_muduru'],
         ['depo', 'depo123', 'Emre Koç', 'depo'],
@@ -89,9 +88,15 @@ export function seedCollections() {
     });
 
     c.demands = {
-        'SIP-1001': { id: 'SIP-1001', kod: 'BG.212.A', qty: 40, dueDate: iso(18), note: 'Otel projesi (ERP satış siparişi)' },
-        'SIP-1002': { id: 'SIP-1002', kod: 'BG.06.A', qty: 120, dueDate: iso(14), note: 'Bayi siparişi (ERP satış siparişi)' },
-        'SIP-1003': { id: 'SIP-1003', kod: 'BG.100.A', qty: 60, dueDate: iso(28), note: 'Sezon stoğu' }
+        'MPS-1003': { id: 'MPS-1003', kod: 'BG.100.A', qty: 60, dueDate: iso(28), note: 'Sezon stoğu (tahmin)' }
+    };
+    // ERP'de açılmış satış siparişleri (MRP bunları otomatik talep olarak planlar)
+    const Y = new Date().getFullYear();
+    c.salesOrders = {
+        [`SS-${Y}-0001`]: { no: `SS-${Y}-0001`, erpRef: 'ERP-SO-48211', customer: 'Kıyı Otelcilik A.Ş.', orderDate: iso(-3), status: 'open', note: 'Otel projesi — teras', source: 'erp', receivedAt: now, updatedAt: now,
+            lines: [{ line: 1, kod: 'BG.212.A', qty: 40, shipped: 0, dueDate: iso(18) }] },
+        [`SS-${Y}-0002`]: { no: `SS-${Y}-0002`, erpRef: 'ERP-SO-48230', customer: 'Bodrum Bahçe Bayi', orderDate: iso(-1), status: 'open', note: 'Bayi siparişi', source: 'erp', receivedAt: now, updatedAt: now,
+            lines: [{ line: 1, kod: 'BG.06.A', qty: 120, shipped: 0, dueDate: iso(18 - 4) }] }
     };
     c.settings = { main: { fx: { rates: { ...D.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] }, costing: { overheadPct: 10, includeLabor: true, stdLot: 20 } } };
     for (const k of ['movements', 'purchaseRequests', 'purchaseOrders', 'workOrders', 'subcontracts', 'inspections', 'notifications', 'auditLog', 'mrpRun']) c[k] = {};

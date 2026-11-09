@@ -36,10 +36,10 @@ node mrp-pro/integration/mock-erp/server.mjs   # → http://localhost:8787
 | Mühendislik | Ürün Ağacı | Çok seviyeli ürün ağacı, rota, maliyet kırılımı (malzeme / işçilik / genel gider / döviz payı), kayıtlı maliyetle sapma, yeni ürün |
 | | Malzeme Kartları | Para birimi, tedarik süresi, emniyet stoğu, parti politikası; tedarikçi teklifleri, fiyat geçmişi, lotlar |
 | | **Maliyet & Kur** | Güncel kuru tek tıkla çekme veya elle girme, **kur değişiminin maliyet etkisi önizlemesi**, kur geçmişi, tablodan satır içi fiyat düzenleme, toplu % fiyat güncelleme, genel gider / işçilik / standart parti ayarları |
-| Planlama | MRP Çalıştırma | Ana Üretim Planı, çok seviyeli MRP, planlı sipariş önerileri, istisnalar, zaman fazlı tablo, pegging |
+| Planlama | **Satış Siparişleri** | **ERP'de açılan müşteri siparişleri otomatik gelir** ve sevk bekleyen miktar MRP'ye talep olarak girer; satır bazında karşılama (stoktan / iş emriyle / geç / planlanmadı), MRP'ye yansımamış sipariş uyarısı, planlamaya bildirim |
+| | MRP Çalıştırma | Ana Üretim Planı (tahmin, stok hedefi), çok seviyeli MRP, planlı sipariş önerileri, istisnalar, zaman fazlı tablo, pegging |
 | | **Kapasite Planlama** | İş merkezleri (kapasite, verimlilik, saat ücreti), rota bazlı haftalık yük ısı haritası, aşırı yük tespiti |
-| | İş Emirleri | Malzeme uygunluğu, operasyon süreleri, Gantt, tamamlamada FIFO lot sarfı + mamul girişi (atölye bildirimine göre sağlam miktar) |
-| | **Atölye Takibi** | İş merkezi panosu, operasyon **başlat / duruş / devam / bitir**, sağlam ve **fire** bildirimi (sebepli), canlı süre, **kullanılabilirlik / performans / kalite / OEE**, duruş ve fire sebep analizi, atölye kayıtları |
+| | İş Emirleri | Malzeme uygunluğu, operasyon süreleri, Gantt, tamamlamada FIFO lot sarfı + mamul girişi |
 | Satın Alma | Talepler | Onay limiti, müdür onayına yönlendirme, yorumlar |
 | | Siparişler (PO) | **Teklif karşılaştırma**, fiyat listesinden otomatik fiyat (dövizli → TL), **talebi en uygun tedarikçilere bölme**, lot/lokasyonlu kısmi mal kabul, PDF |
 | | Tedarikçiler | Fiyat listesi yönetimi, **teslimat verisinden otomatik performans puanı** (zamanında teslim + kalite) |
@@ -65,7 +65,7 @@ Standart maliyet = (Malzeme + İşçilik) × (1 + Genel gider %)
 
 ## MRP motoru (`assets/js/mrp-engine.js`)
 
-1. Brüt ihtiyaç = Ana Üretim Planı + açık iş emirlerinin bileşen ihtiyaçları
+1. Brüt ihtiyaç = açık satış siparişlerinin sevk bekleyen miktarı + Ana Üretim Planı (tahmin / stok hedefi) + açık iş emirlerinin bileşen ihtiyaçları
 2. Düşük seviye kodu (LLC) ile ağaç seviye seviye işlenir
 3. Netleştirme: `eldeki (tüm lokasyonlar) − emniyet stoğu + planlı girişler (açık PO, açık talep, açık iş emri)`
 4. Net ihtiyaç parti politikasına göre yuvarlanır, tedarik süresi kadar geriye kaydırılarak salım tarihi bulunur
@@ -77,17 +77,20 @@ Standart maliyet = (Malzeme + İşçilik) × (1 + Genel gider %)
 
 Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartları, ana plan ve fiyat listesi şablonları mevcut verilerle dolu gelir). Sütun başlıkları Türkçe karakter ve büyük/küçük harf duyarsız eşleşir; ERP çıktısındaki yaygın başlıklar (ör. "Stok Kodu", "Malzeme Adı", "Termin Tarihi") tanınır. Sayılar `1.234,56` veya `1234.56`, tarihler `gg.aa.yyyy`, `yyyy-aa-gg` ya da Excel tarih hücresi olabilir. Hatalı satırlar listelenir ve atlanır.
 
-## Atölye takibi akışı
+## Satış siparişi akışı (ERP → MRP)
 
-1. **Serbest bırakma:** İş emri serbest bırakılınca ürün rotası operasyonlara açılır (ör. 10 Kesim → 20 Polisaj → 30 Montaj → 40 Paketleme).
-2. **Pano:** Her iş merkezinde bekleyen / çalışan / duruştaki operasyonlar kart olarak görünür. Bir operasyonun girdisi
-   önceki operasyonun **sağlam** çıktısıdır; önceki operasyon çıktı vermeden sonraki başlatılamaz.
-3. **Bildirim (operatör):** Başlat → ara bildirim (sağlam / fire + sebep) → **Duruş** (Arıza, Malzeme bekleme, Ayar…) → Devam →
-   **Bitir**. Süreler otomatik tutulur, bitirirken unutulan saat düzeltilebilir. Arıza ve malzeme beklemesi üretim şefine bildirilir.
-4. **Tamamlama (üretim şefi):** Son operasyon bitince emir "tamamlanmaya hazır" olur. Tamamlamada stoğa **son operasyonun
-   sağlam miktarı** girer, malzeme emir miktarı kadar sarf edilir; eksik kalan miktarı MRP yeniden planlar.
-5. **Verimlilik:** İş merkezi bazında Kullanılabilirlik = çalışma / (çalışma + duruş), Performans = standart süre / gerçek
-   çalışma, Kalite = sağlam / (sağlam + fire), **OEE** = üçünün çarpımı (performans en fazla %100 sayılır); duruş ve fire Pareto'su.
+1. Sipariş **ERP'de açılır** (müşteri, satırlar: mamul, miktar, termin). ERP kaydı `salesOrders` koleksiyonuna yazar.
+2. MRP Pro birkaç saniye içinde siparişi çeker; **Satış Siparişleri** ekranında "Yeni" olarak görünür,
+   planlama ve üretime bildirim gider, gösterge panelinde ve MRP ekranında "MRP'ye yansımadı" uyarısı çıkar.
+3. **MRP'yi çalıştırın:** her satırın sevk bekleyen miktarı (miktar − sevk edilen) bağımsız talep olur; ana plana
+   ayrıca girilmez. Ana plan yalnızca sipariş dışı talepler (tahmin, stok hedefi) içindir.
+4. Önerilen iş emirlerini ve satın alma taleplerini oluşturun. Sipariş ekranındaki **Karşılama** sütunu her satırın
+   nereden karşılandığını gösterir: eldeki mamul stoğu, iş emri (bitiş tarihi) — termin sonrası bitiyorsa **Geç** —
+   ya da **Planlanmadı**.
+5. Miktar / termin değişikliği, kısmi sevkiyat, iptal ve kapanış **ERP'de** yapılır ve aynı yolla MRP'ye gelir;
+   sevk edilen miktar talepten düşer, iptal edilen sipariş talep olmaktan çıkar. MRP Pro siparişi değiştiremez.
+
+ERP bağlantısı olmadan (bağımsız mod) sipariş bu ekrandan elle girilebilir ve kapatılabilir.
 
 ## Kalite kontrol akışı
 
@@ -115,8 +118,7 @@ Ekranı görmek salt okunurdur; değiştirmek için rolün o işleme yetkisi olm
 | Sistem Yöneticisi | `admin` | `1234` | Gösterge Paneli | Her şey; kullanıcı, rol ve firma ayarları |
 | Genel Müdür | `yonetim` | `yon123` | Gösterge Paneli | Tüm ekranları görür, sınırsız talep onayı |
 | Üretim Planlama | `planlama` | `plan123` | MRP | Ürün/reçete, malzeme parametreleri, MRP, kapasite, iş emri, satın alma talebi |
-| Üretim Şefi | `uretim` | `uret123` | İş Emirleri | İş emri serbest bırakma/tamamlama, atölye bildirimi, hatta malzeme transferi |
-| Atölye Operatörü | `operator` | `op123` | Atölye Takibi | Operasyon başlat/bitir, sağlam/fire ve duruş bildirimi (iş emri bilgilerini değiştiremez) |
+| Üretim Şefi | `uretim` | `uret123` | İş Emirleri | İş emri serbest bırakma/tamamlama, hatta malzeme transferi |
 | Satın Alma Uzmanı | `satinalma` | `satin123` | Talepler | 10.000 ₺'ye kadar onay, sipariş, tedarikçi ve fiyat listesi |
 | Satın Alma Müdürü | `satinalma_muduru` | `mudur123` | Talepler | 500.000 ₺'ye kadar onay, sipariş, tedarikçi, fiyat |
 | Depo Sorumlusu | `depo` | `depo123` | Stok Durumu | Mal kabul, sayım, transfer, fason sevk/dönüş, barkod |
@@ -159,5 +161,5 @@ mrp-pro/
     ├── embed.js        # gömülü mod: üst sayfayla postMessage köprüsü
     ├── app.js          # kabuk, yönlendirme, olay delegasyonu
     └── views/          # ekranlar (dashboard, engineering, costing, planning, capacity,
-                        #           shopfloor, purchasing, inventory, quality, analysis, import, system, users)
+                        #           purchasing, inventory, quality, analysis, import, system, users)
 ```

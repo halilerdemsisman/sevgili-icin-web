@@ -51,6 +51,7 @@
     <b>Firma ERP</b>
     <nav id="nav">
         <button data-v="dashboard" class="on">Üretim Özeti</button>
+        <button data-v="sales">Satış Siparişleri</button>
         <button data-v="mrp">MRP</button>
         <button data-v="workorders">İş Emirleri</button>
         <button data-v="requests">Satın Alma</button>
@@ -66,10 +67,18 @@
     <aside>
         <section>
             <h3>ERP'de satış siparişi aç</h3>
+            <input id="soCust" value="Ege Mobilya Ltd." placeholder="Müşteri">
             <input id="soKod" value="BG.205.A" placeholder="Mamul kodu">
             <input id="soQty" type="number" value="50" placeholder="Miktar">
             <input id="soDate" type="date">
             <button id="soBtn">Siparişi kaydet → MRP'ye aktar</button>
+        </section>
+        <section>
+            <h3>ERP'de sevkiyat / iptal</h3>
+            <input id="shNo" placeholder="Sipariş no (ör. SS-2026-0003)">
+            <input id="shQty" type="number" value="10" placeholder="Toplam sevk edilen (1. satır)">
+            <button id="shBtn">Sevk et</button>
+            <button id="cnBtn">Siparişi iptal et</button>
         </section>
         <section>
             <h3>ERP'de fiyat güncelle</h3>
@@ -128,9 +137,19 @@
     $('#nav').onclick = (e) => { const v = e.target.dataset.v; if (v && mrp) mrp.navigate(v); };
     $('#hideNav').onchange = () => mount();
     $('#soBtn').onclick = async () => {
-        try { const so = await api('POST', '/erp/sales-orders', { kod: $('#soKod').value.trim(), qty: +$('#soQty').value, dueDate: $('#soDate').value, customer: 'Portal' }); log('ERP → satış siparişi', so); mrp.refresh(); }
+        try {
+            const so = await api('POST', '/erp/sales-orders', { customer: $('#soCust').value.trim(), lines: [{ kod: $('#soKod').value.trim(), qty: +$('#soQty').value, dueDate: $('#soDate').value }] });
+            log('ERP → satış siparişi', { no: so.no, müşteri: so.customer, satır: so.lines });
+            $('#shNo').value = so.no;
+            mrp.refresh();
+        } catch (e) { log('HATA', e.message); }
+    };
+    const patchSO = async (body) => {
+        try { const so = await api('PATCH', '/erp/sales-orders/' + encodeURIComponent($('#shNo').value.trim()), body); log('ERP → sipariş güncellendi', { no: so.no, durum: so.status, satır: so.lines }); mrp.refresh(); }
         catch (e) { log('HATA', e.message); }
     };
+    $('#shBtn').onclick = () => patchSO({ lines: [{ line: 1, shipped: +$('#shQty').value }] });
+    $('#cnBtn').onclick = () => patchSO({ status: 'cancelled' });
     $('#prBtn').onclick = async () => {
         try { const it = await api('PATCH', '/erp/items/' + encodeURIComponent($('#prKod').value.trim()), { price: +$('#prPrice').value, currency: $('#prCur').value }); log('ERP → fiyat', { kod: it.kod, price: it.price, currency: it.currency }); mrp.refresh(); }
         catch (e) { log('HATA', e.message); }

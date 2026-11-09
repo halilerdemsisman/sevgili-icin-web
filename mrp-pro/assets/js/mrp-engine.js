@@ -57,6 +57,11 @@
         [...st.mps, ...(opts.extraDemands || [])].forEach((d) => {
             if (M.product(d.kod)) push(gross, d.kod, { date: d.dueDate, qty: +d.qty, src: d.id, kind: 'MPS' });
         });
+        // 1b) ERP'den gelen satış siparişleri (sevk bekleyen miktar)
+        const soLines = M.salesLines();
+        soLines.forEach((x) => {
+            if (M.product(x.kod)) push(gross, x.kod, { date: x.dueDate, qty: x.remaining, src: x.key, kind: 'SO' });
+        });
 
         // 2) Açık iş emirleri: mamul için planlı giriş, bileşenler için bağımlı talep
         const openWOs = st.workOrders.filter((w) => OPEN_WO.includes(w.status));
@@ -93,6 +98,7 @@
         const records = {};
         const planned = [];
         const exceptions = [];
+        soLines.filter((x) => !M.product(x.kod)).forEach((x) => exceptions.push({ sev: 'critical', kod: x.kod, msg: `${x.key} (${x.so.customer || 'müşteri'}): mamul MRP'de tanımlı değil — sipariş planlanamadı.` }));
         let seq = 0;
 
         order.forEach((kod) => {
@@ -179,7 +185,8 @@
             today,
             planned, records, exceptions,
             summary: {
-                demands: st.mps.length + (opts.extraDemands || []).length,
+                demands: st.mps.length + soLines.length + (opts.extraDemands || []).length,
+                salesLines: soLines.length,
                 items: Object.keys(records).length,
                 purchaseCount: purchase.length,
                 purchaseValue: U.sum(purchase, (p) => p.value),

@@ -34,6 +34,11 @@
                 html += H.banner('amber', 'warehouse', `${crit.length} malzeme emniyet stoğunun yarısının altında`, crit.slice(0, 6).map((i) => i.kod).join(', ') + (crit.length > 6 ? '…' : ''),
                     MRP.auth.canView('stock') ? '<button class="btn btn-secondary btn-sm" data-act="go" data-id="stock">Stok durumu</button>' : '');
             }
+            const soNew = MRP.sales ? MRP.sales.unplanned() : [];
+            if (soNew.length && MRP.auth.canView('sales')) {
+                html += H.banner('blue', 'doc', `${soNew.length} yeni / değişen satış siparişi MRP'ye yansımadı`, soNew.slice(0, 4).map((o) => `${o.no} · ${o.customer}`).join(', ') + (soNew.length > 4 ? '…' : ''),
+                    '<button class="btn btn-secondary btn-sm" data-act="go" data-id="sales">Siparişler</button>');
+            }
             const qcPending = (st.inspections || []).filter((x) => x.status === 'pending');
             if (qcPending.length && MRP.auth.canView('quality')) {
                 html += H.banner('amber', 'qc', `${qcPending.length} parti giriş muayenesi bekliyor`, `Karantinadaki malzeme muayene edilmeden üretimde kullanılamaz: ${qcPending.slice(0, 5).map((x) => x.kod).join(', ')}${qcPending.length > 5 ? '…' : ''}`,
@@ -47,6 +52,7 @@
                 ${H.kpi('Kritik / Düşük Stok', `${crit.length} / ${warn.length}`, 'Emniyet stoğuna göre', crit.length ? 'red' : 'green')}
                 ${H.kpi('Onay Bekleyen Talep', pendingReq.length, U.cur(U.sum(pendingReq, (r) => r.total)), 'violet')}
                 ${H.kpi('Açık Sipariş Bakiyesi', U.compactCur(openPOValue()), `${st.pos.filter((p) => p.status === 'open' || p.status === 'partial').length} PO (KDV dahil)`, 'blue')}
+                ${(() => { const ls = M.salesLines(); const late = ls.filter((x) => x.dueDate < U.iso(U.today())).length; return H.kpi('Açık Satış Siparişi', new Set(ls.map((x) => x.so.no)).size, `${U.qty(U.sum(ls, (x) => x.remaining), 'ad')} sevk bekliyor${late ? ` · ${late} gecikmiş` : ''}`, late ? 'red' : 'blue'); })()}
                 ${H.kpi('Aktif İş Emri', activeWO, `${st.workOrders.filter((w) => w.status === 'completed').length} tamamlandı`, 'green')}
                 ${H.kpi('MRP Önerisi', run ? run.planned.length : '–', run ? `${run.summary.late} geç salım` : 'Çalıştırılmadı', run && run.summary.late ? 'red' : '')}
                 ${(() => { const c = MRP.capacity.summary(MRP.capacity.compute({ includePlanned: true })); return H.kpi('Kapasite Tepe Doluluk', `%${U.num(c.peak * 100, 0)}`, c.over ? `${c.over} aşırı yüklü hafta` : '8 hafta içinde aşım yok', c.over ? 'red' : 'green'); })()}

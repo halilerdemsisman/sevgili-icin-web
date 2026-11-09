@@ -21,10 +21,11 @@ info:
     | priceList | `supplierId\|kod` | Tedarikçi fiyatı | manageSuppliers, editCost |
     | lots | `id` | Lot bakiyesi (stok = lotların toplamı) | adjustStock, receiveGoods, manageWO, transferStock, inspectQuality |
     | movements | `id` | Stok hareketi (değişmez) | adjustStock, receiveGoods, manageWO, transferStock, inspectQuality |
-    | demands | `id` | Bağımsız talep / satış siparişi (MPS) | runMRP |
+    | demands | `id` | Ana plan: sipariş dışı bağımsız talep (tahmin, stok hedefi) | runMRP |
+    | salesOrders | `no` | Satış siparişi — ERP'de açılır, sevk bekleyen miktar MRP talebi olur | (yalnızca ERP yazar) |
     | purchaseRequests | `no` | Satın alma talebi | createRequest, approveRequest, createPO, receiveGoods, inspectQuality |
     | purchaseOrders | `no` | Satın alma siparişi | createPO, receiveGoods, inspectQuality (kalite iadesi teslim miktarını düşürür) |
-    | workOrders | `no` | İş emri (atölye operasyonları `ops` içinde) | manageWO, runMRP, reportProduction (yalnızca `ops`) |
+    | workOrders | `no` | İş emri | manageWO, runMRP |
     | subcontracts | `no` | Fason sevk fişi | transferStock |
     | inspections | `no` | Giriş kalite muayenesi (karantina partisi) | receiveGoods (açma), inspectQuality (karar) |
     | notifications | `id` | Rol bazlı bildirim | (oturum açmış herkes) |
@@ -112,6 +113,7 @@ paths:
                       lots: { type: array, items: { $ref: "#/components/schemas/Lot" } }
                       movements: { type: array, items: { $ref: "#/components/schemas/Movement" } }
                       demands: { type: array, items: { $ref: "#/components/schemas/Demand" } }
+                      salesOrders: { type: array, items: { $ref: "#/components/schemas/SalesOrder" } }
                       purchaseRequests: { type: array, items: { $ref: "#/components/schemas/PurchaseRequest" } }
                       purchaseOrders: { type: array, items: { $ref: "#/components/schemas/PurchaseOrder" } }
                       workOrders: { type: array, items: { $ref: "#/components/schemas/WorkOrder" } }
@@ -212,6 +214,41 @@ paths:
                       properties: { from: { type: integer }, to: { type: integer } }
                     example: { "PO-2026": { from: 51, to: 100 } }
 
+  /erp/sales-orders:
+    post:
+      tags: [ERP örneği]
+      summary: "ERP'de satış siparişi açıldı (örnek sunucu) — salesOrders kaydı + planlama bildirimi"
+      description: Kendi ERP'nizde bu uç nokta gerekmez; sipariş kaydedildiğinde salesOrders koleksiyonuna ve değişiklik günlüğüne yazmanız yeterlidir.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer, lines]
+              properties:
+                customer: { type: string }
+                erpRef: { type: string }
+                orderDate: { type: string, format: date }
+                note: { type: string }
+                lines: { type: array, items: { type: object, properties: { kod: { type: string }, qty: { type: number }, dueDate: { type: string, format: date } } } }
+      responses:
+        "201": { description: Oluşturulan sipariş, content: { application/json: { schema: { $ref: "#/components/schemas/SalesOrder" } } } }
+        "422": { description: İş kuralı hatası (tanımsız mamul, eksik termin…) }
+  /erp/sales-orders/{no}:
+    patch:
+      tags: [ERP örneği]
+      summary: "ERP'de sipariş değişti: miktar / termin, sevkiyat (shipped), iptal veya kapanış"
+      parameters: [{ name: no, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: { type: string, enum: [open, cancelled, closed] }
+                lines: { type: array, items: { type: object, properties: { line: { type: integer }, qty: { type: number }, shipped: { type: number }, dueDate: { type: string, format: date } } } }
+      responses:
+        "200": { description: Güncel sipariş, content: { application/json: { schema: { $ref: "#/components/schemas/SalesOrder" } } } }
   /health:
     get:
       summary: Sağlık kontrolü
@@ -261,13 +298,12 @@ components:
             adjustStock: { type: boolean, description: Sayım düzeltme }
             transferStock: { type: boolean, description: Lokasyon transferi ve fason sevk/dönüş }
             inspectQuality: { type: boolean, description: "Giriş muayenesi ve karantina kararı (kabul / iade / hurda)" }
-            reportProduction: { type: boolean, description: "Atölye: operasyon başlat/bitir, sağlam/fire ve duruş bildirimi" }
             manageUsers: { type: boolean, description: "Firma ayarları (logo); ERP modunda kullanıcılar ERP'de yönetilir" }
     Change:
       type: object
       required: [collection, op, key]
       properties:
-        collection: { type: string, enum: [items, products, boms, routings, workCenters, suppliers, priceList, lots, movements, demands, purchaseRequests, purchaseOrders, workOrders, subcontracts, inspections, notifications, auditLog, settings, mrpRun] }
+        collection: { type: string, enum: [items, products, boms, routings, workCenters, suppliers, priceList, lots, movements, demands, salesOrders, purchaseRequests, purchaseOrders, workOrders, subcontracts, inspections, notifications, auditLog, settings, mrpRun] }
         op: { type: string, enum: [upsert, delete] }
         key: { type: string }
         data: { type: object, description: "upsert için kaydın tamamı (koleksiyon şeması)" }
@@ -389,11 +425,36 @@ components:
         note: { type: string }
         user: { type: string }
         value: { type: number, description: TL }
+    SalesOrder:
+      type: object
+      description: Satış siparişi. ERP'ye aittir; MRP Pro okur, değiştiremez.
+      required: [no, customer, status, lines]
+      properties:
+        no: { type: string, example: SS-2026-0003 }
+        erpRef: { type: string, description: "ERP / müşteri sipariş numarası" }
+        customer: { type: string }
+        orderDate: { type: string, format: date }
+        status: { type: string, enum: [open, partial, closed, cancelled] }
+        note: { type: string }
+        source: { type: string, enum: [erp, manual] }
+        receivedAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time, description: "Her değişiklikte yenilenir; MRP'ye yansımamış sipariş tespiti için" }
+        lines:
+          type: array
+          items:
+            type: object
+            required: [line, kod, qty, dueDate]
+            properties:
+              line: { type: integer }
+              kod: { type: string, description: Mamul kodu }
+              qty: { type: number }
+              shipped: { type: number, default: 0, description: "Sevk edilen; MRP talebi = qty − shipped" }
+              dueDate: { type: string, format: date }
     Demand:
       type: object
       required: [id, kod, qty, dueDate]
       properties:
-        id: { type: string, example: SIP-1001 }
+        id: { type: string, example: MPS-2026-0001 }
         kod: { type: string }
         qty: { type: number }
         dueDate: { type: string, format: date }
@@ -459,39 +520,6 @@ components:
         end: { type: string, format: date }
         status: { type: string, enum: [planned, released, completed, cancelled] }
         source: { type: string, description: MRP planlı sipariş no }
-        goodQty: { type: number, description: "Tamamlamada stoğa giren sağlam miktar (atölye bildirimi)" }
-        scrapQty: { type: number }
-        ops:
-          type: array
-          description: "Atölye takibi: serbest bırakmada rotadan açılır; girdi = önceki operasyonun sağlam çıktısı"
-          items:
-            type: object
-            properties:
-              seq: { type: integer }
-              wc: { type: string }
-              setup: { type: number }
-              run: { type: number }
-              status: { type: string, enum: [waiting, running, paused, done] }
-              good: { type: number }
-              scrap: { type: number }
-              runMin: { type: number }
-              downMin: { type: number }
-              cur: { type: object, nullable: true, description: "Açık çalışma/duruş parçası {kind: run|down, start, operator, reason}" }
-              logs:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    type: { type: string, enum: [run, down, qty] }
-                    start: { type: string, format: date-time }
-                    end: { type: string, format: date-time }
-                    at: { type: string, format: date-time }
-                    min: { type: number }
-                    good: { type: number }
-                    scrap: { type: number }
-                    reason: { type: string, description: duruş sebebi }
-                    scrapReason: { type: string }
-                    operator: { type: string }
     Subcontract:
       type: object
       required: [no, supplierId, status, lines]

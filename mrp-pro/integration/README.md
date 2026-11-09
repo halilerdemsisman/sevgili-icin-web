@@ -99,13 +99,26 @@ Ayrıntılı tanımlar `openapi.yaml`'dadır. Özet:
 - Onay limiti sunucuda da kontrol edilir (istemciye güvenilmez)
 - Talep yalnızca `approveRequest` yetkisi olan kullanıcı tarafından ve yalnızca bekleyen durumdan onaylanır/reddedilir
 - Talep toplamı kalem tutarlarının toplamına eşit olmalıdır; onaylanmış talebin tutarı sonradan artırılamaz
-- Atölye bildirimi yapan (yalnızca `reportProduction` yetkili) kullanıcı iş emrinde sadece `ops` alanını değiştirebilir; bir operasyonda sağlam + fire, girdiyi (önceki operasyonun sağlamı) aşamaz
+- `salesOrders` istemciden yazılamaz (ERP'ye ait); ERP tarafında müşteri, en az bir satır, tanımlı mamul, pozitif miktar, termin tarihi ve `0 ≤ shipped ≤ qty` kontrol edilir
 - Muayene kaydını depo açar (`pending`); kararı (`done`) yalnızca `inspectQuality` yetkisi verir, kabul + ret = muayene miktarı olmalı, ret için karar (iade/hurda) ve sebep zorunludur; tamamlanmış muayene değiştirilemez
 
 Kendi kurallarınızı (muhasebe fişi, bütçe kontrolü, stok kilidi…) buraya ekleyin. Reddedilen her değişiklik için `{collection, key, reason, current}` döndürmeniz yeterli.
 
 ### 4.4 ERP'den MRP'ye veri akışı
-ERP'de oluşan her kaydı (satış siparişi, yeni malzeme, fiyat değişikliği, başka modülden stok girişi) değişiklik günlüğüne `client_id = 'erp'` ile yazın; tüm açık MRP Pro istemcileri bir sonraki çekmede alır. SQL örneği `schema.sql` sonundadır. Örnek sunucuda `POST /api/erp/sales-orders` ve `PATCH /api/erp/items/:kod` bunu gösterir.
+ERP'de oluşan her kaydı (satış siparişi, yeni malzeme, fiyat değişikliği, başka modülden stok girişi) değişiklik günlüğüne `client_id = 'erp'` ile yazın; tüm açık MRP Pro istemcileri bir sonraki çekmede alır. SQL örneği `schema.sql` sonundadır. Örnek sunucuda `POST /api/erp/sales-orders`, `PATCH /api/erp/sales-orders/:no` ve `PATCH /api/erp/items/:kod` bunu gösterir.
+
+**Satış siparişleri.** Sipariş ERP'de açıldığında (veya onaylandığında) `salesOrders` koleksiyonuna bir kayıt yazın ve
+planlamaya bildirim ekleyin (`notifications`, `roles: ["perm:runMRP","perm:manageWO"]`, `link: "sales"`):
+
+```json
+{ "no": "SS-2026-0003", "erpRef": "ERP-SO-50002", "customer": "Ege Mobilya Ltd.", "orderDate": "2026-11-09",
+  "status": "open", "source": "erp", "receivedAt": "…", "updatedAt": "…",
+  "lines": [ { "line": 1, "kod": "BG.205.A", "qty": 50, "shipped": 0, "dueDate": "2026-12-09" } ] }
+```
+
+- MRP, `open` / `partial` siparişlerde her satırın `qty − shipped` miktarını talep olarak planlar; ana plana (`demands`) ayrıca yazmayın
+- Değişiklik, sevkiyat (`shipped`), iptal (`cancelled`) ve kapanışta (`closed`) kaydı güncelleyin ve `updatedAt`'i yenileyin — MRP Pro bunu "MRP'ye yansımadı" olarak gösterir
+- `salesOrders` **yalnızca ERP'ye aittir**: MRP Pro'dan gelen değişiklikler reddedilir
 
 ### 4.5 Muhasebe/stok entegrasyonu için önemli koleksiyonlar
 | Olay | Koleksiyon | Ayırt edici alan |

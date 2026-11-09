@@ -111,13 +111,35 @@ CREATE TABLE mrp_movement (                            -- değişmez defter
 CREATE INDEX ON mrp_movement (kod, at);
 
 -- ---------- Planlama ----------
-CREATE TABLE mrp_demand (                              -- MPS / satış siparişi
+CREATE TABLE mrp_demand (                              -- Ana plan: tahmin / stok hedefi (sipariş dışı)
     id        varchar(40) PRIMARY KEY,
     kod       varchar(40) NOT NULL REFERENCES mrp_product(kod),
     qty       numeric(18,4) NOT NULL CHECK (qty > 0),
     due_date  date NOT NULL,
     note      text
 );
+
+-- Satış siparişi: ERP'de açılır, MRP okur (sevk bekleyen miktar = MRP talebi)
+CREATE TABLE mrp_sales_order (
+    no          varchar(30) PRIMARY KEY,
+    erp_ref     varchar(60),
+    customer    varchar(200) NOT NULL,
+    order_date  date,
+    status      varchar(12) NOT NULL DEFAULT 'open' CHECK (status IN ('open','partial','closed','cancelled')),
+    note        text,
+    received_at timestamptz NOT NULL DEFAULT now(),
+    updated_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE mrp_sales_order_line (
+    so_no     varchar(30) NOT NULL REFERENCES mrp_sales_order(no) ON DELETE CASCADE,
+    line      integer NOT NULL,
+    kod       varchar(40) NOT NULL REFERENCES mrp_product(kod),
+    qty       numeric(18,4) NOT NULL CHECK (qty > 0),
+    shipped   numeric(18,4) NOT NULL DEFAULT 0 CHECK (shipped >= 0 AND shipped <= qty),
+    due_date  date NOT NULL,
+    PRIMARY KEY (so_no, line)
+);
+CREATE INDEX ON mrp_sales_order (status) WHERE status IN ('open','partial');
 
 CREATE TABLE mrp_work_order (
     no        varchar(20) PRIMARY KEY,
@@ -128,26 +150,8 @@ CREATE TABLE mrp_work_order (
     "end"     date NOT NULL,
     status    varchar(10) NOT NULL CHECK (status IN ('planned','released','completed','cancelled')),
     source    varchar(20),
-    payload   jsonb NOT NULL DEFAULT '{}'              -- history, ops (atölye operasyonları), goodQty, scrapQty
+    payload   jsonb NOT NULL DEFAULT '{}'              -- history vb.
 );
-
--- Atölye bildirimleri (raporlama için; kaynak kayıt mrp_work_order.payload->'ops').
--- ERP bu tabloyu iş emri kaydı her geldiğinde ops[].logs'tan yeniden doldurabilir.
-CREATE TABLE mrp_shopfloor_log (
-    wo_no     varchar(20) NOT NULL REFERENCES mrp_work_order(no) ON DELETE CASCADE,
-    seq       integer NOT NULL,                         -- operasyon sırası (10, 20…)
-    wc        varchar(10) NOT NULL REFERENCES mrp_work_center(id),
-    n         integer NOT NULL,                         -- kayıt sırası
-    type      varchar(4) NOT NULL CHECK (type IN ('run','down','qty')),
-    start_at  timestamptz, end_at timestamptz,
-    minutes   numeric(10,2),
-    good      numeric(18,4) NOT NULL DEFAULT 0,
-    scrap     numeric(18,4) NOT NULL DEFAULT 0,
-    reason    varchar(60),                              -- duruş veya fire sebebi
-    operator  varchar(100),
-    PRIMARY KEY (wo_no, seq, n)
-);
-CREATE INDEX ON mrp_shopfloor_log (wc, end_at);
 
 -- ---------- Satın alma ----------
 CREATE TABLE mrp_purchase_request (
@@ -270,4 +274,8 @@ CREATE TABLE mrp_sequence (
 -- ERP'nin kendi tablolarında olan bir değişikliği MRP'ye bildirmek için
 -- (ör. satış siparişi onaylandığında) change_log'a client_id='erp' ile satır eklemek yeterlidir:
 --   INSERT INTO mrp_change_log(collection, op, key, data, client_id, username)
---   VALUES ('demands','upsert','SIP-1050', '{"id":"SIP-1050","kod":"BG.212.A","qty":20,"dueDate":"2026-12-01"}', 'erp', 'satis');
+--   VALUES ('salesOrders','upsert','SS-2026-0050',
+--     '{"no":"SS-2026-0050","customer":"Ege Mobilya","status":"open","source":"erp","updatedAt":"2026-11-09T09:00:00Z",
+--       "lines":[{"line":1,"kod":"BG.212.A","qty":20,"shipped":0,"dueDate":"2026-12-01"}]}', 'erp', 'satis');
+-- Tetikleyici ile otomatikleştirmek için mrp_sales_order / mrp_sales_order_line üzerinde
+-- AFTER INSERT OR UPDATE tetikleyicisi siparişi JSON'a çevirip change_log'a yazabilir.

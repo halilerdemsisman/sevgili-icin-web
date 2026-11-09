@@ -399,5 +399,58 @@
         .map((s) => ({ s, match: types.filter((t) => s.kategoriler.includes(t)).length }))
         .sort((a, b) => b.match - a.match || M.supplierScore(b.s) - M.supplierScore(a.s));
 
+
+    // ======================================================================
+    // Satış siparişleri (ERP'de açılır, MRP'ye bağımsız talep olarak girer)
+    // ======================================================================
+    M.SO_STATUS = {
+        open: ['badge-blue', 'Açık'], partial: ['badge-violet', 'Kısmi sevk'],
+        closed: ['badge-green', 'Kapandı'], cancelled: ['badge-gray', 'İptal']
+    };
+    const SO_OPEN = ['open', 'partial'];
+    /** Sevk bekleyen satış sipariş satırları: [{so, line, key, kod, remaining, dueDate}] */
+    M.salesLines = () => {
+        const out = [];
+        (S().salesOrders || []).filter((o) => SO_OPEN.includes(o.status)).forEach((o) => (o.lines || []).forEach((l) => {
+            const remaining = U.round((+l.qty || 0) - (+l.shipped || 0), 4);
+            if (remaining > EPS) out.push({ so: o, line: l, key: `${o.no}/${l.line}`, kod: l.kod, remaining, dueDate: l.dueDate || o.dueDate });
+        }));
+        return out;
+    };
+    /**
+     * Sipariş karşılama (basit ATP): her mamulde açık satırlar termin sırasıyla
+     * önce eldeki mamul stoğundan, sonra açık iş emirlerinden (bitiş sırasıyla) pay alır.
+     * Sonuç: Map(key → {state: stock|wo|late|open, from:[{src, qty, date}], uncovered, readyDate})
+     */
+    M.soCoverage = () => {
+        const res = new Map();
+        const byKod = new Map();
+        M.salesLines().forEach((x) => { if (!byKod.has(x.kod)) byKod.set(x.kod, []); byKod.get(x.kod).push(x); });
+        const today = U.iso(U.today());
+        byKod.forEach((lines, kod) => {
+            const supply = [];
+            const stock = M.available(kod);
+            if (stock > EPS) supply.push({ src: 'Stok', qty: stock, date: today });
+            S().workOrders.filter((w) => w.kod === kod && (w.status === 'planned' || w.status === 'released'))
+                .sort((a, b) => a.end.localeCompare(b.end))
+                .forEach((w) => supply.push({ src: w.no, qty: +w.qty, date: w.end, status: w.status }));
+            lines.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.key.localeCompare(b.key)).forEach((x) => {
+                let need = x.remaining;
+                const from = [];
+                for (const s of supply) {
+                    if (need <= EPS) break;
+                    if (s.qty <= EPS) continue;
+                    const take = Math.min(need, s.qty);
+                    s.qty -= take; need -= take;
+                    from.push({ src: s.src, qty: U.round(take, 4), date: s.date, status: s.status });
+                }
+                const readyDate = from.length ? from.reduce((m, f) => (f.date > m ? f.date : m), today) : null;
+                const state = need > EPS ? 'open' : from.every((f) => f.src === 'Stok') ? 'stock' : readyDate > x.dueDate ? 'late' : 'wo';
+                res.set(x.key, { state, from, uncovered: U.round(Math.max(0, need), 4), readyDate });
+            });
+        });
+        return res;
+    };
+
     MRP.model = M;
 })(window.MRP);

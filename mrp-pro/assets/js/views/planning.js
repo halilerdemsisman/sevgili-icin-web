@@ -32,7 +32,15 @@
             const run = st.lastRun;
 
             const mps = st.mps.slice().sort((a, b) => a.dueDate.localeCompare(b.dueDate));
-            let html = H.card('Ana Üretim Planı (MPS)', 'Bağımsız talepler: müşteri siparişleri, tahminler, stok hedefleri', `
+            const soLines = M.salesLines();
+            const soNew = MRP.sales ? MRP.sales.unplanned().length : 0;
+            let html = '';
+            if (MRP.auth.canView('sales') || soLines.length) {
+                html += H.banner(soNew ? 'amber' : 'blue', 'doc', `Satış siparişleri: ${soLines.length} açık satır · ${U.qty(U.sum(soLines, (x) => x.remaining), 'ad')}`,
+                    soNew ? `${soNew} sipariş son MRP çalıştırmasından sonra geldi veya değişti — MRP'yi çalıştırın.` : 'ERP\'den gelen siparişlerin sevk bekleyen miktarı MRP\'ye otomatik talep olarak girer; ana plana ayrıca eklemeyin.',
+                    MRP.auth.canView('sales') ? '<button class="btn btn-secondary btn-sm" data-act="go" data-id="sales">Siparişler</button>' : '');
+            }
+            html += H.card('Ana Üretim Planı (MPS)', 'Sipariş dışı talepler: tahmin, stok hedefi, numune — satış siparişleri ayrıca otomatik eklenir', `
                 <div class="table-wrap"><table>
                     <thead><tr><th>No</th><th>Mamul</th><th>Ad</th><th class="num">Miktar</th><th>Termin</th><th>Açıklama</th><th></th></tr></thead>
                     <tbody>${mps.map((d) => {
@@ -57,7 +65,7 @@
             const s = run.summary;
             html += `<div class="kpis">
                 ${H.kpi('Son Çalıştırma', U.dateTime(run.runAt), run.runBy, 'blue')}
-                ${H.kpi('Planlanan Kalem', s.items, `${s.demands} bağımsız talep`, 'cyan')}
+                ${H.kpi('Planlanan Kalem', s.items, `${s.demands} bağımsız talep${s.salesLines ? ` (${s.salesLines} sipariş satırı)` : ''}`, 'cyan')}
                 ${H.kpi('Satın Alma Önerisi', s.purchaseCount, U.cur(s.purchaseValue), 'violet')}
                 ${H.kpi('Üretim Önerisi', s.productionCount, 'Mamul + yarı mamul', 'green')}
                 ${H.kpi('Geç Salım', s.late, 'Tedarik süresi yetersiz', s.late ? 'red' : 'green')}
@@ -310,7 +318,7 @@
             const open = by(['planned', 'released']);
             if (open.length) html += H.card('Üretim takvimi', 'Açık iş emirleri — kırmızı çizgi bugünü gösterir', `<div class="card-body" style="overflow-x:auto;">${gantt(open)}</div>`) + '<div style="height:16px;"></div>';
             html += `<section class="card"><div class="table-wrap"><table>
-                <thead><tr><th>İş Emri</th><th>Mamul</th><th>Ad</th><th class="num">Miktar</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th><th>Atölye</th><th>Malzeme</th><th></th></tr></thead>
+                <thead><tr><th>İş Emri</th><th>Mamul</th><th>Ad</th><th class="num">Miktar</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th><th>Malzeme</th><th></th></tr></thead>
                 <tbody>${list.map((w) => {
                     const isOpen = w.status === 'planned' || w.status === 'released';
                     const av = isOpen ? woAvailability(w) : [];
@@ -320,12 +328,11 @@
                         <td>${H.anyLink(w.kod)}</td><td class="strong">${esc(w.ad)}</td><td class="num">${esc(U.qty(w.qty, 'ad'))}</td>
                         <td class="nowrap">${esc(U.date(U.parseDate(w.start)))}</td><td class="nowrap">${esc(U.date(U.parseDate(w.end)))}</td>
                         <td>${H.badge(H.WO_STATUS, w.status)}</td>
-                        <td>${(() => { const pg = MRP.shopfloor && MRP.shopfloor.woProgress(w); if (w.status === 'completed' && w.goodQty != null) return `<span class="muted">${esc(U.qty(w.goodQty, 'ad'))} sağlam${w.scrapQty ? ` · ${esc(U.qty(w.scrapQty, 'ad'))} fire` : ''}</span>`; return pg && isOpen ? `<span class="badge ${pg.badge}">${esc(pg.text)}</span>` : '<span class="muted">–</span>'; })()}</td>
                         <td>${isOpen ? (shorts ? `<span class="badge badge-red">${shorts} eksik</span>` : '<span class="badge badge-green">Hazır</span>') : '–'}</td>
                         <td><div class="row-actions">${can && w.status === 'planned' ? `<button class="btn btn-secondary btn-sm" data-act="woRelease" data-id="${esc(w.no)}">Serbest Bırak</button>` : ''}
                             ${can && w.status === 'released' ? `<button class="btn btn-success btn-sm" data-act="woComplete" data-id="${esc(w.no)}">Tamamla</button>` : ''}
                             ${can && isOpen ? `<button class="btn btn-ghost btn-sm" data-act="woCancel" data-id="${esc(w.no)}" title="İptal">${MRP.icon('x', 'sm')}</button>` : ''}</div></td></tr>`;
-                }).join('') || `<tr><td colspan="10">${H.empty('İş emri yok', 'MRP önerilerinden veya "Yeni İş Emri" ile oluşturabilirsiniz.')}</td></tr>`}</tbody>
+                }).join('') || `<tr><td colspan="9">${H.empty('İş emri yok', 'MRP önerilerinden veya "Yeni İş Emri" ile oluşturabilirsiniz.')}</td></tr>`}</tbody>
             </table></div></section>`;
             return html;
         }
@@ -372,10 +379,9 @@
                     <td class="num">${a.stocked ? esc(U.qty(a.have, a.it.unit)) : '<span class="muted">fason</span>'}</td><td class="num ${a.short > 0 ? 'tp-neg' : ''}">${a.short > 0 ? esc(U.qty(a.short, a.it.unit)) : '–'}</td></tr>`).join('')}
                 </tbody></table></div>
                 <h3 style="font-size:.9em;margin:16px 0 8px;">Operasyonlar</h3>
-                <div class="table-wrap"><table><thead><tr><th>#</th><th>İş merkezi</th><th class="num">Hazırlık</th><th class="num">Birim</th><th class="num">Planlanan</th><th class="num">İşçilik ₺</th>${w.ops ? '<th>Atölye</th><th class="num">Sağlam</th><th class="num">Fire</th><th class="num">Gerçek çalışma</th><th class="num">Duruş</th>' : ''}</tr></thead><tbody>
-                ${(w.ops || M.routing(w.kod)).map((op, i) => { const wc = M.workCenter(op.wc) || { ad: op.wc, rate: 0 }; const min = M.opMinutes(op, w.qty); const SF = MRP.shopfloor;
-                    return `<tr><td class="num">${op.seq || (i + 1) * 10}</td><td>${esc(wc.ad)}</td><td class="num">${U.num(op.setup, 0)} dk</td><td class="num">${U.num(op.run, 1)} dk</td><td class="num strong">${U.num(min / 60, 1)} sa</td><td class="num">${U.num(min / 60 * wc.rate)}</td>
-                        ${w.ops ? `<td>${H.badge(SF.OP_STATUS, op.status)}</td><td class="num">${U.num(op.good, 0)}</td><td class="num ${op.scrap ? 'tp-neg' : ''}">${U.num(op.scrap, 0)}</td><td class="num">${esc(SF.fmtMin(op.runMin))}</td><td class="num">${op.downMin ? esc(SF.fmtMin(op.downMin)) : '–'}</td>` : ''}</tr>`; }).join('') || '<tr><td colspan="6" class="muted">Rota tanımlı değil</td></tr>'}
+                <div class="table-wrap"><table><thead><tr><th>#</th><th>İş merkezi</th><th class="num">Hazırlık</th><th class="num">Birim</th><th class="num">Toplam süre</th><th class="num">İşçilik ₺</th></tr></thead><tbody>
+                ${M.routing(w.kod).map((op, i) => { const wc = M.workCenter(op.wc) || { ad: op.wc, rate: 0 }; const min = M.opMinutes(op, w.qty);
+                    return `<tr><td class="num">${(i + 1) * 10}</td><td>${esc(wc.ad)}</td><td class="num">${U.num(op.setup, 0)} dk</td><td class="num">${U.num(op.run, 1)} dk</td><td class="num strong">${U.num(min / 60, 1)} sa</td><td class="num">${U.num(min / 60 * wc.rate)}</td></tr>`; }).join('') || '<tr><td colspan="6" class="muted">Rota tanımlı değil</td></tr>'}
                 </tbody></table></div>
                 <h3 style="font-size:.9em;margin:16px 0 8px;">Geçmiş</h3>
                 <div class="timeline">${(w.history || []).map((h) => `<div class="ev"><b>${esc(h.action)}</b><span class="d">${esc(h.by)} · ${esc(U.dateTime(h.at))}</span></div>`).join('')}</div>`,
@@ -429,30 +435,16 @@
                 buttons: [{ label: 'Kapat' }]
             });
         }
-        // Atölye bildirimi varsa stoğa son operasyonun sağlam çıktısı girer; malzeme emir miktarı kadar sarf edilir (fire dahil)
-        const ops = (w.ops || []).filter(Boolean);
-        const tracked = ops.some((o) => o.logs && o.logs.length);
-        const last = ops[ops.length - 1];
-        const fgQty = tracked ? U.round(last.good, 4) : w.qty;
-        const scrapQty = tracked ? U.round(U.sum(ops, (o) => o.scrap), 4) : 0;
-        const openOps = tracked ? ops.filter((o) => o.status !== 'done') : [];
-        if (tracked && fgQty <= 0) return UI.toast('Sağlam çıktı yok', 'Son operasyonda sağlam üretim bildirilmemiş; atölyeden bildirim yapın veya emri iptal edin.', 'warn', 6000);
-        const msg = tracked
-            ? `${w.no}: atölye bildirimine göre ${U.qty(fgQty, 'ad')} sağlam ${w.kod} stoğa girecek${scrapQty ? `, ${U.qty(scrapQty, 'ad')} fire kaydedildi` : ''}${fgQty < w.qty ? ` (emir ${U.qty(w.qty, 'ad')}; eksik ${U.qty(w.qty - fgQty, 'ad')} MRP'de yeniden planlanır)` : ''}. Malzeme emir miktarı kadar sarf edilir.${openOps.length ? ` UYARI: ${openOps.length} operasyon bitirilmedi.` : ''}`
-            : `${w.no}: ${av.filter((a) => a.stocked).length} bileşen stoktan düşülecek ve ${U.qty(w.qty, 'ad')} ${w.kod} stoğa girecek.`;
-        if (!(await UI.confirm(msg, { title: 'İş emrini tamamla', okLabel: 'Tamamla', danger: openOps.length > 0 }))) return;
+        if (!(await UI.confirm(`${w.no}: ${av.filter((a) => a.stocked).length} bileşen stoktan düşülecek ve ${U.qty(w.qty, 'ad')} ${w.kod} stoğa girecek.`, { title: 'İş emrini tamamla', okLabel: 'Tamamla' }))) return;
         av.filter((a) => a.stocked).forEach((a) => M.move({ kod: a.kod, qty: -a.need, type: 'GI', loc: ['FABRIKA', 'MERKEZ'], ref: w.no }));
         // Teslim alınmış fason hizmet bakiyesi varsa düşülür (hizmet alınmamışsa iş emri engellenmez)
         av.filter((a) => !a.stocked).forEach((a) => { const q = Math.min(a.need, M.available(a.kod)); if (q > 1e-9) M.move({ kod: a.kod, qty: -q, type: 'GI', loc: ['FABRIKA', 'MERKEZ'], ref: w.no, note: 'Fason hizmet kullanımı' }); });
-        M.move({ kod: w.kod, qty: fgQty, type: 'FG', loc: 'MERKEZ', lot: w.no, ref: w.no, note: tracked && fgQty < w.qty ? `Emir ${w.qty}, sağlam ${fgQty}` : '' });
-        ops.forEach((o) => { if (o.cur) { o.logs.push({ type: o.cur.kind === 'run' ? 'run' : 'down', start: o.cur.start, end: new Date().toISOString(), min: U.round(Math.max(0, (Date.now() - new Date(o.cur.start)) / 60000), 2), reason: o.cur.reason, operator: o.cur.operator }); o.cur = null; } if (o.status !== 'done' && o.status !== 'waiting') o.status = 'done'; });
+        M.move({ kod: w.kod, qty: w.qty, type: 'FG', loc: 'MERKEZ', lot: w.no, ref: w.no });
         w.status = 'completed';
         w.completedAt = new Date().toISOString();
-        w.goodQty = fgQty;
-        w.scrapQty = scrapQty;
-        woLog(w, `Tamamlandı — sarf ve mamul girişi yapıldı (${U.qty(fgQty, 'ad')} sağlam${scrapQty ? `, ${U.qty(scrapQty, 'ad')} fire` : ''})`);
-        MRP.store.audit('İş emri tamamlandı', `${w.no}: ${w.kod} × ${fgQty}${fgQty !== w.qty ? ` (emir ${w.qty})` : ''}`);
-        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${fgQty}`, ['perm:runMRP', 'perm:manageWO'], 'workorders');
+        woLog(w, 'Tamamlandı — sarf ve mamul girişi yapıldı');
+        MRP.store.audit('İş emri tamamlandı', `${w.no}: ${w.kod} × ${w.qty}`);
+        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${w.qty}`, ['perm:runMRP', 'perm:manageWO'], 'workorders');
         app().commit();
         UI.toast('İş emri tamamlandı', 'Stoklar güncellendi.', 'success');
     }
@@ -466,7 +458,6 @@
             const w = findWO(no);
             const shorts = woAvailability(w).filter((a) => a.short > 0).length;
             w.status = 'released';
-            if (MRP.shopfloor) MRP.shopfloor.ensureOps(w);
             woLog(w, 'Serbest bırakıldı');
             MRP.store.audit('İş emri serbest bırakıldı', w.no);
             app().commit();

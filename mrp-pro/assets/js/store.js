@@ -34,10 +34,9 @@
             lots: stockToLots(MRP.data.buildInitialStock(items), 'BAŞLANGIÇ'),
             movements: [],
             mps: [
-                { id: 'MPS-1', kod: 'BG.212.A', qty: 40, dueDate: U.iso(U.addDays(today, 18)), note: 'Otel projesi' },
-                { id: 'MPS-2', kod: 'BG.06.A', qty: 120, dueDate: U.iso(U.addDays(today, 14)), note: 'Bayi siparişi' },
-                { id: 'MPS-3', kod: 'BG.100.A', qty: 60, dueDate: U.iso(U.addDays(today, 28)), note: 'Sezon stoğu' }
+                { id: 'MPS-3', kod: 'BG.100.A', qty: 60, dueDate: U.iso(U.addDays(today, 28)), note: 'Sezon stoğu (tahmin)' }
             ],
+            salesOrders: demoSalesOrders(today),
             lastRun: null,
             requests: [],
             pos: [],
@@ -51,13 +50,26 @@
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
             notifications: [],
             audit: [],
-            seq: {},
+            seq: { [`SS-${today.getFullYear()}`]: 2 },   // demo siparişler 0001-0002
             roles: MRP.auth.defaultRoles(),
             users: MRP.auth.defaultUsers(),
             branding: defaultBranding(),
             qcSetup: true,
-            sfSetup: true
+            soSetup: true
         };
+    }
+
+    /** Demo: ERP'den gelmiş gibi iki satış siparişi */
+    function demoSalesOrders(today) {
+        const at = new Date().toISOString();
+        const d = (n) => U.iso(U.addDays(today, n));
+        const Y = today.getFullYear();
+        return [
+            { no: `SS-${Y}-0001`, erpRef: 'ERP-SO-48211', customer: 'Kıyı Otelcilik A.Ş.', orderDate: d(-3), status: 'open', note: 'Otel projesi — teras', source: 'erp', receivedAt: at, updatedAt: at,
+                lines: [{ line: 1, kod: 'BG.212.A', qty: 40, shipped: 0, dueDate: d(18) }] },
+            { no: `SS-${Y}-0002`, erpRef: 'ERP-SO-48230', customer: 'Bodrum Bahçe Bayi', orderDate: d(-1), status: 'open', note: 'Bayi siparişi', source: 'erp', receivedAt: at, updatedAt: at,
+                lines: [{ line: 1, kod: 'BG.06.A', qty: 120, shipped: 0, dueDate: d(14) }] }
+        ];
     }
 
     /**
@@ -67,30 +79,28 @@
      */
     function upgrade(st) {
         if (!Array.isArray(st.inspections)) st.inspections = [];
+        if (!Array.isArray(st.salesOrders)) st.salesOrders = [];
         if (MRP.config.erp) return st;
         upgradeQC(st);
-        upgradeShopfloor(st);
+        upgradeSales(st);
+        dropShopfloor(st);
         return st;
     }
-    /** Eksik rol ve demo kullanıcısını ekler */
-    function addRole(st, id) {
-        const roles = st.roles || (st.roles = []);
-        if (!roles.some((r) => r.id === id)) roles.push(MRP.auth.defaultRoles().find((r) => r.id === id));
-        const users = st.users || (st.users = []);
-        const demo = MRP.auth.defaultUsers().find((u) => u.role === id);
-        if (demo && !users.some((u) => u.username === demo.username)) users.push(demo);
+    /** Satış siparişleri ekranı mevcut rollere eklenir */
+    function upgradeSales(st) {
+        if (st.soSetup) return;
+        (st.roles || []).forEach((r) => {
+            if (['admin', 'yonetim', 'planlama', 'uretim'].includes(r.id) && !r.views.includes('sales')) r.views.splice(Math.max(0, r.views.indexOf('mrp')), 0, 'sales');
+        });
+        st.soSetup = true;
     }
-    /** Atölye takibi öncesi kayıtlar: operatör rolü, yetki ve ekran */
-    function upgradeShopfloor(st) {
-        if (st.sfSetup) return;
-        const roles = st.roles || (st.roles = []);
-        const admin = roles.find((r) => r.id === 'admin');
-        if (admin) { admin.can = { ...admin.can, reportProduction: true }; if (!admin.views.includes('shopfloor')) admin.views.push('shopfloor'); }
-        const uretim = roles.find((r) => r.id === 'uretim');
-        if (uretim) uretim.can = { ...uretim.can, reportProduction: true };
-        ['yonetim', 'planlama', 'uretim'].forEach((id) => { const r = roles.find((x) => x.id === id); if (r && !r.views.includes('shopfloor')) r.views.push('shopfloor'); });
-        addRole(st, 'operator');
-        st.sfSetup = true;
+    /** Kaldırılan atölye takibinden kalan rol/ekran/yetki izleri temizlenir */
+    function dropShopfloor(st) {
+        if (!st.sfSetup) return;
+        st.roles = (st.roles || []).filter((r) => r.id !== 'operator');
+        st.roles.forEach((r) => { r.views = r.views.filter((v) => v !== 'shopfloor'); if (r.can) delete r.can.reportProduction; });
+        st.users = (st.users || []).filter((u) => u.role !== 'operator');
+        delete st.sfSetup;
     }
     function upgradeQC(st) {
         if (st.qcSetup) return;
@@ -111,7 +121,7 @@
     /** v2 → v3: sayısal stok → lot kaydı, yeni alanlar varsayılanlarla eklenir */
     function migrateV2(old) {
         const fresh = defaultState();
-        const st = Object.assign(fresh, old, { version: VERSION });
+        const st = Object.assign(fresh, old, { version: VERSION, salesOrders: old.salesOrders || [] });
         st.lots = stockToLots(old.stock || {}, 'DEVİR');
         delete st.stock;
         st.movements = (old.movements || []).map((m) => ({ loc: 'MERKEZ', lots: [], ...m }));
@@ -126,7 +136,7 @@
         return {
             version: VERSION, createdAt: new Date().toISOString(),
             itemOverrides: {}, customItems: {}, productOverrides: {}, customProducts: [], customBoms: {}, routings: {},
-            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [], inspections: [],
+            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [], inspections: [], salesOrders: [],
             suppliers: [], priceList: [], workCenters: [],
             fx: { rates: { ...MRP.data.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] },
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
@@ -145,7 +155,7 @@
                 const parsed = JSON.parse(raw);
                 if (parsed && parsed.version === VERSION) {
                     const fresh = defaultState();
-                    delete fresh.qcSetup; delete fresh.sfSetup;   // eski kayıtta yoksa yükseltme çalışsın
+                    delete fresh.qcSetup; delete fresh.soSetup; delete fresh.salesOrders;   // eski kayıtta yoksa yükseltme çalışsın; demo sipariş eklenmez
                     state = upgrade(Object.assign(fresh, parsed));
                     return state;
                 }
@@ -155,7 +165,7 @@
                 const parsed = JSON.parse(rawV2);
                 if (parsed && parsed.version === 2) {
                     state = migrateV2(parsed);
-                    delete state.qcSetup; delete state.sfSetup;
+                    delete state.qcSetup; delete state.soSetup;
                     upgrade(state);
                     save();
                     localStorage.removeItem(KEY_V2);
@@ -197,7 +207,7 @@
     function restore(obj) {
         if (!obj || (obj.version !== VERSION && obj.version !== 2)) throw new Error('Tanınmayan yedek dosyası');
         const fresh = defaultState();
-        delete fresh.qcSetup; delete fresh.sfSetup;
+        delete fresh.qcSetup; delete fresh.soSetup; delete fresh.salesOrders;
         state = upgrade(obj.version === 2 ? migrateV2(obj) : Object.assign(fresh, obj));
         save();
     }
