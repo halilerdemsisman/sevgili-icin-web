@@ -5,7 +5,7 @@ Bu klasör, MRP Pro'nun **sizin geliştirdiğiniz ERP'nin bir modülü** olarak 
 | Dosya | Ne işe yarar |
 |---|---|
 | [`openapi.yaml`](openapi.yaml) | **Sözleşme.** ERP'nin sağlaması gereken REST uç noktaları ve tüm veri şemaları (OpenAPI 3) |
-| [`schema.sql`](schema.sql) | ERP veritabanı için önerilen PostgreSQL tabloları (PostgreSQL 16'da doğrulandı) |
+| [`schema.sql`](schema.sql) | ERP veritabanı için önerilen PostgreSQL tabloları (kullanıcı, bölüm rolü ve oturum tabloları dahil) (PostgreSQL 16'da doğrulandı) |
 | [`embed-sdk.js`](embed-sdk.js) | ERP portalında MRP Pro'yu gömmek için küçük SDK |
 | [`host-demo.html`](host-demo.html) | Örnek ERP portalı: tek oturum, ERP menüsünden yönetim, olay akışı |
 | [`mock-erp/`](mock-erp/) | **Çalışan referans ERP sunucusu** (Node.js, bağımlılıksız). Ekibiniz bunu birebir taklit edebilir |
@@ -156,6 +156,7 @@ Mesajlar yalnızca `parentOrigin` ile tanımlı origin'den kabul edilir. MRP Pro
 
 - [ ] `openapi.yaml`'daki uç noktalar ERP'de uygulandı (örnek: `mock-erp/server.mjs`)
 - [ ] Tablolar `schema.sql`'e göre oluşturuldu veya mevcut tablolara VIEW ile eşlendi
+- [ ] Bölüm rolleri `mrp_role` tablosuna, kullanıcılar `mrp_user` tablosuna aktarıldı (parolalar yalnızca hash olarak)
 - [ ] Roller → `views` + `permissions` eşlemesi yapıldı; onay limitleri sunucuda da kontrol ediliyor
 - [ ] ERP'deki satış siparişi / malzeme / fiyat değişiklikleri `mrp_change_log`'a yazılıyor
 - [ ] `movements` → stok/muhasebe entegrasyonu (GR, GI, FG, ADJ) bağlandı

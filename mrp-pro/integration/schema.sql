@@ -1,7 +1,7 @@
 -- ==========================================================================
 -- MRP Pro — ERP veritabanı için önerilen şema (PostgreSQL 14+)
 -- --------------------------------------------------------------------------
--- Kendi ERP'nizde MRP Pro'nun ihtiyaç duyduğu tablolar. Sütun adları
+-- Kendi ERP'nizde MRP Pro'nun ihtiyaç duyduğu tablolar (kullanıcı/rol dahil). Sütun adları
 -- openapi.yaml'daki alanlarla birebir eşleşir; API katmanı satırları JSON'a
 -- çevirip /mrp/snapshot ve /mrp/changes ile sunar.
 -- Not: Mevcut ERP tablolarınız (stok kartı, cari, sipariş) varsa yeni tablo
@@ -165,6 +165,40 @@ CREATE TABLE mrp_settings (id varchar(10) PRIMARY KEY DEFAULT 'main', fx jsonb N
 CREATE TABLE mrp_notification (id varchar(40) PRIMARY KEY, payload jsonb NOT NULL, at timestamptz NOT NULL);
 CREATE TABLE mrp_audit (id varchar(40) PRIMARY KEY, at timestamptz NOT NULL, username varchar(60), action varchar(120), detail text);
 CREATE TABLE mrp_run (id varchar(10) PRIMARY KEY DEFAULT 'last', payload jsonb NOT NULL, run_at timestamptz NOT NULL);
+
+-- ---------- Kullanıcılar ve bölüm rolleri ----------
+-- /auth/login bu tablolardan User nesnesini (openapi.yaml → User) üretir.
+-- Roller MRP Pro'nun varsayılan bölüm rolleriyle aynıdır (assets/js/auth.js → DEFAULT_ROLES).
+CREATE TABLE mrp_role (
+    id            varchar(30) PRIMARY KEY,                 -- 'planlama', 'satinalma' ...
+    ad            varchar(80) NOT NULL,
+    home          varchar(30) NOT NULL DEFAULT 'dashboard', -- açılış ekranı
+    views         text[] NOT NULL DEFAULT '{}',            -- erişilebilen ekranlar
+    permissions   jsonb NOT NULL DEFAULT '{}',             -- {"runMRP":true,"createPO":false,...}
+    approve_limit numeric(18,2),                           -- TL; NULL = sınırsız
+    CHECK (home = ANY (views))
+);
+
+CREATE TABLE mrp_user (
+    username      varchar(60) PRIMARY KEY,
+    ad            varchar(120) NOT NULL,
+    role_id       varchar(30) NOT NULL REFERENCES mrp_role(id),
+    password_hash varchar(200) NOT NULL,                   -- ör. scrypt "salt:hash"; düz parola saklanmaz
+    aktif         boolean NOT NULL DEFAULT true,
+    created_at    timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE mrp_session (
+    token       varchar(100) PRIMARY KEY,
+    username    varchar(60) NOT NULL REFERENCES mrp_user(username) ON DELETE CASCADE,
+    expires_at  timestamptz NOT NULL
+);
+CREATE INDEX ON mrp_session (expires_at);
+
+-- Örnek rol:
+--   INSERT INTO mrp_role(id, ad, home, views, permissions, approve_limit) VALUES
+--   ('satinalma', 'Satın Alma', 'requests', '{dashboard,requests,orders,suppliers,stock}',
+--    '{"createRequest":true,"approveRequest":true,"createPO":true,"manageSuppliers":true}', 10000);
 
 -- ---------- Senkronizasyon altyapısı ----------
 -- Her kabul edilen değişiklik buraya yazılır; /mrp/changes?since=N bu tablodan okunur.
