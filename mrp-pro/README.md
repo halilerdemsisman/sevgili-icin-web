@@ -38,7 +38,7 @@ node mrp-pro/integration/mock-erp/server.mjs   # → http://localhost:8787
 | | **Maliyet & Kur** | Güncel kuru tek tıkla çekme veya elle girme, **kur değişiminin maliyet etkisi önizlemesi**, kur geçmişi, tablodan satır içi fiyat düzenleme, toplu % fiyat güncelleme, genel gider / işçilik / standart parti ayarları |
 | Planlama | **Satış Siparişleri** | **ERP'de açılan müşteri siparişleri otomatik gelir** ve sevk bekleyen miktar MRP'ye talep olarak girer; satır bazında karşılama (stoktan / iş emriyle / geç / planlanmadı), MRP'ye yansımamış sipariş uyarısı, planlamaya bildirim |
 | | MRP Çalıştırma | Ana Üretim Planı (tahmin, stok hedefi), çok seviyeli MRP, planlı sipariş önerileri, istisnalar, zaman fazlı tablo, pegging |
-| | **Kapasite Planlama** | İş merkezleri (kapasite, verimlilik, saat ücreti), rota bazlı haftalık yük ısı haritası, aşırı yük tespiti |
+| | **Kapasite Planlama** | İş merkezleri (kapasite, verimlilik, saat ücreti), rota bazlı haftalık yük ısı haritası, aşırı yük tespiti; **sonlu kapasite çizelgesi**: iş emirleri sipariş termin önceliğiyle iş merkezlerine yerleştirilir, gerçekçi bitiş, termine yetişmeyen sipariş, darboğaz, acil işaretleme, tarihleri iş emirlerine uygulama |
 | | İş Emirleri | **Bağlı satış siparişi / müşteri**, malzeme uygunluğu, operasyon süreleri, Gantt, tamamlamada FIFO lot sarfı + mamul girişi |
 | Satın Alma | Talepler | Onay limiti, müdür onayına yönlendirme, yorumlar |
 | | Siparişler (PO) | **Teklif karşılaştırma**, fiyat listesinden otomatik fiyat (dövizli → TL), **talebi en uygun tedarikçilere bölme**, lot/lokasyonlu kısmi mal kabul, PDF |
@@ -76,6 +76,19 @@ Standart maliyet = (Malzeme + İşçilik) × (1 + Genel gider %)
 ## Excel ile veri aktarımı
 
 Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartları, ana plan ve fiyat listesi şablonları mevcut verilerle dolu gelir). Sütun başlıkları Türkçe karakter ve büyük/küçük harf duyarsız eşleşir; ERP çıktısındaki yaygın başlıklar (ör. "Stok Kodu", "Malzeme Adı", "Termin Tarihi") tanınır. Sayılar `1.234,56` veya `1234.56`, tarihler `gg.aa.yyyy`, `yyyy-aa-gg` ya da Excel tarih hücresi olabilir. Hatalı satırlar listelenir ve atlanır.
+
+## Sonlu kapasite çizelgesi
+
+**Kapasite Planlama → Sonlu Çizelge**, açık iş emirlerini iş merkezlerinin günlük kapasitesine yerleştirir:
+
+- **Sıra:** acil işaretli (⚑) → termin (bağlı satış siparişinin en erken termini; bağlı değilse iş emri bitişi) → serbest bırakılmış → iş emri no
+- Operasyonlar rota sırasıyla yerleşir; bir operasyon önceki bitmeden başlamaz, iş merkezinin o günkü kalan dakikasını kullanır
+  (verimlilik dahil süre, iş merkezinin haftalık çalışma günleri). Serbest bırakılmış iş emri bugünden, planlanan iş emri
+  planlı başlangıcından (malzeme hazırlığı) önce başlamaz
+- Çıktı: iş emri bazında gerçekçi başlangıç/bitiş, termine göre gecikme, etkilenen sipariş satırları, darboğaz iş merkezi
+  ve operasyonları iş merkezine göre renkli Gantt
+- **Tarihleri iş emirlerine uygula** çizelgeyi iş emirlerine yazar (geçmişe kaydedilir); sipariş ekranındaki karşılama tarihi
+  güncellenir, termine yetişmeyen siparişler için planlamaya bildirim gider
 
 ## Satış siparişi akışı (ERP → MRP)
 

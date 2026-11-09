@@ -70,22 +70,105 @@
         }));
         return { peak, over, totalHours: total / 60 };
     }
-    MRP.capacity = { compute, summary };
+    // =====================================================================
+    // Sonlu kapasite çizelgeleme (ileriye doğru, günlük kova)
+    // ---------------------------------------------------------------------
+    // Öncelik: acil işaretli → termin (bağlı satış siparişinin en erken
+    // termini, yoksa iş emri bitişi) → serbest bırakılmış → iş emri no.
+    // Her iş emrinin operasyonları rota sırasıyla, iş merkezinin o güne kalan
+    // dakikasından yer alır; bir operasyon önceki operasyonun bittiği gün
+    // başlayabilir. Serbest bırakılmış iş emri bugünden, planlanan iş emri
+    // planlı başlangıcından (malzeme hazırlığı) önce başlamaz.
+    // =====================================================================
+    const HORIZON = 365;
+    const EPS = 1e-6;
+    const isWorkday = (date, wc) => ((date.getDay() + 6) % 7) < (wc.days || 5);
+
+    /** İş emrinin öncelik termini: bağlı açık sipariş satırlarının en erkeni, yoksa bitiş */
+    function dueOf(w) {
+        let due = null;
+        const sos = [];
+        (w.soRefs || []).forEach((r) => {
+            const x = M.soLine(r.key);
+            if (!x || !['open', 'partial'].includes(x.so.status)) return;
+            const d = x.line.dueDate || x.so.dueDate;
+            sos.push({ key: r.key, customer: x.so.customer, due: d });
+            if (!due || d < due) due = d;
+        });
+        return { due: due || w.end, soDue: due, sos };
+    }
+
+    function schedule() {
+        const today = U.today();
+        const todayIso = U.iso(today);
+        const dates = [...Array(HORIZON)].map((_, i) => U.addDays(today, i));
+        const isoAt = (i) => U.iso(dates[Math.min(i, HORIZON - 1)]);
+        const free = new Map(M.workCenters().map((wc) => [wc.id, dates.map((d) => (isWorkday(d, wc) ? +wc.capacity || 0 : 0))]));
+        const used = new Map(M.workCenters().map((wc) => [wc.id, Array(HORIZON).fill(0)]));
+
+        const orders = S().workOrders.filter((w) => w.status === 'planned' || w.status === 'released').map((w) => ({ w, ...dueOf(w) }));
+        orders.sort((a, b) => (a.w.priority === 'urgent' ? 0 : 1) - (b.w.priority === 'urgent' ? 0 : 1)
+            || a.due.localeCompare(b.due)
+            || (a.w.status === 'released' ? 0 : 1) - (b.w.status === 'released' ? 0 : 1)
+            || a.w.no.localeCompare(b.w.no));
+
+        orders.forEach((o, rank) => {
+            const w = o.w;
+            o.rank = rank + 1;
+            const earliest = w.status === 'released' ? 0 : Math.max(0, U.diffDays(w.start, todayIso));
+            let day = Math.min(earliest, HORIZON - 1);
+            let startDay = null;
+            o.ops = [];
+            o.overflow = false;
+            M.routing(w.kod).forEach((op, i) => {
+                const f = free.get(op.wc);
+                if (!f) { o.ops.push({ seq: (i + 1) * 10, wc: op.wc, missing: true, min: 0 }); return; }
+                let need = M.opMinutes(op, w.qty);
+                const min = need;
+                let d = day, first = null;
+                while (need > EPS && d < HORIZON) {
+                    if (f[d] > EPS) {
+                        const take = Math.min(need, f[d]);
+                        f[d] -= take; need -= take;
+                        used.get(op.wc)[d] += take;
+                        if (first == null) first = d;
+                    }
+                    if (need > EPS) d++;
+                }
+                if (need > EPS) { o.overflow = true; d = HORIZON - 1; }
+                if (first == null) first = d;
+                if (startDay == null) startDay = first;
+                o.ops.push({ seq: (i + 1) * 10, wc: op.wc, min, startDay: first, endDay: d, start: isoAt(first), end: isoAt(d) });
+                day = d;
+            });
+            if (startDay == null) startDay = day;
+            o.startDay = startDay; o.endDay = day;
+            o.start = isoAt(startDay); o.end = isoAt(day);
+            o.lateDays = Math.max(0, U.diffDays(o.end, o.due));
+            o.late = o.lateDays > 0 || o.overflow;
+            o.shift = U.diffDays(o.end, w.end);
+        });
+        return { orders, used, dates, horizon: HORIZON };
+    }
+
+    MRP.capacity = { compute, summary, schedule, dueOf };
 
     // =====================================================================
     // Görünüm
     // =====================================================================
-    const capState = { includePlanned: true };
+    const capState = { includePlanned: true, tab: 'load' };
     const heat = (pct) => (pct > 1 ? 'var(--red)' : pct > 0.85 ? 'var(--amber)' : pct > 0 ? 'var(--green)' : 'transparent');
 
     MRP.views.capacity = {
         title: 'Kapasite Planlama',
-        subtitle: 'İş merkezi bazında haftalık yük — açık iş emirleri ve MRP üretim önerileri',
+        subtitle: 'İş merkezi bazında haftalık yük ve sonlu kapasite çizelgesi — termin önceliğiyle gerçekçi bitiş tarihleri',
         render() {
+            const tabs = H.tabs([['load', 'Yük (ısı haritası)'], ['schedule', 'Sonlu Çizelge', S().workOrders.filter((w) => w.status === 'planned' || w.status === 'released').length]], capState.tab, 'capTab');
+            if (capState.tab === 'schedule') return tabs + renderSchedule();
             const cap = compute({ includePlanned: capState.includePlanned });
             const sm = summary(cap);
             const can = MRP.auth.can('manageCapacity');
-            let html = `<div class="kpis">
+            let html = tabs + `<div class="kpis">
                 ${H.kpi('En Yüksek Doluluk', `%${U.num(sm.peak * 100, 0)}`, 'İş merkezi × hafta', sm.peak > 1 ? 'red' : sm.peak > 0.85 ? 'violet' : 'green')}
                 ${H.kpi('Aşırı Yüklü Hücre', sm.over, 'Kapasitenin üzerinde', sm.over ? 'red' : 'green')}
                 ${H.kpi('Toplam Yük', `${U.num(sm.totalHours, 0)} sa`, '8 hafta', 'blue')}
@@ -113,6 +196,91 @@
             return html;
         }
     };
+
+    // ---------------- Sonlu çizelge görünümü ----------------
+    const WC_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#ec4899', '#84cc16'];
+    const wcColor = (id) => WC_COLORS[Math.max(0, M.workCenters().findIndex((w) => w.id === id)) % WC_COLORS.length];
+    const dshort = (iso) => U.date(U.parseDate(iso)).slice(0, 5);
+
+    function renderSchedule() {
+        const sc = schedule();
+        const list = sc.orders;
+        const canWO = MRP.auth.can('manageWO');
+        if (!list.length) return H.empty('Açık iş emri yok', 'MRP önerilerinden iş emri oluşturduğunuzda burada kapasiteye göre sıralanır.');
+        const late = list.filter((o) => o.late);
+        const soLate = new Set(late.flatMap((o) => o.sos.filter((x) => o.end > x.due).map((x) => x.key)));
+        const changed = list.filter((o) => o.start !== o.w.start || o.end !== o.w.end);
+        const lastEnd = list.reduce((m, o) => (o.end > m ? o.end : m), U.iso(U.today()));
+        const win = Math.max(5, Math.max(...list.map((o) => o.endDay)) + 1);   // bugün → son bitiş
+        const util = M.workCenters().map((wc) => {
+            const u = sc.used.get(wc.id).slice(0, win);
+            const capSum = sc.dates.slice(0, win).reduce((a, d) => a + (isWorkday(d, wc) ? +wc.capacity : 0), 0);
+            return { wc, pct: capSum ? U.sum(u, (x) => x) / capSum : 0 };
+        }).sort((a, b) => b.pct - a.pct);
+
+        let html = `<div class="kpis">
+            ${H.kpi('Çizelgelenen İş Emri', list.length, `Son bitiş ${U.date(U.parseDate(lastEnd))}`, 'blue')}
+            ${H.kpi('Termine Yetişmeyen', late.length, late.length ? `toplam ${U.sum(late, (o) => o.lateDays)} gün gecikme` : 'Tüm iş emirleri zamanında', late.length ? 'red' : 'green')}
+            ${H.kpi('Etkilenen Sipariş Satırı', soLate.size, 'Kapasite nedeniyle geç kalacak', soLate.size ? 'red' : 'green')}
+            ${H.kpi('Darboğaz', util[0] ? util[0].wc.ad : '–', util[0] ? `son bitişe kadar doluluk %${U.num(util[0].pct * 100, 0)}` : '', util[0] && util[0].pct > 0.85 ? 'violet' : 'cyan')}
+            ${H.kpi('Tarihi Değişecek', changed.length, 'Çizelge ↔ iş emri tarihleri', changed.length ? 'violet' : 'green')}
+        </div>`;
+        if (late.length) html += H.banner('red', 'alert', `${late.length} iş emri kapasite nedeniyle termine yetişmiyor`, `${late.slice(0, 4).map((o) => `${o.w.no} (${o.lateDays} gün${o.sos[0] ? ` · ${o.sos[0].customer}` : ''})`).join(', ')}${late.length > 4 ? '…' : ''} — acil işaretleyin, vardiya/kapasite ekleyin veya müşteriyle termini konuşun.`);
+        html += `<div class="toolbar"><span class="muted" style="font-size:.82em;">Sıra: acil → termin (bağlı siparişin) → serbest bırakılmış. Planlanan iş emri planlı başlangıcından önce başlamaz (malzeme hazırlığı).</span><span class="spacer"></span>
+            ${canWO && changed.length ? `<button class="btn btn-primary" data-act="schedApply">${MRP.icon('check')} Tarihleri iş emirlerine uygula (${changed.length})</button>` : ''}</div>`;
+
+        // Gantt: satır = iş emri, parçalar = operasyonlar (iş merkezine göre renkli), dikey çizgi = termin
+        const span = Math.min(sc.horizon, Math.max(14, Math.max(...list.map((o) => o.endDay), ...list.map((o) => Math.max(0, U.diffDays(o.due, U.iso(U.today()))))) + 2));
+        const pct = (d) => (Math.min(d, span) / span) * 100;
+        html += H.card('Çizelge', `Bugünden itibaren ${span} gün · renk = iş merkezi · kesikli çizgi = termin`, `<div class="card-body" style="overflow-x:auto;"><div class="gantt">
+            <div class="gantt-head"><div>İş emri (öncelik sırası)</div><div>${esc(U.date(U.today()))} → ${esc(U.date(U.addDays(U.today(), span)))}</div><div class="text-right">Çizelge / termin</div></div>
+            ${list.map((o) => {
+                const dueDay = U.diffDays(o.due, U.iso(U.today()));
+                return `<div class="gantt-row"><div class="gantt-label" title="${esc(o.w.ad)}">${o.w.priority === 'urgent' ? '⚑ ' : ''}${esc(o.w.ad)}<small>${o.rank}. ${esc(o.w.no)} · ${esc(U.qty(o.w.qty, 'ad'))}${o.sos[0] ? ` · ${esc(o.sos[0].customer)}` : ''}</small></div>
+                    <div class="gantt-track">${dueDay >= 0 && dueDay <= span ? `<span style="position:absolute;top:-4px;bottom:-4px;left:${pct(dueDay + 1)}%;border-left:2px dashed ${o.late ? 'var(--red)' : 'var(--text-3)'};z-index:2;" title="Termin ${esc(U.date(U.parseDate(o.due)))}"></span>` : ''}
+                        ${o.ops.filter((op) => !op.missing).map((op) => `<div class="gantt-bar" style="left:${pct(op.startDay)}%;width:${Math.max(0.8, pct(op.endDay + 1) - pct(op.startDay))}%;background:${wcColor(op.wc)};" title="${esc(op.wc)} · ${esc(U.date(U.parseDate(op.start)))} → ${esc(U.date(U.parseDate(op.end)))} · ${U.num(op.min / 60, 1)} sa">${esc(op.wc)}</div>`).join('')}</div>
+                    <div class="mono text-right" style="font-size:.78em;">${esc(dshort(o.end))} / ${esc(dshort(o.due))} ${o.late ? `<span class="badge badge-red">+${o.overflow ? '∞' : o.lateDays}g</span>` : '<span class="badge badge-green">ok</span>'}</div></div>`;
+            }).join('')}
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:.78em;">${M.workCenters().map((wc) => `<span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${wcColor(wc.id)};"></span> ${esc(wc.ad)}</span>`).join('')}</div>
+        </div></div>`);
+
+        html += '<div style="height:16px;"></div>' + `<section class="card"><div class="table-wrap"><table>
+            <thead><tr><th class="num">Sıra</th><th>İş emri</th><th>Mamul</th><th class="num">Miktar</th><th>Satış siparişi</th><th>Termin</th><th>Mevcut plan</th><th>Çizelge</th><th>Durum</th><th></th></tr></thead>
+            <tbody>${list.map((o) => `<tr class="${o.late ? 'r-crit' : ''}">
+                <td class="num">${o.rank}</td>
+                <td class="nowrap"><button class="link mono" data-act="woDetail" data-id="${esc(o.w.no)}">${esc(o.w.no)}</button> ${H.badge(H.WO_STATUS, o.w.status)}</td>
+                <td>${H.anyLink(o.w.kod)}<div class="muted" style="font-size:12px;">${esc(o.w.ad)}</div></td>
+                <td class="num">${esc(U.qty(o.w.qty, 'ad'))}</td>
+                <td>${o.sos.length ? o.sos.map((x) => `<div><span class="mono">${esc(x.key)}</span> <span class="muted">${esc(x.customer)}</span></div>`).join('') : '<span class="muted">Stok için</span>'}</td>
+                <td class="nowrap">${esc(U.date(U.parseDate(o.due)))}${o.soDue ? '' : ' <span class="muted" style="font-size:11px;">(İE bitişi)</span>'}</td>
+                <td class="nowrap muted">${esc(dshort(o.w.start))} → ${esc(dshort(o.w.end))}</td>
+                <td class="nowrap strong">${esc(dshort(o.start))} → ${esc(dshort(o.end))}${o.shift ? ` <span class="muted" style="font-size:11px;">(${o.shift > 0 ? '+' : ''}${o.shift}g)</span>` : ''}</td>
+                <td>${o.overflow ? '<span class="badge badge-red">Ufuk dışı</span>' : o.late ? `<span class="badge badge-red">${o.lateDays} gün geç</span>` : '<span class="badge badge-green">Zamanında</span>'}${o.ops.some((x) => x.missing) ? ' <span class="badge badge-amber">Tanımsız iş merkezi</span>' : ''}${o.ops.length ? '' : ' <span class="badge badge-amber">Rota yok</span>'}</td>
+                <td>${canWO ? `<button class="btn btn-ghost btn-sm" data-act="schedUrgent" data-id="${esc(o.w.no)}" title="${o.w.priority === 'urgent' ? 'Acil işaretini kaldır' : 'Acil — sıranın başına al'}">${o.w.priority === 'urgent' ? '⚑ Acil' : '⚐'}</button>` : ''}</td></tr>`).join('')}</tbody>
+        </table></div></section>`;
+        return html;
+    }
+
+    async function applySchedule() {
+        if (!H.guard('manageWO')) return;
+        const sc = schedule();
+        const ch = sc.orders.filter((o) => o.start !== o.w.start || o.end !== o.w.end);
+        if (!ch.length) return;
+        if (!(await UI.confirm(`${ch.length} iş emrinin başlangıç / bitiş tarihi kapasiteye göre güncellenecek. Bağlı siparişlerin karşılama tarihleri de buna göre değişir.`, { title: 'Çizelgeyi uygula', okLabel: 'Uygula' }))) return;
+        const u = MRP.auth.current();
+        ch.forEach((o) => {
+            const w = o.w;
+            (w.history = w.history || []).push({ action: `Çizelge: ${U.date(U.parseDate(w.start))}–${U.date(U.parseDate(w.end))} → ${U.date(U.parseDate(o.start))}–${U.date(U.parseDate(o.end))}`, by: u.name, at: new Date().toISOString() });
+            if (w.status === 'planned') w.start = o.start;
+            w.end = o.end;
+            w.scheduledAt = new Date().toISOString();
+        });
+        MRP.store.audit('Sonlu çizelge uygulandı', `${ch.length} iş emri; ${sc.orders.filter((o) => o.late).length} termine yetişmiyor`);
+        const lateSO = sc.orders.filter((o) => o.late && o.sos.length);
+        if (lateSO.length) MRP.store.notify('wo', 'Kapasite: termine yetişmeyen sipariş', lateSO.slice(0, 3).map((o) => `${o.sos[0].key} (${o.sos[0].customer}) +${o.lateDays}g`).join(', '), ['perm:runMRP', 'perm:manageWO'], 'capacity');
+        app().commit();
+        UI.toast('Çizelge uygulandı', `${ch.length} iş emri güncellendi.`, 'success');
+    }
 
     function cellDetail(id) {
         const [wcId, i] = id.split('|');
@@ -167,6 +335,15 @@
     Object.assign(MRP.actions, {
         capPlanned: (_, el) => { capState.includePlanned = el.checked; app().render(); },
         capCell: (id) => cellDetail(id),
+        capTab: (t) => { capState.tab = t; app().render(); },
+        schedApply: () => applySchedule(),
+        schedUrgent: (no) => {
+            if (!H.guard('manageWO')) return;
+            const w = S().workOrders.find((x) => x.no === no);
+            w.priority = w.priority === 'urgent' ? 'normal' : 'urgent';
+            (w.history = w.history || []).push({ action: w.priority === 'urgent' ? 'Acil işaretlendi' : 'Acil işareti kaldırıldı', by: MRP.auth.current().name, at: new Date().toISOString() });
+            app().commit();
+        },
         wcEdit: (id) => editWc(id)
     });
 })(window.MRP);

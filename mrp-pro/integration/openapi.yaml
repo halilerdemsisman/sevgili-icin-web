@@ -520,6 +520,8 @@ components:
         end: { type: string, format: date }
         status: { type: string, enum: [planned, released, completed, cancelled] }
         source: { type: string, description: "MRP planlı sipariş no veya satış sipariş satırı (SS-…/1)" }
+        priority: { type: string, enum: [normal, urgent], description: "Sonlu çizelgede acil iş emri sıranın başına alınır" }
+        scheduledAt: { type: string, format: date-time, description: "Tarihler en son sonlu kapasite çizelgesinden uygulandığında" }
         soRefs:
           type: array
           description: "Satış siparişi bağlantısı (pegging). Toplam bağlı miktar iş emri miktarını, her satırda sevk bekleyen miktarı aşamaz; bağlanmayan kısım stok için üretimdir."
