@@ -128,8 +128,26 @@ CREATE TABLE mrp_work_order (
     "end"     date NOT NULL,
     status    varchar(10) NOT NULL CHECK (status IN ('planned','released','completed','cancelled')),
     source    varchar(20),
-    payload   jsonb NOT NULL DEFAULT '{}'              -- history vb.
+    payload   jsonb NOT NULL DEFAULT '{}'              -- history, ops (atölye operasyonları), goodQty, scrapQty
 );
+
+-- Atölye bildirimleri (raporlama için; kaynak kayıt mrp_work_order.payload->'ops').
+-- ERP bu tabloyu iş emri kaydı her geldiğinde ops[].logs'tan yeniden doldurabilir.
+CREATE TABLE mrp_shopfloor_log (
+    wo_no     varchar(20) NOT NULL REFERENCES mrp_work_order(no) ON DELETE CASCADE,
+    seq       integer NOT NULL,                         -- operasyon sırası (10, 20…)
+    wc        varchar(10) NOT NULL REFERENCES mrp_work_center(id),
+    n         integer NOT NULL,                         -- kayıt sırası
+    type      varchar(4) NOT NULL CHECK (type IN ('run','down','qty')),
+    start_at  timestamptz, end_at timestamptz,
+    minutes   numeric(10,2),
+    good      numeric(18,4) NOT NULL DEFAULT 0,
+    scrap     numeric(18,4) NOT NULL DEFAULT 0,
+    reason    varchar(60),                              -- duruş veya fire sebebi
+    operator  varchar(100),
+    PRIMARY KEY (wo_no, seq, n)
+);
+CREATE INDEX ON mrp_shopfloor_log (wc, end_at);
 
 -- ---------- Satın alma ----------
 CREATE TABLE mrp_purchase_request (

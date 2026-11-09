@@ -43,6 +43,7 @@ export function seedUsers() {
         ['yonetim', 'yon123', 'Kemal Aydın', 'yonetim'],
         ['planlama', 'plan123', 'Ahmet Yılmaz', 'planlama'],
         ['uretim', 'uret123', 'Hüseyin Çelik', 'uretim'],
+        ['operator', 'op123', 'Mehmet Öztürk', 'operator'],
         ['satinalma', 'satin123', 'Zeynep Kaya', 'satinalma'],
         ['satinalma_muduru', 'mudur123', 'Murat Demir', 'satinalma_muduru'],
         ['depo', 'depo123', 'Emre Koç', 'depo'],

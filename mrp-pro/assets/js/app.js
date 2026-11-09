@@ -20,7 +20,8 @@
         { group: 'Planlama', items: [
             { id: 'mrp', label: 'MRP Çalıştırma', icon: 'calc', count: () => (MRP.store.state.lastRun ? MRP.store.state.lastRun.summary.critical : 0), alert: true },
             { id: 'capacity', label: 'Kapasite Planlama', icon: 'gauge' },
-            { id: 'workorders', label: 'İş Emirleri', icon: 'factory', count: () => MRP.store.state.workOrders.filter((w) => w.status === 'planned' || w.status === 'released').length }
+            { id: 'workorders', label: 'İş Emirleri', icon: 'factory', count: () => MRP.store.state.workOrders.filter((w) => w.status === 'planned' || w.status === 'released').length },
+            { id: 'shopfloor', label: 'Atölye Takibi', icon: 'play', count: () => (MRP.shopfloor ? MRP.shopfloor.activeCount() : 0) }
         ] },
         { group: 'Satın Alma', items: [
             { id: 'requests', label: 'Satın Alma Talepleri', icon: 'cart', count: () => MRP.store.state.requests.filter((r) => r.status === 'pending').length },

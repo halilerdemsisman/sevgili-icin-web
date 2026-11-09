@@ -24,7 +24,7 @@ info:
     | demands | `id` | Bağımsız talep / satış siparişi (MPS) | runMRP |
     | purchaseRequests | `no` | Satın alma talebi | createRequest, approveRequest, createPO, receiveGoods, inspectQuality |
     | purchaseOrders | `no` | Satın alma siparişi | createPO, receiveGoods, inspectQuality (kalite iadesi teslim miktarını düşürür) |
-    | workOrders | `no` | İş emri | manageWO, runMRP |
+    | workOrders | `no` | İş emri (atölye operasyonları `ops` içinde) | manageWO, runMRP, reportProduction (yalnızca `ops`) |
     | subcontracts | `no` | Fason sevk fişi | transferStock |
     | inspections | `no` | Giriş kalite muayenesi (karantina partisi) | receiveGoods (açma), inspectQuality (karar) |
     | notifications | `id` | Rol bazlı bildirim | (oturum açmış herkes) |
@@ -261,6 +261,7 @@ components:
             adjustStock: { type: boolean, description: Sayım düzeltme }
             transferStock: { type: boolean, description: Lokasyon transferi ve fason sevk/dönüş }
             inspectQuality: { type: boolean, description: "Giriş muayenesi ve karantina kararı (kabul / iade / hurda)" }
+            reportProduction: { type: boolean, description: "Atölye: operasyon başlat/bitir, sağlam/fire ve duruş bildirimi" }
             manageUsers: { type: boolean, description: "Firma ayarları (logo); ERP modunda kullanıcılar ERP'de yönetilir" }
     Change:
       type: object
@@ -458,6 +459,39 @@ components:
         end: { type: string, format: date }
         status: { type: string, enum: [planned, released, completed, cancelled] }
         source: { type: string, description: MRP planlı sipariş no }
+        goodQty: { type: number, description: "Tamamlamada stoğa giren sağlam miktar (atölye bildirimi)" }
+        scrapQty: { type: number }
+        ops:
+          type: array
+          description: "Atölye takibi: serbest bırakmada rotadan açılır; girdi = önceki operasyonun sağlam çıktısı"
+          items:
+            type: object
+            properties:
+              seq: { type: integer }
+              wc: { type: string }
+              setup: { type: number }
+              run: { type: number }
+              status: { type: string, enum: [waiting, running, paused, done] }
+              good: { type: number }
+              scrap: { type: number }
+              runMin: { type: number }
+              downMin: { type: number }
+              cur: { type: object, nullable: true, description: "Açık çalışma/duruş parçası {kind: run|down, start, operator, reason}" }
+              logs:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type: { type: string, enum: [run, down, qty] }
+                    start: { type: string, format: date-time }
+                    end: { type: string, format: date-time }
+                    at: { type: string, format: date-time }
+                    min: { type: number }
+                    good: { type: number }
+                    scrap: { type: number }
+                    reason: { type: string, description: duruş sebebi }
+                    scrapReason: { type: string }
+                    operator: { type: string }
     Subcontract:
       type: object
       required: [no, supplierId, status, lines]

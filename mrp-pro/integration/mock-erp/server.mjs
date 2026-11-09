@@ -47,7 +47,7 @@ const COLLECTIONS = {
     demands:          { key: (r) => r.id,                      perms: ['runMRP'] },
     purchaseRequests: { key: (r) => r.no,                      perms: ['createRequest', 'approveRequest', 'createPO', 'receiveGoods', 'inspectQuality'] },
     purchaseOrders:   { key: (r) => r.no,                      perms: ['createPO', 'receiveGoods', 'inspectQuality'] },
-    workOrders:       { key: (r) => r.no,                      perms: ['manageWO', 'runMRP'] },
+    workOrders:       { key: (r) => r.no,                      perms: ['manageWO', 'runMRP', 'reportProduction'] },
     subcontracts:     { key: (r) => r.no,                      perms: ['transferStock'] },
     inspections:      { key: (r) => r.no,                      perms: ['receiveGoods', 'inspectQuality'] },
     notifications:    { key: (r) => r.id,                      perms: ['*'] },
@@ -95,6 +95,25 @@ function validate(collection, op, key, data, user, db) {
             }
             // Onaylanmış talebin tutarı onaydan sonra artırılamaz
             if (prev && prev.status !== 'pending' && Number(data.total) > Number(prev.total) + 0.01) return 'Onaylı talebin tutarı artırılamaz';
+            break;
+        }
+        case 'workOrders': {
+            const prev = db.collections.workOrders[key];
+            const strip = (w) => { const { ops, history, ...rest } = w || {}; return JSON.stringify(rest); };
+            // Atölye bildirimi yapan (iş emri yönetimi yetkisi olmayan) kullanıcı yalnızca operasyon kayıtlarını değiştirebilir
+            if (!p.manageWO && !p.runMRP) {
+                if (!prev) return 'İş emri açma yetkiniz yok';
+                if (prev.status !== 'released') return 'Yalnızca serbest bırakılmış iş emrine bildirim yapılabilir';
+                if (strip(prev) !== strip(data)) return 'Atölye bildirimi iş emri bilgilerini değiştiremez';
+            }
+            if (Array.isArray(data.ops)) {
+                for (let i = 0; i < data.ops.length; i++) {
+                    const o = data.ops[i];
+                    const input = i === 0 ? data.qty : data.ops[i - 1].good;
+                    if (!(o.good >= 0) || !(o.scrap >= 0)) return `Op ${o.seq}: miktar geçersiz`;
+                    if (o.good + o.scrap > input + 1e-6) return `Op ${o.seq}: sağlam + fire girdiyi (${input}) aşıyor`;
+                }
+            }
             break;
         }
         case 'inspections': {

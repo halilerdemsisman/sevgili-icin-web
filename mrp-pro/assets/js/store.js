@@ -55,7 +55,8 @@
             roles: MRP.auth.defaultRoles(),
             users: MRP.auth.defaultUsers(),
             branding: defaultBranding(),
-            qcSetup: true
+            qcSetup: true,
+            sfSetup: true
         };
     }
 
@@ -66,7 +67,33 @@
      */
     function upgrade(st) {
         if (!Array.isArray(st.inspections)) st.inspections = [];
-        if (st.qcSetup || MRP.config.erp) return st;
+        if (MRP.config.erp) return st;
+        upgradeQC(st);
+        upgradeShopfloor(st);
+        return st;
+    }
+    /** Eksik rol ve demo kullanıcısını ekler */
+    function addRole(st, id) {
+        const roles = st.roles || (st.roles = []);
+        if (!roles.some((r) => r.id === id)) roles.push(MRP.auth.defaultRoles().find((r) => r.id === id));
+        const users = st.users || (st.users = []);
+        const demo = MRP.auth.defaultUsers().find((u) => u.role === id);
+        if (demo && !users.some((u) => u.username === demo.username)) users.push(demo);
+    }
+    /** Atölye takibi öncesi kayıtlar: operatör rolü, yetki ve ekran */
+    function upgradeShopfloor(st) {
+        if (st.sfSetup) return;
+        const roles = st.roles || (st.roles = []);
+        const admin = roles.find((r) => r.id === 'admin');
+        if (admin) { admin.can = { ...admin.can, reportProduction: true }; if (!admin.views.includes('shopfloor')) admin.views.push('shopfloor'); }
+        const uretim = roles.find((r) => r.id === 'uretim');
+        if (uretim) uretim.can = { ...uretim.can, reportProduction: true };
+        ['yonetim', 'planlama', 'uretim'].forEach((id) => { const r = roles.find((x) => x.id === id); if (r && !r.views.includes('shopfloor')) r.views.push('shopfloor'); });
+        addRole(st, 'operator');
+        st.sfSetup = true;
+    }
+    function upgradeQC(st) {
+        if (st.qcSetup) return;
         const defs = MRP.auth.defaultRoles();
         const roles = st.roles || (st.roles = []);
         const admin = roles.find((r) => r.id === 'admin');
@@ -76,7 +103,6 @@
         const users = st.users || (st.users = []);
         if (!users.some((u) => u.username === 'kalite')) users.push(MRP.auth.defaultUsers().find((u) => u.username === 'kalite'));
         st.qcSetup = true;
-        return st;
     }
 
     /** Firma adı ve logolar (Kullanıcılar & Roller → Firma Ayarları) */
@@ -119,7 +145,7 @@
                 const parsed = JSON.parse(raw);
                 if (parsed && parsed.version === VERSION) {
                     const fresh = defaultState();
-                    delete fresh.qcSetup;               // eski kayıtta yoksa yükseltme çalışsın
+                    delete fresh.qcSetup; delete fresh.sfSetup;   // eski kayıtta yoksa yükseltme çalışsın
                     state = upgrade(Object.assign(fresh, parsed));
                     return state;
                 }
@@ -129,7 +155,7 @@
                 const parsed = JSON.parse(rawV2);
                 if (parsed && parsed.version === 2) {
                     state = migrateV2(parsed);
-                    delete state.qcSetup;
+                    delete state.qcSetup; delete state.sfSetup;
                     upgrade(state);
                     save();
                     localStorage.removeItem(KEY_V2);
@@ -171,7 +197,7 @@
     function restore(obj) {
         if (!obj || (obj.version !== VERSION && obj.version !== 2)) throw new Error('Tanınmayan yedek dosyası');
         const fresh = defaultState();
-        delete fresh.qcSetup;
+        delete fresh.qcSetup; delete fresh.sfSetup;
         state = upgrade(obj.version === 2 ? migrateV2(obj) : Object.assign(fresh, obj));
         save();
     }
