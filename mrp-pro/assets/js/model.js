@@ -1,0 +1,560 @@
+/* ==========================================================================
+   MRP Pro — İş modeli: ürünler, malzeme kartları, ürün ağacı, rotalar,
+   döviz/maliyet, lot tabanlı çoklu lokasyon stoğu, fiyat listesi
+   ========================================================================== */
+(function (MRP) {
+    'use strict';
+    const U = MRP.U;
+    const D = MRP.data;
+    const S = () => MRP.store.state;
+    const EPS = 1e-9;
+
+    let staticProducts = [];
+    let baseItems = {};
+    let cache = {};
+
+    const MOVE_TYPES = {
+        GR: { label: 'Mal Kabul', badge: 'badge-green' },
+        GI: { label: 'Üretime Sarf', badge: 'badge-amber' },
+        FG: { label: 'Üretimden Giriş', badge: 'badge-blue' },
+        ADJ: { label: 'Sayım Düzeltme', badge: 'badge-violet' },
+        TRF: { label: 'Transfer', badge: 'badge-cyan' },
+        RTV: { label: 'Tedarikçiye İade', badge: 'badge-red' },
+        SCR: { label: 'Hurda / Fire', badge: 'badge-gray' }
+    };
+    const PROCUREMENT = { buy: 'Satın Alma', make: 'Üretim', service: 'Fason / Hizmet' };
+    const LOT_POLICIES = { L4L: 'Lot-for-Lot (ihtiyaç kadar)', FOQ: 'Sabit Parti (katları)', MIN: 'Minimum Sipariş' };
+
+    const M = { MOVE_TYPES, PROCUREMENT, LOT_POLICIES, LOCATIONS: D.LOCATIONS };
+
+    /** ERP modunda yerleşik demo verisi kullanılmaz; tüm ana veri ERP'den gelir */
+    const ERP = () => MRP.config.erp;
+
+    M.init = () => {
+        staticProducts = ERP() ? [] : D.buildProducts();
+        baseItems = ERP() ? {} : D.buildItemMaster();
+        M.invalidate();
+    };
+    M.invalidate = () => { cache = {}; };
+
+    // ======================================================================
+    // Döviz
+    // ======================================================================
+    M.fxRate = (cur) => (!cur || cur === 'TRY' ? 1 : (S().fx.rates[cur] || D.DEFAULT_FX[cur] || 1));
+    M.toTRY = (amount, cur) => amount * M.fxRate(cur);
+    M.fmtMoney = (amount, cur) => (cur && cur !== 'TRY' ? `${U.num(amount, 2)} ${D.CURRENCIES[cur].symbol}` : U.cur(amount));
+
+    // ======================================================================
+    // Ürünler
+    // ======================================================================
+    M.products = () => {
+        if (!cache.products) {
+            const ov = S().productOverrides;
+            cache.products = [
+                ...staticProducts.map((p) => (ov[p.kod] ? { ...p, ...ov[p.kod] } : p)),
+                ...S().customProducts.map((p) => ({ ...p, custom: true }))
+            ];
+            cache.productIndex = new Map(cache.products.map((p) => [p.kod, p]));
+        }
+        return cache.products;
+    };
+    M.product = (kod) => { M.products(); return cache.productIndex.get(kod) || null; };
+    M.isProduct = (kod) => !!M.product(kod);
+
+    // ======================================================================
+    // Malzeme kartları
+    // ======================================================================
+    M.items = () => {
+        if (!cache.items) {
+            const all = { ...baseItems, ...S().customItems };
+            cache.items = Object.values(all)
+                .map((it) => ({ currency: 'TRY', ...it, ...(S().itemOverrides[it.kod] || {}) }))
+                .sort((a, b) => a.kod.localeCompare(b.kod));
+            cache.itemIndex = new Map(cache.items.map((i) => [i.kod, i]));
+        }
+        return cache.items;
+    };
+    M.rawItem = (kod) => { M.items(); return cache.itemIndex.get(kod) || null; };
+    /** Malzeme veya mamul için birleşik kart (mamuller "üretim" tipinde sanal karttır) */
+    M.item = (kod) => {
+        const it = M.rawItem(kod);
+        if (it) return it;
+        const p = M.product(kod);
+        if (!p) return null;
+        return {
+            kod, ad: p.ad, tur: 'Mamul', unit: 'ad', procurement: 'make', isProduct: true, currency: 'TRY',
+            price: M.unitCost(kod), leadTime: (D.CATEGORY_STYLE[p.kategori] || {}).lead || 5,
+            safetyStock: 0, lotPolicy: 'L4L', lotSize: 0, kategori: p.kategori
+        };
+    };
+    /** Satın alınan kalemin TL birim fiyatı (güncel kurla) */
+    M.priceTRY = (kod) => { const it = M.rawItem(kod); return it ? M.toTRY(it.price || 0, it.currency) : 0; };
+
+    // ======================================================================
+    // Ürün ağacı ve rotalar
+    // ======================================================================
+    /** Tek seviyeli reçete satırları [{kod, k}] */
+    M.bom = (kod) => {
+        const custom = S().customBoms[kod];
+        if (custom) return custom;
+        if (ERP()) return [];
+        if (D.SUB_BOMS[kod]) return D.SUB_BOMS[kod].map(([c, k]) => ({ kod: c, k }));
+        const p = M.product(kod);
+        if (!p || p.custom) return [];
+        const tpl = D.BOM_TEMPLATES[p.kategori] || [];
+        return tpl.map(([c, , , k]) => ({ kod: c, k }));
+    };
+    M.hasBom = (kod) => M.bom(kod).length > 0;
+
+    M.workCenters = () => S().workCenters;
+    M.workCenter = (id) => S().workCenters.find((w) => w.id === id) || null;
+
+    /** Operasyon listesi [{wc, setup, run}] — özel rota yoksa kategori varsayılanı */
+    M.routing = (kod) => {
+        if (S().routings[kod]) return S().routings[kod];
+        if (ERP()) return [];
+        const p = M.product(kod);
+        let tpl = null;
+        if (p) tpl = D.DEFAULT_ROUTINGS[p.kategori];
+        else { const it = M.rawItem(kod); if (it && it.procurement === 'make') tpl = D.DEFAULT_ROUTINGS._YM; }
+        return (tpl || []).map(([wc, setup, run]) => ({ wc, setup, run }));
+    };
+    /** Bir operasyonun toplam dakikası (verimlilik dahil) */
+    M.opMinutes = (op, qty) => {
+        const wc = M.workCenter(op.wc);
+        const eff = wc ? (wc.efficiency || 100) / 100 : 1;
+        return (op.setup + op.run * qty) / eff;
+    };
+
+    // ======================================================================
+    // Maliyet (TL, güncel kurla) — malzeme + işçilik + genel gider
+    // ======================================================================
+    /** Kendi rotasının birim işçilik maliyeti (hazırlık standart partiye yayılır) */
+    M.ownLabor = (kod) => {
+        if (!S().costing.includeLabor) return 0;
+        const lot = Math.max(1, S().costing.stdLot || 20);
+        return U.sum(M.routing(kod), (op) => {
+            const wc = M.workCenter(op.wc);
+            return wc ? (M.opMinutes(op, lot) / lot) * (wc.rate || 0) / 60 : 0;
+        });
+    };
+
+    /** { material, labor } — çok seviyeli toplanmış, genel gider hariç */
+    M.costParts = (kod, depth = 0) => {
+        cache.parts = cache.parts || {};
+        if (cache.parts[kod]) return cache.parts[kod];
+        let res;
+        const lines = depth > 20 ? [] : M.bom(kod);
+        if (lines.length) {
+            res = { material: 0, labor: M.ownLabor(kod) };
+            lines.forEach((l) => {
+                const c = M.hasBom(l.kod) ? M.costParts(l.kod, depth + 1) : { material: M.priceTRY(l.kod), labor: 0 };
+                res.material += l.k * c.material;
+                res.labor += l.k * c.labor;
+            });
+        } else {
+            const it = M.rawItem(kod);
+            const p = it ? null : M.product(kod);
+            res = { material: it ? M.priceTRY(kod) : (p ? p.toplam : 0), labor: 0 };
+        }
+        cache.parts[kod] = res;
+        return res;
+    };
+    M.overheadPct = () => (S().costing.overheadPct || 0) / 100;
+    /** Standart birim maliyet (TL): malzeme + işçilik + genel gider */
+    M.unitCost = (kod) => {
+        const c = M.costParts(kod);
+        if (!M.hasBom(kod)) return c.material;
+        return (c.material + c.labor) * (1 + M.overheadPct());
+    };
+    /** Yalnızca malzeme maliyeti (ERP'deki kayıtlı maliyetle karşılaştırma için) */
+    M.materialCost = (kod) => M.costParts(kod).material;
+
+    /** Maliyetin malzeme türüne göre dağılımı + işçilik + genel gider (TL) */
+    M.costBreakdown = (kod) => {
+        const acc = {};
+        const walk = (k, mult, depth) => {
+            if (depth > 20) return;
+            M.bom(k).forEach((l) => {
+                const child = M.item(l.kod);
+                if (!child) return;
+                if (M.hasBom(l.kod) && !child.isProduct) walk(l.kod, mult * l.k, depth + 1);
+                else acc[child.tur] = (acc[child.tur] || 0) + mult * l.k * (child.isProduct ? M.unitCost(l.kod) : M.priceTRY(l.kod));
+            });
+        };
+        walk(kod, 1, 0);
+        const c = M.costParts(kod);
+        if (c.labor) acc['İşçilik'] = c.labor;
+        const oh = (c.material + c.labor) * M.overheadPct();
+        if (oh) acc['Genel Gider'] = oh;
+        return acc;
+    };
+    /** Döviz bazında malzeme maliyeti dağılımı (TL karşılığı) — kur riski analizi */
+    M.currencyExposure = (kod) => {
+        const acc = {};
+        const walk = (k, mult, depth) => {
+            if (depth > 20) return;
+            M.bom(k).forEach((l) => {
+                if (M.hasBom(l.kod)) return walk(l.kod, mult * l.k, depth + 1);
+                const it = M.rawItem(l.kod);
+                if (!it) return;
+                acc[it.currency] = (acc[it.currency] || 0) + mult * l.k * M.priceTRY(l.kod);
+            });
+        };
+        walk(kod, 1, 0);
+        return acc;
+    };
+
+    /** Kalemin kullanıldığı ürünler (kategori bazında sayım) */
+    M.whereUsed = (kod) => {
+        const res = { products: 0, byCategory: {}, parents: [] };
+        if (!ERP()) Object.entries(D.SUB_BOMS).forEach(([ym, lines]) => { if (lines.some(([c]) => c === kod)) res.parents.push(ym); });
+        Object.entries(S().customBoms).forEach(([p, lines]) => { if (!M.isProduct(p) && lines.some((l) => l.kod === kod) && !res.parents.includes(p)) res.parents.push(p); });
+        const direct = new Set([kod, ...res.parents]);
+        M.products().forEach((p) => {
+            if (M.bom(p.kod).some((l) => direct.has(l.kod))) {
+                res.products++;
+                res.byCategory[p.kategori] = (res.byCategory[p.kategori] || 0) + 1;
+            }
+        });
+        return res;
+    };
+
+    // ======================================================================
+    // Stok (lot kayıtlarından türetilir)
+    // ======================================================================
+    function stockIndex() {
+        if (!cache.stock) {
+            cache.stock = new Map();
+            S().lots.forEach((l) => {
+                let e = cache.stock.get(l.kod);
+                if (!e) { e = { total: 0, byLoc: {} }; cache.stock.set(l.kod, e); }
+                e.total += l.qty;
+                e.byLoc[l.loc] = (e.byLoc[l.loc] || 0) + l.qty;
+            });
+        }
+        return cache.stock;
+    }
+    /** Eldeki stok; locs verilirse yalnızca o lokasyon(lar) */
+    M.onHand = (kod, locs) => {
+        const e = stockIndex().get(kod);
+        if (!e) return 0;
+        if (!locs) return U.round(e.total, 3);
+        return U.round(U.sum([].concat(locs), (l) => e.byLoc[l] || 0), 3);
+    };
+    /** Üretimde kullanılabilir stok (fasoncudaki hariç) */
+    M.CONSUME_LOCS = Object.keys(D.LOCATIONS).filter((k) => D.LOCATIONS[k].consume);
+    /** Elle transfer / sayım yapılabilen lokasyonlar (karantina hariç) */
+    M.MANUAL_LOCS = Object.keys(D.LOCATIONS).filter((k) => !D.LOCATIONS[k].locked);
+    M.available = (kod) => M.onHand(kod, M.CONSUME_LOCS);
+
+    /** FIFO sıralı lotlar */
+    M.lots = (kod, loc, lotNo) => S().lots.filter((l) => l.kod === kod && (!loc || l.loc === loc) && (!lotNo || l.lot === lotNo) && l.qty > EPS)
+        .sort((a, b) => a.at.localeCompare(b.at));
+
+    M.stockStatus = (kod) => {
+        const it = M.item(kod);
+        if (!it || it.procurement === 'service') return 'na';
+        const q = M.onHand(kod);
+        if (it.safetyStock <= 0) return q < 0 ? 'critical' : 'ok';
+        if (q < it.safetyStock * 0.5) return 'critical';
+        if (q < it.safetyStock) return 'warn';
+        return 'ok';
+    };
+
+    /** Açık satın alma siparişlerinde bekleyen miktar */
+    M.onOrder = (kod) => U.sum(
+        S().pos.filter((p) => p.status === 'open' || p.status === 'partial'),
+        (p) => U.sum(p.lines.filter((l) => l.kod === kod), (l) => Math.max(0, l.qty - (l.received || 0)))
+    );
+
+    /** FIFO ile lotlardan düşer; düşülen parçaları döndürür */
+    function takeFIFO(kod, locs, qty, lotNo) {
+        const taken = [];
+        let rem = qty;
+        [].concat(locs).forEach((loc) => {
+            if (rem <= EPS) return;
+            M.lots(kod, loc, lotNo).forEach((l) => {
+                if (rem <= EPS) return;
+                const q = Math.min(l.qty, rem);
+                l.qty = U.round(l.qty - q, 4);
+                rem = U.round(rem - q, 4);
+                taken.push({ lot: l.lot, qty: q, at: l.at, supplier: l.supplier, ref: l.ref, loc: l.loc });
+            });
+        });
+        return { taken, missing: rem > EPS ? rem : 0 };
+    }
+
+    /**
+     * Stok hareketi kaydeder.
+     *  - qty > 0 (GR, FG, ADJ+) → loc'a yeni lot açar (lot verilmezse otomatik numara)
+     *  - qty < 0 (GI, ADJ−)     → loc listesinden FIFO düşer
+     *  - TRF                    → loc(lar)dan toLoc'a FIFO taşır (lot numaraları korunur)
+     *  - onlyLot verilirse çıkış/transfer yalnızca o lot numarasından yapılır (kalite kararı)
+     * @returns {object} hareket kaydı
+     */
+    M.move = ({ kod, qty, type, loc = 'MERKEZ', toLoc = null, lot = '', ref = '', note = '', supplier = '', onlyLot = '' }) => {
+        const st = S();
+        const it = M.item(kod);
+        const now = new Date().toISOString();
+        let lots = [];
+        if (type === 'TRF') {
+            const r = takeFIFO(kod, loc, qty, onlyLot);
+            r.taken.forEach((t) => st.lots.push({ id: U.uid('lot'), lot: t.lot, kod, loc: toLoc, qty: t.qty, at: t.at, ref: t.ref, supplier: t.supplier }));
+            lots = r.taken.map((t) => ({ lot: t.lot, qty: t.qty }));
+            qty = U.sum(r.taken, (t) => t.qty);
+        } else if (qty > 0) {
+            const lotNo = lot || MRP.store.nextNo('LOT');
+            st.lots.push({ id: U.uid('lot'), lot: lotNo, kod, loc, qty: U.round(qty, 4), at: now, ref, supplier });
+            lots = [{ lot: lotNo, qty }];
+        } else if (qty < 0) {
+            const r = takeFIFO(kod, loc, -qty, onlyLot);
+            lots = r.taken.map((t) => ({ lot: t.lot, qty: -t.qty }));
+            if (r.missing) lots.push({ lot: '(eksik)', qty: -r.missing });
+            qty = -U.sum(r.taken, (t) => t.qty);
+        }
+        st.lots = st.lots.filter((l) => l.qty > EPS);
+        cache.stock = null;
+        const u = MRP.auth.current();
+        const m = {
+            id: MRP.store.nextNo('HRK'), at: now, kod, type, qty: U.round(qty, 4), balance: M.onHand(kod),
+            loc: Array.isArray(loc) ? loc.join('+') : loc, toLoc, lots, ref, note,
+            user: u ? u.name : 'sistem', value: Math.abs(qty) * (it ? (it.isProduct ? M.unitCost(kod) : M.priceTRY(kod)) : 0) * (qty < 0 ? -1 : 1)
+        };
+        st.movements.push(m);
+        return m;
+    };
+
+    M.stockValue = () => {
+        let v = 0;
+        stockIndex().forEach((e, kod) => {
+            if (e.total <= 0) return;
+            const it = M.rawItem(kod);
+            if (it && it.procurement === 'service') return; // hizmet bakiyesi stok değeri sayılmaz
+            v += e.total * (M.isProduct(kod) ? M.unitCost(kod) : M.priceTRY(kod));
+        });
+        return v;
+    };
+
+    // ======================================================================
+    // Tedarikçi fiyat listesi, performans, fiyat geçmişi
+    // ======================================================================
+    /** Kalem için tedarikçi teklifleri — TL fiyata göre artan */
+    M.offers = (kod) => S().priceList.filter((o) => o.kod === kod)
+        .map((o) => ({ ...o, priceTRY: M.toTRY(o.price, o.currency), supplier: S().suppliers.find((s) => s.id === o.supplierId) }))
+        .filter((o) => o.supplier)
+        .sort((a, b) => a.priceTRY - b.priceTRY);
+    M.offer = (supplierId, kod) => S().priceList.find((o) => o.supplierId === supplierId && o.kod === kod) || null;
+
+    /**
+     * Teslimat ve muayene kayıtlarından otomatik performans.
+     * Kalite oranı: kapıda reddedilen teslimat = 0, muayenesiz kabul = 1,
+     * muayene edilen her parti = kabul edilen miktar / muayene edilen miktar.
+     */
+    M.supplierPerformance = (id) => {
+        const pos = S().pos.filter((p) => p.supplierId === id && (p.receipts || []).length);
+        if (!pos.length) return null;
+        const insp = (S().inspections || []).filter((x) => x.supplierId === id);
+        const inspectedRc = new Set(insp.map((x) => x.receiptId));
+        let onTime = 0, events = 0, score = 0;
+        pos.forEach((p) => {
+            const first = p.receipts.find((r) => r.quality !== 'rejected');
+            if (first && first.at.slice(0, 10) <= p.deliveryDate) onTime++;
+            p.receipts.forEach((r) => {
+                if (r.quality === 'rejected') { events++; return; }
+                if (!inspectedRc.has(r.id)) { events++; score++; }
+            });
+        });
+        insp.filter((x) => x.status === 'done' && x.qty > 0).forEach((x) => { events++; score += x.result.accepted / x.qty; });
+        const onTimePct = onTime / pos.length;
+        const qualityPct = events ? score / events : 1;
+        return { orders: pos.length, onTimePct, qualityPct, score: U.round(1 + 4 * (0.6 * onTimePct + 0.4 * qualityPct), 1) };
+    };
+
+    /** Tedarikçi bazında giriş kalite istatistiği */
+    M.supplierQuality = (id) => {
+        const insp = (S().inspections || []).filter((x) => x.supplierId === id && x.status === 'done');
+        const doorRejects = U.sum(S().pos.filter((p) => p.supplierId === id), (p) => (p.receipts || []).filter((r) => r.quality === 'rejected').length);
+        const lots = insp.length;
+        const full = insp.filter((x) => x.result.rejected <= 0).length;
+        const ratio = lots ? U.sum(insp, (x) => x.result.rejected / x.qty) / lots : 0;
+        return { lots, full, partial: lots - full, doorRejects, ppm: Math.round(ratio * 1e6), acceptPct: lots ? 1 - ratio : null,
+            rejectedValue: U.sum(insp, (x) => x.result.rejected * M.priceTRY(x.kod)) };
+    };
+    /** Etkin puan: teslimat verisi varsa otomatik, yoksa elle girilen puan */
+    M.supplierScore = (s) => { const p = M.supplierPerformance(s.id); return p ? p.score : s.puan; };
+
+    M.priceHistory = (kod) => {
+        const out = [];
+        S().pos.forEach((p) => p.lines.filter((l) => l.kod === kod).forEach((l) => out.push({
+            at: p.createdAt, po: p.no, supplier: p.supplierName, qty: l.qty, price: l.price,
+            origPrice: l.origPrice ?? l.price, currency: l.currency || 'TRY', status: p.status
+        })));
+        return out.sort((a, b) => a.at.localeCompare(b.at));
+    };
+
+    /** Talep/PO satırları için öncelikli tedarikçi önerisi */
+    M.suggestSuppliers = (types) => S().suppliers
+        .filter((s) => s.aktif)
+        .map((s) => ({ s, match: types.filter((t) => s.kategoriler.includes(t)).length }))
+        .sort((a, b) => b.match - a.match || M.supplierScore(b.s) - M.supplierScore(a.s));
+
+
+    // ======================================================================
+    // Satış siparişleri (ERP'de açılır, MRP'ye bağımsız talep olarak girer)
+    // ======================================================================
+    M.SO_STATUS = {
+        open: ['badge-blue', 'Açık'], partial: ['badge-violet', 'Kısmi sevk'],
+        closed: ['badge-green', 'Kapandı'], cancelled: ['badge-gray', 'İptal']
+    };
+    const SO_OPEN = ['open', 'partial'];
+    /** Sevk bekleyen satış sipariş satırları: [{so, line, key, kod, remaining, dueDate}] */
+    M.salesLines = () => {
+        const out = [];
+        (S().salesOrders || []).filter((o) => SO_OPEN.includes(o.status)).forEach((o) => (o.lines || []).forEach((l) => {
+            const remaining = U.round((+l.qty || 0) - (+l.shipped || 0), 4);
+            if (remaining > EPS) out.push({ so: o, line: l, key: `${o.no}/${l.line}`, kod: l.kod, remaining, dueDate: l.dueDate || o.dueDate });
+        }));
+        return out;
+    };
+    const WO_OPEN = ['planned', 'released'];
+    /**
+     * Sipariş karşılama (pegging + basit ATP). Sıra:
+     *   1) Siparişe bağlı açık iş emirleri (soRefs) yalnızca bağlı oldukları satırı besler
+     *   2) Bağlı iş emri tamamlandıysa ürettiği mamul stoktan o satıra ayrılır
+     *   3) Kalan satırlar termin sırasıyla eldeki stoktan, sonra bağlanmamış iş emri miktarından pay alır
+     * opts.exclude: hesapta yok sayılacak iş emri no (yeni iş emrini bağlarken)
+     * Sonuç: Map(key → {state: stock|wo|late|open, from:[{src, qty, date, linked}], uncovered, readyDate})
+     */
+    M.soCoverage = (opts = {}) => {
+        const res = new Map();
+        const byKod = new Map();
+        M.salesLines().forEach((x) => { if (!byKod.has(x.kod)) byKod.set(x.kod, []); byKod.get(x.kod).push(x); });
+        const today = U.iso(U.today());
+        const wos = S().workOrders.filter((w) => w.no !== opts.exclude);
+        byKod.forEach((lines, kod) => {
+            const need = new Map(lines.map((x) => [x.key, x.remaining]));
+            const from = new Map(lines.map((x) => [x.key, []]));
+            const take = (key, qty, entry) => {
+                const q = Math.min(qty, need.get(key));
+                if (q <= EPS) return 0;
+                need.set(key, need.get(key) - q);
+                from.get(key).push({ ...entry, qty: U.round(q, 4) });
+                return q;
+            };
+            const kodWOs = wos.filter((w) => w.kod === kod);
+            // 1) bağlı açık iş emirleri
+            const woLeft = new Map();
+            kodWOs.filter((w) => WO_OPEN.includes(w.status)).forEach((w) => {
+                let left = +w.qty;
+                (w.soRefs || []).forEach((r) => { if (need.has(r.key) && left > EPS) left -= take(r.key, Math.min(+r.qty, left), { src: w.no, date: w.end, status: w.status, linked: true }); });
+                woLeft.set(w.no, left);
+            });
+            // 2) bağlı iş emrinin ürettiği stok o siparişe ayrılır
+            let stock = M.available(kod);
+            kodWOs.filter((w) => w.status === 'completed').forEach((w) => (w.soRefs || []).forEach((r) => {
+                if (need.has(r.key) && stock > EPS) stock -= take(r.key, Math.min(+r.qty, stock), { src: 'Stok', date: today, linked: true, wo: w.no });
+            }));
+            // 3) serbest arz: stok, sonra bağlanmamış iş emri miktarı (bitiş sırasıyla)
+            const supply = [];
+            if (stock > EPS) supply.push({ src: 'Stok', qty: stock, date: today });
+            kodWOs.filter((w) => WO_OPEN.includes(w.status) && woLeft.get(w.no) > EPS).sort((a, b) => a.end.localeCompare(b.end))
+                .forEach((w) => supply.push({ src: w.no, qty: woLeft.get(w.no), date: w.end, status: w.status }));
+            lines.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.key.localeCompare(b.key)).forEach((x) => {
+                for (const s of supply) {
+                    if (need.get(x.key) <= EPS) break;
+                    if (s.qty > EPS) s.qty -= take(x.key, s.qty, { src: s.src, date: s.date, status: s.status });
+                }
+                const f = from.get(x.key);
+                const rest = need.get(x.key);
+                const readyDate = f.length ? f.reduce((m, e) => (e.date > m ? e.date : m), today) : null;
+                const state = rest > EPS ? 'open' : f.every((e) => e.src === 'Stok') ? 'stock' : readyDate > x.dueDate ? 'late' : 'wo';
+                res.set(x.key, { state, from: f, uncovered: U.round(Math.max(0, rest), 4), readyDate });
+            });
+        });
+        return res;
+    };
+
+    /** Sipariş satırına bağlı iş emirleri (tüm durumlar): [{w, qty}] */
+    M.soLinkedWOs = (key) => {
+        const out = [];
+        S().workOrders.forEach((w) => (w.soRefs || []).forEach((r) => { if (r.key === key) out.push({ w, qty: +r.qty }); }));
+        return out;
+    };
+    /** Sipariş satırı anahtarı → {so, line} */
+    M.soLine = (key) => {
+        const [no, ln] = String(key).split('/');
+        const so = (S().salesOrders || []).find((o) => o.no === no);
+        const line = so && (so.lines || []).find((l) => String(l.line) === ln);
+        return line ? { so, line } : null;
+    };
+    /**
+     * Yeni / mevcut iş emri için önerilen sipariş bağlantısı: aynı mamulde başka
+     * kaynakla karşılanmayan satırlara termin sırasıyla iş emri miktarı kadar.
+     */
+    M.autoPeg = (w) => {
+        const cov = M.soCoverage({ exclude: w.no });
+        let left = +w.qty;
+        const refs = [];
+        M.salesLines().filter((x) => x.kod === w.kod).sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.key.localeCompare(b.key)).forEach((x) => {
+            const c = cov.get(x.key);
+            const q = Math.min(left, c ? c.uncovered : 0);
+            if (q > EPS) { refs.push({ key: x.key, qty: U.round(q, 4) }); left -= q; }
+        });
+        return refs;
+    };
+
+    // ======================================================================
+    // Tedarikçi teslim takibi
+    // ======================================================================
+    /** Beklenen teslim: tedarikçinin teyit ettiği tarih, yoksa istenen tarih */
+    M.poExpected = (p) => (p.ack && p.ack.date) || p.deliveryDate;
+    /** Teslim bekleyen satırlar */
+    M.poOpenLines = (p) => (p.lines || []).map((l) => ({ ...l, open: U.round(Math.max(0, l.qty - (l.received || 0)), 4) })).filter((l) => l.open > EPS);
+    /**
+     * Gecikmenin etkisi: siparişteki kalemleri kullanan açık iş emirleri
+     * (bileşende stok eksikse) ve onlara bağlı satış siparişleri.
+     * needDate: bu kalemlere ihtiyaç duyan en erken iş emri başlangıcı.
+     */
+    M.poImpact = (p) => {
+        const kods = new Set(M.poOpenLines(p).map((l) => l.kod));
+        const wos = [];
+        let needDate = null;
+        S().workOrders.filter((w) => w.status === 'planned' || w.status === 'released').forEach((w) => {
+            const hit = M.bom(w.kod).filter((b) => kods.has(b.kod) && M.available(b.kod) < b.k * w.qty - EPS);
+            if (!hit.length) return;
+            wos.push({ w, kods: hit.map((b) => b.kod) });
+            if (!needDate || w.start < needDate) needDate = w.start;
+        });
+        const sos = new Map();
+        wos.forEach(({ w }) => (w.soRefs || []).forEach((r) => { const x = M.soLine(r.key); if (x && ['open', 'partial'].includes(x.so.status)) sos.set(r.key, { key: r.key, customer: x.so.customer, due: x.line.dueDate || x.so.dueDate }); }));
+        return { wos, sos: [...sos.values()], needDate };
+    };
+    /**
+     * Tedarikçi teslim performansı (teslim alınmış siparişler):
+     * istenen tarihe ve teyit edilen tarihe göre zamanında oranı, ortalama gecikme,
+     * ortalama teyit süresi (gün)
+     */
+    M.supplierDelivery = (id) => {
+        const pos = S().pos.filter((p) => (!id || p.supplierId === id) && p.status !== 'cancelled');
+        const recv = pos.filter((p) => (p.receipts || []).some((r) => r.quality !== 'rejected'));
+        let onReq = 0, onAck = 0, ackN = 0, delay = 0;
+        recv.forEach((p) => {
+            const d = p.receipts.find((r) => r.quality !== 'rejected').at.slice(0, 10);
+            if (d <= p.deliveryDate) onReq++;
+            if (p.ack && p.ack.date) { ackN++; if (d <= p.ack.date) onAck++; }
+            delay += Math.max(0, U.diffDays(d, p.deliveryDate));
+        });
+        const acked = pos.filter((p) => p.ack && p.ack.at);
+        return {
+            orders: pos.length, received: recv.length,
+            onTimeReq: recv.length ? onReq / recv.length : null,
+            onTimeAck: ackN ? onAck / ackN : null,
+            avgDelay: recv.length ? delay / recv.length : null,
+            ackDays: acked.length ? U.sum(acked, (p) => Math.max(0, (new Date(p.ack.at) - new Date(p.createdAt)) / 864e5)) / acked.length : null,
+            ackRate: pos.length ? acked.length / pos.length : null
+        };
+    };
+
+    MRP.model = M;
+})(window.MRP);

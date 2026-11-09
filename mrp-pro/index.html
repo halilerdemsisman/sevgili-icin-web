@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="MRP Pro — Ürün ağacı, malzeme ihtiyaç planlama, satın alma ve stok yönetimi">
+<title>MRP Pro · Malzeme İhtiyaç Planlama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+
+<!-- Üçüncü parti kütüphaneler (sabit sürüm) -->
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+
+<!-- Uygulama -->
+<script defer src="assets/js/config.js"></script>
+<script defer src="assets/js/utils.js"></script>
+<script defer src="assets/js/data.js"></script>
+<script defer src="assets/js/store.js"></script>
+<script defer src="assets/js/auth.js"></script>
+<script defer src="assets/js/model.js"></script>
+<script defer src="assets/js/mrp-engine.js"></script>
+<script defer src="assets/js/backend.js"></script>
+<script defer src="assets/js/embed.js"></script>
+<script defer src="assets/js/app.js"></script>
+<script defer src="assets/js/views/common.js"></script>
+<script defer src="assets/js/views/dashboard.js"></script>
+<script defer src="assets/js/views/engineering.js"></script>
+<script defer src="assets/js/views/sales.js"></script>
+<script defer src="assets/js/views/planning.js"></script>
+<script defer src="assets/js/views/purchasing.js"></script>
+<script defer src="assets/js/views/inventory.js"></script>
+<script defer src="assets/js/views/quality.js"></script>
+<script defer src="assets/js/views/expedite.js"></script>
+<script defer src="assets/js/views/capacity.js"></script>
+<script defer src="assets/js/views/costing.js"></script>
+<script defer src="assets/js/views/analysis.js"></script>
+<script defer src="assets/js/views/import.js"></script>
+<script defer src="assets/js/views/system.js"></script>
+<script defer src="assets/js/views/users.js"></script>
+</head>
+<body>
+
+<div id="toasts" class="toast-stack" aria-live="polite"></div>
+<div id="modalRoot"></div>
+
+<!-- Varsayılan marka logoları (tekrar kullanım için).
+     Resmî logo dosyaları "Kullanıcılar & Roller → Firma Ayarları"ndan yüklenince bunların yerine geçer.
+     textLength ile metin genişliği sabitlenir: yazı tipi bilgisayara göre değişse de yerleşim bozulmaz. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+        <symbol id="logo-exit" viewBox="0 0 300 100">
+            <polygon points="6,10 6,90 74,50" fill="#e63946"/>
+            <line x1="10" y1="86" x2="78" y2="54" stroke="#3a3a3a" stroke-width="3" stroke-linecap="round"/>
+            <text x="92" y="64" textLength="196" lengthAdjust="spacingAndGlyphs" font-family="'Arial Black', Arial, Helvetica, 'Liberation Sans', sans-serif" font-weight="900" font-size="58" fill="#3a3a3a">EXIT</text>
+            <text x="94" y="87" textLength="192" lengthAdjust="spacingAndGlyphs" font-family="Arial, Helvetica, 'Liberation Sans', sans-serif" font-style="italic" font-size="15" fill="#3a3a3a">Innovative Solutions</text>
+        </symbol>
+        <symbol id="logo-bg" viewBox="0 0 236 65">
+            <!-- Resmî bg group logosu (bngint.com), 236×65 PNG -->
+            <image width="236" height="65" href="data:image/png;base64,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"/>
+        </symbol>
+    </defs>
+</svg>
+
+<!-- ======================= GİRİŞ ======================= -->
+<section id="login" class="login" hidden>
+    <button class="btn btn-secondary btn-icon theme-fab" data-act="toggleTheme" title="Tema değiştir" aria-label="Tema değiştir"><span data-theme-icon></span></button>
+    <div class="login-card">
+        <div class="login-logos" data-brand-logos></div>
+        <div class="login-title">
+            <h1>MRP Pro</h1>
+            <p data-brand-company="Ürün Ağacı · Malzeme İhtiyaç Planlama · Satın Alma · Stok">Ürün Ağacı · Malzeme İhtiyaç Planlama · Satın Alma · Stok</p>
+        </div>
+        <div class="login-error" id="loginError" role="alert">Kullanıcı adı veya şifre hatalı.</div>
+        <form id="loginForm" class="stack" autocomplete="on">
+            <div class="field">
+                <label for="loginUser">Kullanıcı adı</label>
+                <input id="loginUser" autocomplete="username" required>
+            </div>
+            <div class="field">
+                <label for="loginPass">Şifre</label>
+                <input id="loginPass" type="password" autocomplete="current-password" required>
+            </div>
+            <button class="btn btn-primary" type="submit" style="width:100%;padding:11px;">Giriş Yap</button>
+        </form>
+        <div class="login-demo" id="loginDemo">
+            <h4>Demo hesaplar — tıklayarak doldurun</h4>
+            <div id="demoAccounts"></div>
+            <p class="login-note">Bağımsız mod: veriler yalnızca bu tarayıcıda saklanır.</p>
+        </div>
+        <p class="login-note" id="loginErpNote" hidden>ERP kullanıcı hesabınızla giriş yapın. Veriler ERP sunucusunda saklanır.</p>
+    </div>
+</section>
+
+<!-- ======================= ERP BAĞLANTI EKRANI ======================= -->
+<section id="boot" class="login" hidden>
+    <div class="login-card" style="text-align:center;">
+        <div class="login-title"><h1>MRP Pro</h1><p id="bootMsg">Yükleniyor…</p></div>
+        <div class="boot-spinner" aria-hidden="true"></div>
+        <button class="btn btn-primary" id="bootRetry" data-act="bootRetry" hidden>Tekrar dene</button>
+    </div>
+</section>
+
+<!-- ======================= UYGULAMA ======================= -->
+<div id="app" class="app" hidden>
+    <aside class="sidebar" id="sidebar">
+        <div class="sb-brand">
+            <div class="sb-mark">M</div>
+            <div><b>MRP Pro</b><small data-brand-company="Üretim Planlama Sistemi">Üretim Planlama Sistemi</small></div>
+        </div>
+        <nav class="sb-nav" id="sbNav" aria-label="Ana menü"></nav>
+        <div class="sb-foot" data-brand-logos></div>
+    </aside>
+    <div class="sb-backdrop" id="sbBackdrop" data-act="closeSidebar"></div>
+
+    <div class="main">
+        <header class="topbar">
+            <button class="btn btn-ghost btn-icon menu-btn" data-act="openSidebar" aria-label="Menü"><svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+            <div class="page-title">
+                <h1 id="pageTitle">Gösterge Paneli</h1>
+                <p id="pageSub"></p>
+            </div>
+            <div class="top-actions">
+                <button class="sync-chip" id="syncStatus" data-act="syncNow" hidden><i></i><span>ERP</span></button>
+                <button class="btn btn-secondary btn-icon" data-act="scanOpen" title="Barkod / hızlı arama" aria-label="Barkod okut">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M3 5v14M7 5v14M11 5v14M14 5v14M18 5v14M21 5v14"/></svg>
+                </button>
+                <div class="notif-wrap">
+                    <button class="btn btn-secondary btn-icon" data-act="toggleNotif" title="Bildirimler" aria-label="Bildirimler">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+                    </button>
+                    <span class="notif-dot" id="notifCount" hidden>0</span>
+                    <div class="popover" id="notifPop" hidden>
+                        <div class="popover-head"><h4>Bildirimler</h4><button class="btn btn-ghost btn-sm" data-act="markAllRead">Tümünü okundu say</button></div>
+                        <div class="popover-body" id="notifBody"></div>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-icon" data-act="toggleTheme" title="Tema değiştir" aria-label="Tema değiştir"><span data-theme-icon></span></button>
+                <div class="notif-wrap">
+                    <button class="user-chip" data-act="toggleUserMenu" style="cursor:pointer;">
+                        <span class="avatar" id="userAvatar">A</span>
+                        <span class="meta" style="text-align:left;"><span class="n" id="userName" style="display:block;"></span><span class="r" id="userRole" style="display:block;"></span></span>
+                    </button>
+                    <div class="popover" id="userPop" hidden style="width:220px;">
+                        <button class="menu-item" data-act="toggleTheme"><span data-theme-icon></span> Tema değiştir</button>
+                        <button class="menu-item" data-act="logout" style="color:var(--red);"><svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg> Çıkış yap</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main class="content" id="view"></main>
+    </div>
+</div>
+
+</body>
+</html>
