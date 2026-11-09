@@ -97,8 +97,9 @@ Roller **Kullanıcılar & Roller** ekranından yönetilir (yönetici):
 - **Kullanıcılar:** ekleme, rol atama, parola belirleme (yalnızca SHA-256 özeti saklanır), pasife alma
 - **Firma Ayarları:** resmî logo dosyalarını (SVG / PNG / JPG, en fazla 3) ve firma adını yükleme
 
-> Varsayılan EXIT ve bg group logoları orijinallerin yaklaşık çizimleridir. Doğru görünüm için
-> **Firma Ayarları**'ndan resmî logo dosyalarını yükleyin; giriş ekranında ve menüde onlar gösterilir.
+> Varsayılan bg group logosu şirketin resmî logosudur (bngint.com; `index.html` içinde gömülü PNG).
+> EXIT logosu ise yaklaşık bir çizimdir; resmî dosyası **Firma Ayarları**'ndan yüklenebilir —
+> yüklenen logolar giriş ekranında ve menüde varsayılanların yerine gösterilir.
 
 > **Önemli:** Bağımsız modda kimlik doğrulama tarayıcıda yapılır ve veriler `localStorage`'da tutulur.
 > Çok kullanıcılı gerçek kullanım için ERP modunu kullanın: kimlik doğrulama, yetkilendirme ve veri
