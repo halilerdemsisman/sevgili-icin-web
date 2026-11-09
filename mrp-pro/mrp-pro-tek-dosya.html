@@ -2264,39 +2264,91 @@ window.MRP = window.MRP || {};
         }));
         return out;
     };
+    const WO_OPEN = ['planned', 'released'];
     /**
-     * Sipariş karşılama (basit ATP): her mamulde açık satırlar termin sırasıyla
-     * önce eldeki mamul stoğundan, sonra açık iş emirlerinden (bitiş sırasıyla) pay alır.
-     * Sonuç: Map(key → {state: stock|wo|late|open, from:[{src, qty, date}], uncovered, readyDate})
+     * Sipariş karşılama (pegging + basit ATP). Sıra:
+     *   1) Siparişe bağlı açık iş emirleri (soRefs) yalnızca bağlı oldukları satırı besler
+     *   2) Bağlı iş emri tamamlandıysa ürettiği mamul stoktan o satıra ayrılır
+     *   3) Kalan satırlar termin sırasıyla eldeki stoktan, sonra bağlanmamış iş emri miktarından pay alır
+     * opts.exclude: hesapta yok sayılacak iş emri no (yeni iş emrini bağlarken)
+     * Sonuç: Map(key → {state: stock|wo|late|open, from:[{src, qty, date, linked}], uncovered, readyDate})
      */
-    M.soCoverage = () => {
+    M.soCoverage = (opts = {}) => {
         const res = new Map();
         const byKod = new Map();
         M.salesLines().forEach((x) => { if (!byKod.has(x.kod)) byKod.set(x.kod, []); byKod.get(x.kod).push(x); });
         const today = U.iso(U.today());
+        const wos = S().workOrders.filter((w) => w.no !== opts.exclude);
         byKod.forEach((lines, kod) => {
+            const need = new Map(lines.map((x) => [x.key, x.remaining]));
+            const from = new Map(lines.map((x) => [x.key, []]));
+            const take = (key, qty, entry) => {
+                const q = Math.min(qty, need.get(key));
+                if (q <= EPS) return 0;
+                need.set(key, need.get(key) - q);
+                from.get(key).push({ ...entry, qty: U.round(q, 4) });
+                return q;
+            };
+            const kodWOs = wos.filter((w) => w.kod === kod);
+            // 1) bağlı açık iş emirleri
+            const woLeft = new Map();
+            kodWOs.filter((w) => WO_OPEN.includes(w.status)).forEach((w) => {
+                let left = +w.qty;
+                (w.soRefs || []).forEach((r) => { if (need.has(r.key) && left > EPS) left -= take(r.key, Math.min(+r.qty, left), { src: w.no, date: w.end, status: w.status, linked: true }); });
+                woLeft.set(w.no, left);
+            });
+            // 2) bağlı iş emrinin ürettiği stok o siparişe ayrılır
+            let stock = M.available(kod);
+            kodWOs.filter((w) => w.status === 'completed').forEach((w) => (w.soRefs || []).forEach((r) => {
+                if (need.has(r.key) && stock > EPS) stock -= take(r.key, Math.min(+r.qty, stock), { src: 'Stok', date: today, linked: true, wo: w.no });
+            }));
+            // 3) serbest arz: stok, sonra bağlanmamış iş emri miktarı (bitiş sırasıyla)
             const supply = [];
-            const stock = M.available(kod);
             if (stock > EPS) supply.push({ src: 'Stok', qty: stock, date: today });
-            S().workOrders.filter((w) => w.kod === kod && (w.status === 'planned' || w.status === 'released'))
-                .sort((a, b) => a.end.localeCompare(b.end))
-                .forEach((w) => supply.push({ src: w.no, qty: +w.qty, date: w.end, status: w.status }));
+            kodWOs.filter((w) => WO_OPEN.includes(w.status) && woLeft.get(w.no) > EPS).sort((a, b) => a.end.localeCompare(b.end))
+                .forEach((w) => supply.push({ src: w.no, qty: woLeft.get(w.no), date: w.end, status: w.status }));
             lines.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.key.localeCompare(b.key)).forEach((x) => {
-                let need = x.remaining;
-                const from = [];
                 for (const s of supply) {
-                    if (need <= EPS) break;
-                    if (s.qty <= EPS) continue;
-                    const take = Math.min(need, s.qty);
-                    s.qty -= take; need -= take;
-                    from.push({ src: s.src, qty: U.round(take, 4), date: s.date, status: s.status });
+                    if (need.get(x.key) <= EPS) break;
+                    if (s.qty > EPS) s.qty -= take(x.key, s.qty, { src: s.src, date: s.date, status: s.status });
                 }
-                const readyDate = from.length ? from.reduce((m, f) => (f.date > m ? f.date : m), today) : null;
-                const state = need > EPS ? 'open' : from.every((f) => f.src === 'Stok') ? 'stock' : readyDate > x.dueDate ? 'late' : 'wo';
-                res.set(x.key, { state, from, uncovered: U.round(Math.max(0, need), 4), readyDate });
+                const f = from.get(x.key);
+                const rest = need.get(x.key);
+                const readyDate = f.length ? f.reduce((m, e) => (e.date > m ? e.date : m), today) : null;
+                const state = rest > EPS ? 'open' : f.every((e) => e.src === 'Stok') ? 'stock' : readyDate > x.dueDate ? 'late' : 'wo';
+                res.set(x.key, { state, from: f, uncovered: U.round(Math.max(0, rest), 4), readyDate });
             });
         });
         return res;
+    };
+
+    /** Sipariş satırına bağlı iş emirleri (tüm durumlar): [{w, qty}] */
+    M.soLinkedWOs = (key) => {
+        const out = [];
+        S().workOrders.forEach((w) => (w.soRefs || []).forEach((r) => { if (r.key === key) out.push({ w, qty: +r.qty }); }));
+        return out;
+    };
+    /** Sipariş satırı anahtarı → {so, line} */
+    M.soLine = (key) => {
+        const [no, ln] = String(key).split('/');
+        const so = (S().salesOrders || []).find((o) => o.no === no);
+        const line = so && (so.lines || []).find((l) => String(l.line) === ln);
+        return line ? { so, line } : null;
+    };
+    /**
+     * Yeni / mevcut iş emri için önerilen sipariş bağlantısı: aynı mamulde başka
+     * kaynakla karşılanmayan satırlara termin sırasıyla iş emri miktarı kadar.
+     */
+    M.autoPeg = (w) => {
+        const cov = M.soCoverage({ exclude: w.no });
+        let left = +w.qty;
+        const refs = [];
+        M.salesLines().filter((x) => x.kod === w.kod).sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.key.localeCompare(b.key)).forEach((x) => {
+            const c = cov.get(x.key);
+            const q = Math.min(left, c ? c.uncovered : 0);
+            if (q > EPS) { refs.push({ key: x.key, qty: U.round(q, 4) }); left -= q; }
+        });
+        return refs;
     };
 
     MRP.model = M;
@@ -4244,12 +4296,14 @@ window.MRP = window.MRP || {};
     function coverBadge(c, due) {
         if (!c) return '<span class="muted">–</span>';
         const d = (iso) => U.date(U.parseDate(iso)).slice(0, 5);
-        const src = c.from.filter((f) => f.src !== 'Stok').map((f) => f.src);
+        const seen = new Set();
+        const src = c.from.filter((f) => f.src !== 'Stok' && !seen.has(f.src) && seen.add(f.src))
+            .map((f) => `<button class="link mono" data-act="woDetail" data-id="${esc(f.src)}" title="${f.linked ? 'Siparişe bağlı iş emri' : 'Bağlı değil — serbest iş emri miktarından'}">${esc(f.src)}</button>${f.linked ? '' : '<sup class="muted" title="Siparişe bağlı değil">*</sup>'}`);
         switch (c.state) {
-            case 'stock': return '<span class="badge badge-green">Stoktan karşılanır</span>';
-            case 'wo': return `<span class="badge badge-blue">İş emri · ${esc(d(c.readyDate))}</span> <span class="muted">${esc(src.join(', '))}</span>`;
-            case 'late': return `<span class="badge badge-red">Geç · hazır ${esc(d(c.readyDate))}</span> <span class="muted">${esc(src.join(', '))} · termin ${esc(d(due))}</span>`;
-            default: return `<span class="badge badge-amber">Planlanmadı · ${esc(U.qty(c.uncovered, 'ad'))}</span>${c.from.length ? ` <span class="muted">kısmen ${esc(c.from.map((f) => f.src).join(', '))}</span>` : ''}`;
+            case 'stock': return `<span class="badge badge-green">Stoktan karşılanır</span>${c.from.some((f) => f.wo) ? ` <span class="muted">${esc([...new Set(c.from.filter((f) => f.wo).map((f) => f.wo))].join(', '))} üretti</span>` : ''}`;
+            case 'wo': return `<span class="badge badge-blue">İş emri · ${esc(d(c.readyDate))}</span> ${src.join(', ')}`;
+            case 'late': return `<span class="badge badge-red">Geç · hazır ${esc(d(c.readyDate))}</span> ${src.join(', ')} <span class="muted">· termin ${esc(d(due))}</span>`;
+            default: return `<span class="badge badge-amber">Planlanmadı · ${esc(U.qty(c.uncovered, 'ad'))}</span>${c.from.length ? ` <span class="muted">kısmen</span> ${src.join(', ') || 'stok'}` : ''}`;
         }
     }
 
@@ -4350,14 +4404,15 @@ window.MRP = window.MRP || {};
                 ${o.note ? `<div class="field full"><label>Açıklama</label><div>${esc(o.note)}</div></div>` : ''}
             </div>
             <div class="table-wrap" style="margin-top:12px;"><table>
-                <thead><tr><th>#</th><th>Mamul</th><th class="num">Miktar</th><th class="num">Sevk</th><th class="num">Kalan</th><th>Termin</th><th>Karşılama</th></tr></thead>
+                <thead><tr><th>#</th><th>Mamul</th><th class="num">Miktar</th><th class="num">Sevk</th><th class="num">Kalan</th><th>Termin</th><th>Karşılama</th><th>Bağlı iş emirleri</th></tr></thead>
                 <tbody>${(o.lines || []).map((l) => {
                     const c = open ? cov.get(`${o.no}/${l.line}`) : null;
                     const p = M.product(l.kod);
                     return `<tr><td>${l.line}</td><td><span class="mono">${esc(l.kod)}</span><div class="muted">${esc(p ? p.ad : 'Tanımsız mamul')}</div></td>
                         <td class="num">${esc(U.qty(l.qty, 'ad'))}</td><td class="num">${esc(U.qty(l.shipped || 0, 'ad'))}</td><td class="num strong">${esc(U.qty(remaining(l), 'ad'))}</td>
                         <td class="nowrap">${esc(U.date(U.parseDate(lineDue(o, l))))}</td>
-                        <td>${c ? coverBadge(c, lineDue(o, l)) + (c.from.length ? `<div class="muted" style="font-size:12px;">${c.from.map((f) => `${esc(f.src)}: ${esc(U.qty(f.qty, 'ad'))}${f.src !== 'Stok' ? ` (${esc(U.date(U.parseDate(f.date)))})` : ''}`).join(' · ')}</div>` : '') : '<span class="muted">–</span>'}</td></tr>`;
+                        <td>${c ? coverBadge(c, lineDue(o, l)) + (c.from.length ? `<div class="muted" style="font-size:12px;">${c.from.map((f) => `${esc(f.src)}: ${esc(U.qty(f.qty, 'ad'))}${f.src !== 'Stok' ? ` (${esc(U.date(U.parseDate(f.date)))})` : ''}`).join(' · ')}</div>` : '') : '<span class="muted">–</span>'}</td>
+                        <td>${linkedCell(`${o.no}/${l.line}`, c, l)}</td></tr>`;
                 }).join('')}</tbody>
             </table></div>`,
             buttons: [
@@ -4368,6 +4423,15 @@ window.MRP = window.MRP || {};
                 { label: 'Kapat', cls: 'btn-primary' }
             ]
         });
+    }
+
+    /** Satıra bağlı iş emirleri + karşılanmayan miktar için "İş emri aç" */
+    function linkedCell(key, c, l) {
+        const links = M.soLinkedWOs(key);
+        const html = links.map(({ w, qty }) => `<div class="nowrap"><button class="link mono" data-act="woDetail" data-id="${esc(w.no)}">${esc(w.no)}</button> ${H.badge(H.WO_STATUS, w.status)} <span class="muted">${esc(U.qty(qty, 'ad'))}</span></div>`).join('');
+        const make = c && c.uncovered > 0 && MRP.auth.can('manageWO') && (M.item(l.kod) || {}).procurement === 'make';
+        return (html || (make ? '' : '<span class="muted">–</span>'))
+            + (make ? `<button class="btn btn-secondary btn-sm" data-act="soMakeWO" data-id="${esc(key)}" style="margin-top:4px;">${MRP.icon('factory', 'sm')} İş emri aç (${esc(U.qty(Math.ceil(c.uncovered), 'ad'))})</button>` : '');
     }
 
     function setStatus(o, status) {
@@ -4451,6 +4515,14 @@ window.MRP = window.MRP || {};
         soTab: (id) => { sState.tab = id; app().render(); },
         soSearch: (v) => { sState.q = v; clearTimeout(searchTimer); searchTimer = setTimeout(() => { sState.focus = true; app().render(); }, 200); },
         soDetail: (id) => detail(id),
+        soMakeWO: (key, el) => {
+            const wo = MRP.planning.woForSalesLine(key);
+            if (!wo) return;
+            const ov = el.closest('.modal-overlay, .overlay, [class*="overlay"]');
+            const x = ov && ov.querySelector('[data-close]');
+            if (x) x.click();
+            detail(key.split('/')[0]);
+        },
         soNew: () => newOrder(),
         soRunMRP: () => { if (MRP.actions.runMRP) MRP.actions.runMRP(); }
     });
@@ -4715,11 +4787,14 @@ window.MRP = window.MRP || {};
                 status: 'planned', source: p.id, createdBy: u.name, createdAt: new Date().toISOString(),
                 history: [{ action: 'Oluşturuldu (MRP)', by: u.name, at: new Date().toISOString() }]
             };
+            const refs = M.autoPeg(wo);
+            if (refs.length) { wo.soRefs = refs; wo.history.push({ action: `Siparişe bağlandı: ${refLabel(refs)}`, by: u.name, at: new Date().toISOString() }); }
             S().workOrders.push(wo);
         });
+        const pegged = S().workOrders.slice(-sel.length).filter((w) => w.soRefs && w.soRefs.length).length;
         MRP.store.audit('İş emirleri oluşturuldu', `${sel.length} adet (MRP önerisinden)`);
         runMRP(true);
-        UI.toast('İş emirleri oluşturuldu', `${sel.length} iş emri planlandı.`, 'success');
+        UI.toast('İş emirleri oluşturuldu', `${sel.length} iş emri planlandı${pegged ? ` · ${pegged} tanesi satış siparişine bağlandı` : ''}.`, 'success');
     }
 
     const rerenderMrp = U.debounce(() => app().render(), 250);
@@ -4754,6 +4829,20 @@ window.MRP = window.MRP || {};
     // =====================================================================
     const woState = { tab: 'open' };
 
+    /** "SS-2026-0003/1 (Ege Mobilya) × 25, …" */
+    function refLabel(refs) {
+        return (refs || []).map((r) => { const x = M.soLine(r.key); return `${r.key}${x ? ` (${x.so.customer})` : ''} × ${U.qty(r.qty, 'ad')}`; }).join(', ');
+    }
+    /** İş emri listesinde sipariş hücresi */
+    function soCell(w) {
+        const refs = w.soRefs || [];
+        if (!refs.length) return '<span class="muted">Stok için</span>';
+        const first = M.soLine(refs[0].key);
+        const off = refs.some((r) => { const x = M.soLine(r.key); return !x || x.so.status === 'cancelled'; });
+        return `<button class="link mono" data-act="soDetail" data-id="${esc(refs[0].key.split('/')[0])}">${esc(refs[0].key.split('/')[0])}</button>${refs.length > 1 ? ` <span class="muted">+${refs.length - 1}</span>` : ''}
+            <div class="muted" style="font-size:12px;">${esc(first ? first.so.customer : 'Sipariş bulunamadı')}</div>${off ? '<span class="badge badge-red">Sipariş iptal</span>' : ''}`;
+    }
+
     /** İş emrinin malzeme durumu (stoklu kalemler için) */
     function woAvailability(wo) {
         return M.bom(wo.kod).map((l) => {
@@ -4780,21 +4869,22 @@ window.MRP = window.MRP || {};
             const open = by(['planned', 'released']);
             if (open.length) html += H.card('Üretim takvimi', 'Açık iş emirleri — kırmızı çizgi bugünü gösterir', `<div class="card-body" style="overflow-x:auto;">${gantt(open)}</div>`) + '<div style="height:16px;"></div>';
             html += `<section class="card"><div class="table-wrap"><table>
-                <thead><tr><th>İş Emri</th><th>Mamul</th><th>Ad</th><th class="num">Miktar</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th><th>Malzeme</th><th></th></tr></thead>
+                <thead><tr><th>İş Emri</th><th>Mamul</th><th>Ad</th><th class="num">Miktar</th><th>Satış Siparişi</th><th>Başlangıç</th><th>Bitiş</th><th>Durum</th><th>Malzeme</th><th></th></tr></thead>
                 <tbody>${list.map((w) => {
                     const isOpen = w.status === 'planned' || w.status === 'released';
                     const av = isOpen ? woAvailability(w) : [];
                     const shorts = av.filter((a) => a.short > 0).length;
                     return `<tr class="${isOpen && w.end < U.iso(U.today()) ? 'r-crit' : ''}">
-                        <td><button class="link mono" data-act="woDetail" data-id="${esc(w.no)}">${esc(w.no)}</button></td>
+                        <td class="nowrap"><button class="link mono" data-act="woDetail" data-id="${esc(w.no)}">${esc(w.no)}</button></td>
                         <td>${H.anyLink(w.kod)}</td><td class="strong">${esc(w.ad)}</td><td class="num">${esc(U.qty(w.qty, 'ad'))}</td>
+                        <td>${soCell(w)}</td>
                         <td class="nowrap">${esc(U.date(U.parseDate(w.start)))}</td><td class="nowrap">${esc(U.date(U.parseDate(w.end)))}</td>
                         <td>${H.badge(H.WO_STATUS, w.status)}</td>
                         <td>${isOpen ? (shorts ? `<span class="badge badge-red">${shorts} eksik</span>` : '<span class="badge badge-green">Hazır</span>') : '–'}</td>
                         <td><div class="row-actions">${can && w.status === 'planned' ? `<button class="btn btn-secondary btn-sm" data-act="woRelease" data-id="${esc(w.no)}">Serbest Bırak</button>` : ''}
                             ${can && w.status === 'released' ? `<button class="btn btn-success btn-sm" data-act="woComplete" data-id="${esc(w.no)}">Tamamla</button>` : ''}
                             ${can && isOpen ? `<button class="btn btn-ghost btn-sm" data-act="woCancel" data-id="${esc(w.no)}" title="İptal">${MRP.icon('x', 'sm')}</button>` : ''}</div></td></tr>`;
-                }).join('') || `<tr><td colspan="9">${H.empty('İş emri yok', 'MRP önerilerinden veya "Yeni İş Emri" ile oluşturabilirsiniz.')}</td></tr>`}</tbody>
+                }).join('') || `<tr><td colspan="10">${H.empty('İş emri yok', 'MRP önerilerinden veya "Yeni İş Emri" ile oluşturabilirsiniz.')}</td></tr>`}</tbody>
             </table></div></section>`;
             return html;
         }
@@ -4836,6 +4926,7 @@ window.MRP = window.MRP || {};
                     <dt>Durum</dt><dd>${H.badge(H.WO_STATUS, w.status)}</dd><dt>Miktar</dt><dd>${esc(U.qty(w.qty, 'ad'))}</dd>
                     <dt>Başlangıç</dt><dd>${esc(U.date(U.parseDate(w.start)))}</dd><dt>Bitiş</dt><dd>${esc(U.date(U.parseDate(w.end)))}</dd>
                     <dt>Kaynak</dt><dd>${esc(w.source || 'Manuel')}</dd><dt>Oluşturan</dt><dd>${esc(w.createdBy)}</dd></dl>
+                ${soSection(w)}
                 <div class="table-wrap" style="max-height:340px;"><table><thead><tr><th>Kod</th><th>Bileşen</th><th class="num">İhtiyaç</th><th class="num">Kullanılabilir</th><th class="num">Eksik</th></tr></thead><tbody>
                 ${av.map((a) => `<tr class="${isOpen && a.short > 0 ? 'r-crit' : ''}"><td>${H.itemLink(a.kod)}</td><td>${esc(a.it.ad)}</td><td class="num">${esc(U.qty(a.need, a.it.unit))}</td>
                     <td class="num">${a.stocked ? esc(U.qty(a.have, a.it.unit)) : '<span class="muted">fason</span>'}</td><td class="num ${a.short > 0 ? 'tp-neg' : ''}">${a.short > 0 ? esc(U.qty(a.short, a.it.unit)) : '–'}</td></tr>`).join('')}
@@ -4847,8 +4938,100 @@ window.MRP = window.MRP || {};
                 </tbody></table></div>
                 <h3 style="font-size:.9em;margin:16px 0 8px;">Geçmiş</h3>
                 <div class="timeline">${(w.history || []).map((h) => `<div class="ev"><b>${esc(h.action)}</b><span class="d">${esc(h.by)} · ${esc(U.dateTime(h.at))}</span></div>`).join('')}</div>`,
-            buttons: [{ label: 'Kapat' }]
+            buttons: [
+                ...(isOpen && MRP.auth.can('manageWO') && M.salesLines().some((x) => x.kod === w.kod) || (w.soRefs || []).length && isOpen && MRP.auth.can('manageWO')
+                    ? [{ label: 'Sipariş bağlantısı', cls: 'btn-secondary', onClick: () => { setTimeout(() => editLinks(w.no), 0); } }] : []),
+                { label: 'Kapat' }]
         });
+    }
+
+    /** İş emri detayında bağlı satış siparişleri */
+    function soSection(w) {
+        const refs = w.soRefs || [];
+        const head = '<h3 style="font-size:.9em;margin:0 0 8px;">Satış siparişi</h3>';
+        if (!refs.length) return `${head}<p class="muted" style="margin:0 0 14px;">Bu iş emri bir siparişe bağlı değil (stok için üretim).</p>`;
+        const linked = U.sum(refs, (r) => r.qty);
+        return `${head}<div class="table-wrap" style="margin-bottom:14px;"><table><thead><tr><th>Sipariş / satır</th><th>Müşteri</th><th class="num">Bağlı miktar</th><th>Termin</th><th>Durum</th></tr></thead><tbody>
+            ${refs.map((r) => {
+                const x = M.soLine(r.key);
+                if (!x) return `<tr><td class="mono">${esc(r.key)}</td><td colspan="4" class="muted">Sipariş bulunamadı</td></tr>`;
+                const due = x.line.dueDate || x.so.dueDate;
+                const late = (w.status === 'planned' || w.status === 'released') && w.end > due;
+                return `<tr><td><button class="link mono" data-act="soDetail" data-id="${esc(x.so.no)}">${esc(r.key)}</button></td><td class="strong">${esc(x.so.customer)}</td>
+                    <td class="num">${esc(U.qty(r.qty, 'ad'))}</td><td class="nowrap">${esc(U.date(U.parseDate(due)))} ${late ? '<span class="badge badge-red">İE termin sonrası bitiyor</span>' : ''}</td>
+                    <td>${H.badge(M.SO_STATUS, x.so.status)}</td></tr>`;
+            }).join('')}</tbody></table></div>
+            ${linked < w.qty - 1e-9 ? `<p class="muted" style="margin:-8px 0 14px;font-size:12px;">${esc(U.qty(w.qty - linked, 'ad'))} siparişe bağlı değil (stok için).</p>` : ''}`;
+    }
+
+    /** Bağlantı düzenleme: aynı mamuldeki açık sipariş satırlarına miktar dağıtımı */
+    function editLinks(no) {
+        if (!H.guard('manageWO')) return;
+        const w = findWO(no);
+        const cur = new Map((w.soRefs || []).map((r) => [r.key, r.qty]));
+        const cov = M.soCoverage({ exclude: w.no });
+        const lines = M.salesLines().filter((x) => x.kod === w.kod).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+        const stale = (w.soRefs || []).filter((r) => !lines.some((x) => x.key === r.key));
+        UI.modal({
+            title: `Sipariş bağlantısı — ${w.no}`, size: 'lg',
+            body: `<p class="muted" style="margin-top:0;">${esc(w.kod)} · ${esc(w.ad)} · iş emri miktarı <b>${esc(U.qty(w.qty, 'ad'))}</b>. Her siparişe bu iş emrinden ayrılacak miktarı girin; boş kalan kısım stok için üretilir.</p>
+                ${stale.length ? H.banner('amber', 'alert', 'Kapanmış / iptal edilmiş siparişe bağlantı', `${stale.map((r) => r.key).join(', ')} — kaydedince kaldırılır.`) : ''}
+                <div class="table-wrap"><table><thead><tr><th>Sipariş / satır</th><th>Müşteri</th><th>Termin</th><th class="num">Sevk bekleyen</th><th class="num">Başka kaynakla karşılanmayan</th><th class="num">Bu iş emrinden</th></tr></thead><tbody>
+                ${lines.map((x) => { const c = cov.get(x.key); return `<tr><td class="mono">${esc(x.key)}</td><td class="strong">${esc(x.so.customer)}</td><td class="nowrap">${esc(U.date(U.parseDate(x.dueDate)))}${w.end > x.dueDate ? ' <span class="badge badge-red">İE geç biter</span>' : ''}</td>
+                    <td class="num">${esc(U.qty(x.remaining, 'ad'))}</td><td class="num">${esc(U.qty(c ? c.uncovered : 0, 'ad'))}</td>
+                    <td class="num"><input class="lk-qty" data-key="${esc(x.key)}" data-max="${x.remaining}" type="number" min="0" step="1" value="${cur.get(x.key) || ''}" style="width:90px;"></td></tr>`; }).join('')
+                    || `<tr><td colspan="6">${H.empty('Açık sipariş yok', 'Bu mamul için sevk bekleyen satış siparişi bulunmuyor.')}</td></tr>`}
+                </tbody></table></div>`,
+            buttons: [{ label: 'Vazgeç' },
+                { label: 'Otomatik dağıt', cls: 'btn-secondary', onClick: (ctx) => {
+                    const auto = new Map(M.autoPeg(w).map((r) => [r.key, r.qty]));
+                    ctx.$$('.lk-qty').forEach((i) => { i.value = auto.get(i.dataset.key) || ''; });
+                    return false;
+                } },
+                { label: 'Kaydet', cls: 'btn-primary', onClick: (ctx) => {
+                    const refs = [];
+                    for (const i of ctx.$$('.lk-qty')) {
+                        const q = U.toNum(i.value);
+                        if (!(q > 0)) continue;
+                        if (q > +i.dataset.max + 1e-9) { UI.toast('Miktar fazla', `${i.dataset.key}: sevk bekleyen ${i.dataset.max}`, 'warn'); return false; }
+                        refs.push({ key: i.dataset.key, qty: U.round(q, 4) });
+                    }
+                    if (U.sum(refs, (r) => r.qty) > w.qty + 1e-9) { UI.toast('Toplam iş emri miktarını aşıyor', `En fazla ${w.qty}`, 'warn'); return false; }
+                    w.soRefs = refs;
+                    woLog(w, refs.length ? `Sipariş bağlantısı: ${refLabel(refs)}` : 'Sipariş bağlantısı kaldırıldı');
+                    MRP.store.audit('İş emri sipariş bağlantısı', `${w.no}: ${refLabel(refs) || 'yok'}`);
+                    app().commit();
+                    UI.toast('Bağlantı kaydedildi', refs.length ? refLabel(refs) : 'İş emri stok için', 'success');
+                } }]
+        });
+    }
+
+    /**
+     * Sipariş satırı için iş emri: karşılanmayan miktar kadar, bitiş = termin,
+     * başlangıç = termin − tedarik süresi (bugünden önce olamaz)
+     */
+    function woForSalesLine(key) {
+        if (!H.guard('manageWO')) return;
+        const x = M.soLine(key);
+        if (!x) return;
+        const c = M.soCoverage().get(key);
+        const qty = Math.ceil(c ? c.uncovered : 0);
+        if (!(qty > 0)) { UI.toast('Satır zaten karşılanıyor', key, 'info'); return; }
+        const it = M.item(x.line.kod);
+        if (!it || it.procurement !== 'make') { UI.toast('Üretilemeyen kalem', x.line.kod, 'warn'); return; }
+        const today = U.iso(U.today());
+        const due = x.line.dueDate || x.so.dueDate;
+        const end = due < today ? today : due;
+        const startD = U.iso(U.addDays(U.parseDate(end), -Math.max(1, it.leadTime || 5)));
+        const u = MRP.auth.current();
+        const wo = { no: MRP.store.nextNo('IE'), kod: it.kod, ad: it.ad, qty, start: startD < today ? today : startD, end, status: 'planned',
+            source: key, soRefs: [{ key, qty }], createdBy: u.name, createdAt: new Date().toISOString(), history: [] };
+        woLog(wo, `Oluşturuldu — ${key} (${x.so.customer}) için`);
+        S().workOrders.push(wo);
+        MRP.store.audit('İş emri oluşturuldu', `${wo.no}: ${it.kod} × ${qty} — ${key} (${x.so.customer})`);
+        app().commit();
+        UI.toast('İş emri oluşturuldu', `${wo.no} · ${x.so.customer} siparişine bağlandı${end > due ? ' (termin geçmiş — bugün bitecek şekilde)' : ''}`, 'success');
+        return wo;
     }
 
     function newWO() {
@@ -4861,6 +5044,7 @@ window.MRP = window.MRP || {};
                     <div class="field"><label>Miktar <span class="req">*</span></label><input id="woQty" type="number" min="1" step="1" value="10"></div>
                     <div class="field"><label>Başlangıç</label><input id="woStart" type="date" value="${U.iso(U.today())}"></div>
                     <div class="field"><label>Bitiş</label><input id="woEnd" type="date" value="${U.iso(U.addDays(U.today(), 5))}"></div>
+                    <div class="field full"><label class="check-line"><input type="checkbox" id="woPeg" checked> Karşılanmamış satış siparişlerine otomatik bağla (termin sırasıyla)</label></div>
                 </div>`,
             buttons: [{ label: 'Vazgeç' }, {
                 label: 'Oluştur', cls: 'btn-primary', onClick: (ctx) => {
@@ -4873,10 +5057,11 @@ window.MRP = window.MRP || {};
                     const u = MRP.auth.current();
                     const wo = { no: MRP.store.nextNo('IE'), kod, ad: it.ad, qty, start, end, status: 'planned', source: '', createdBy: u.name, createdAt: new Date().toISOString(), history: [] };
                     woLog(wo, 'Oluşturuldu');
+                    if (ctx.$('#woPeg').checked) { const refs = M.autoPeg(wo); if (refs.length) { wo.soRefs = refs; woLog(wo, `Siparişe bağlandı: ${refLabel(refs)}`); } }
                     S().workOrders.push(wo);
                     MRP.store.audit('İş emri oluşturuldu', `${wo.no}: ${kod} × ${qty}`);
                     app().commit();
-                    UI.toast('İş emri oluşturuldu', wo.no, 'success');
+                    UI.toast('İş emri oluşturuldu', wo.soRefs ? `${wo.no} · ${refLabel(wo.soRefs)}` : wo.no, 'success');
                 }
             }]
         });
@@ -4906,7 +5091,7 @@ window.MRP = window.MRP || {};
         w.completedAt = new Date().toISOString();
         woLog(w, 'Tamamlandı — sarf ve mamul girişi yapıldı');
         MRP.store.audit('İş emri tamamlandı', `${w.no}: ${w.kod} × ${w.qty}`);
-        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${w.qty}`, ['perm:runMRP', 'perm:manageWO'], 'workorders');
+        MRP.store.notify('wo', 'İş emri tamamlandı', `${w.no} · ${w.ad} × ${w.qty}${(w.soRefs || []).length ? ` — sevke hazır: ${refLabel(w.soRefs)}` : ''}`, ['perm:runMRP', 'perm:manageWO'], (w.soRefs || []).length ? 'sales' : 'workorders');
         app().commit();
         UI.toast('İş emri tamamlandı', 'Stoklar güncellendi.', 'success');
     }
@@ -4926,16 +5111,19 @@ window.MRP = window.MRP || {};
             UI.toast('İş emri serbest bırakıldı', shorts ? `Uyarı: ${shorts} bileşende eksik var.` : w.no, shorts ? 'warn' : 'success');
         },
         woComplete: (no) => completeWO(no),
+        woLinks: (no) => editLinks(no),
         woCancel: async (no) => {
             if (!H.guard('manageWO')) return;
-            if (!(await UI.confirm(`${no} iptal edilecek.`, { title: 'İş emrini iptal et', okLabel: 'İptal Et', danger: true }))) return;
             const w = findWO(no);
+            const refs = (w.soRefs || []).filter((r) => { const x = M.soLine(r.key); return x && ['open', 'partial'].includes(x.so.status); });
+            if (!(await UI.confirm(`${no} iptal edilecek.${refs.length ? ` Bağlı siparişler karşılanmamış kalacak: ${refLabel(refs)}.` : ''}`, { title: 'İş emrini iptal et', okLabel: 'İptal Et', danger: true }))) return;
             w.status = 'cancelled';
             woLog(w, 'İptal edildi');
             MRP.store.audit('İş emri iptal edildi', no);
             app().commit();
         }
     });
+    MRP.planning = { woForSalesLine, refLabel };
 })(window.MRP);
 </script>
 <script>

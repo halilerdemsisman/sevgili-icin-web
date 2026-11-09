@@ -34,12 +34,14 @@
     function coverBadge(c, due) {
         if (!c) return '<span class="muted">–</span>';
         const d = (iso) => U.date(U.parseDate(iso)).slice(0, 5);
-        const src = c.from.filter((f) => f.src !== 'Stok').map((f) => f.src);
+        const seen = new Set();
+        const src = c.from.filter((f) => f.src !== 'Stok' && !seen.has(f.src) && seen.add(f.src))
+            .map((f) => `<button class="link mono" data-act="woDetail" data-id="${esc(f.src)}" title="${f.linked ? 'Siparişe bağlı iş emri' : 'Bağlı değil — serbest iş emri miktarından'}">${esc(f.src)}</button>${f.linked ? '' : '<sup class="muted" title="Siparişe bağlı değil">*</sup>'}`);
         switch (c.state) {
-            case 'stock': return '<span class="badge badge-green">Stoktan karşılanır</span>';
-            case 'wo': return `<span class="badge badge-blue">İş emri · ${esc(d(c.readyDate))}</span> <span class="muted">${esc(src.join(', '))}</span>`;
-            case 'late': return `<span class="badge badge-red">Geç · hazır ${esc(d(c.readyDate))}</span> <span class="muted">${esc(src.join(', '))} · termin ${esc(d(due))}</span>`;
-            default: return `<span class="badge badge-amber">Planlanmadı · ${esc(U.qty(c.uncovered, 'ad'))}</span>${c.from.length ? ` <span class="muted">kısmen ${esc(c.from.map((f) => f.src).join(', '))}</span>` : ''}`;
+            case 'stock': return `<span class="badge badge-green">Stoktan karşılanır</span>${c.from.some((f) => f.wo) ? ` <span class="muted">${esc([...new Set(c.from.filter((f) => f.wo).map((f) => f.wo))].join(', '))} üretti</span>` : ''}`;
+            case 'wo': return `<span class="badge badge-blue">İş emri · ${esc(d(c.readyDate))}</span> ${src.join(', ')}`;
+            case 'late': return `<span class="badge badge-red">Geç · hazır ${esc(d(c.readyDate))}</span> ${src.join(', ')} <span class="muted">· termin ${esc(d(due))}</span>`;
+            default: return `<span class="badge badge-amber">Planlanmadı · ${esc(U.qty(c.uncovered, 'ad'))}</span>${c.from.length ? ` <span class="muted">kısmen</span> ${src.join(', ') || 'stok'}` : ''}`;
         }
     }
 
@@ -140,14 +142,15 @@
                 ${o.note ? `<div class="field full"><label>Açıklama</label><div>${esc(o.note)}</div></div>` : ''}
             </div>
             <div class="table-wrap" style="margin-top:12px;"><table>
-                <thead><tr><th>#</th><th>Mamul</th><th class="num">Miktar</th><th class="num">Sevk</th><th class="num">Kalan</th><th>Termin</th><th>Karşılama</th></tr></thead>
+                <thead><tr><th>#</th><th>Mamul</th><th class="num">Miktar</th><th class="num">Sevk</th><th class="num">Kalan</th><th>Termin</th><th>Karşılama</th><th>Bağlı iş emirleri</th></tr></thead>
                 <tbody>${(o.lines || []).map((l) => {
                     const c = open ? cov.get(`${o.no}/${l.line}`) : null;
                     const p = M.product(l.kod);
                     return `<tr><td>${l.line}</td><td><span class="mono">${esc(l.kod)}</span><div class="muted">${esc(p ? p.ad : 'Tanımsız mamul')}</div></td>
                         <td class="num">${esc(U.qty(l.qty, 'ad'))}</td><td class="num">${esc(U.qty(l.shipped || 0, 'ad'))}</td><td class="num strong">${esc(U.qty(remaining(l), 'ad'))}</td>
                         <td class="nowrap">${esc(U.date(U.parseDate(lineDue(o, l))))}</td>
-                        <td>${c ? coverBadge(c, lineDue(o, l)) + (c.from.length ? `<div class="muted" style="font-size:12px;">${c.from.map((f) => `${esc(f.src)}: ${esc(U.qty(f.qty, 'ad'))}${f.src !== 'Stok' ? ` (${esc(U.date(U.parseDate(f.date)))})` : ''}`).join(' · ')}</div>` : '') : '<span class="muted">–</span>'}</td></tr>`;
+                        <td>${c ? coverBadge(c, lineDue(o, l)) + (c.from.length ? `<div class="muted" style="font-size:12px;">${c.from.map((f) => `${esc(f.src)}: ${esc(U.qty(f.qty, 'ad'))}${f.src !== 'Stok' ? ` (${esc(U.date(U.parseDate(f.date)))})` : ''}`).join(' · ')}</div>` : '') : '<span class="muted">–</span>'}</td>
+                        <td>${linkedCell(`${o.no}/${l.line}`, c, l)}</td></tr>`;
                 }).join('')}</tbody>
             </table></div>`,
             buttons: [
@@ -158,6 +161,15 @@
                 { label: 'Kapat', cls: 'btn-primary' }
             ]
         });
+    }
+
+    /** Satıra bağlı iş emirleri + karşılanmayan miktar için "İş emri aç" */
+    function linkedCell(key, c, l) {
+        const links = M.soLinkedWOs(key);
+        const html = links.map(({ w, qty }) => `<div class="nowrap"><button class="link mono" data-act="woDetail" data-id="${esc(w.no)}">${esc(w.no)}</button> ${H.badge(H.WO_STATUS, w.status)} <span class="muted">${esc(U.qty(qty, 'ad'))}</span></div>`).join('');
+        const make = c && c.uncovered > 0 && MRP.auth.can('manageWO') && (M.item(l.kod) || {}).procurement === 'make';
+        return (html || (make ? '' : '<span class="muted">–</span>'))
+            + (make ? `<button class="btn btn-secondary btn-sm" data-act="soMakeWO" data-id="${esc(key)}" style="margin-top:4px;">${MRP.icon('factory', 'sm')} İş emri aç (${esc(U.qty(Math.ceil(c.uncovered), 'ad'))})</button>` : '');
     }
 
     function setStatus(o, status) {
@@ -241,6 +253,14 @@
         soTab: (id) => { sState.tab = id; app().render(); },
         soSearch: (v) => { sState.q = v; clearTimeout(searchTimer); searchTimer = setTimeout(() => { sState.focus = true; app().render(); }, 200); },
         soDetail: (id) => detail(id),
+        soMakeWO: (key, el) => {
+            const wo = MRP.planning.woForSalesLine(key);
+            if (!wo) return;
+            const ov = el.closest('.modal-overlay, .overlay, [class*="overlay"]');
+            const x = ov && ov.querySelector('[data-close]');
+            if (x) x.click();
+            detail(key.split('/')[0]);
+        },
         soNew: () => newOrder(),
         soRunMRP: () => { if (MRP.actions.runMRP) MRP.actions.runMRP(); }
     });

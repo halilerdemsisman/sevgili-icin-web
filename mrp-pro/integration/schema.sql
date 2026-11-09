@@ -149,9 +149,19 @@ CREATE TABLE mrp_work_order (
     start     date NOT NULL,
     "end"     date NOT NULL,
     status    varchar(10) NOT NULL CHECK (status IN ('planned','released','completed','cancelled')),
-    source    varchar(20),
+    source    varchar(40),
     payload   jsonb NOT NULL DEFAULT '{}'              -- history vb.
 );
+-- İş emri ↔ satış sipariş satırı bağlantısı (pegging; WorkOrder.soRefs)
+CREATE TABLE mrp_work_order_so (
+    wo_no     varchar(20) NOT NULL REFERENCES mrp_work_order(no) ON DELETE CASCADE,
+    so_no     varchar(30) NOT NULL,
+    so_line   integer NOT NULL,
+    qty       numeric(18,4) NOT NULL CHECK (qty > 0),
+    PRIMARY KEY (wo_no, so_no, so_line),
+    FOREIGN KEY (so_no, so_line) REFERENCES mrp_sales_order_line(so_no, line)
+);
+CREATE INDEX ON mrp_work_order_so (so_no, so_line);
 
 -- ---------- Satın alma ----------
 CREATE TABLE mrp_purchase_request (

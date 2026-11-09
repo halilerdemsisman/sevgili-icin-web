@@ -99,6 +99,26 @@ function validate(collection, op, key, data, user, db) {
             if (prev && prev.status !== 'pending' && Number(data.total) > Number(prev.total) + 0.01) return 'Onaylı talebin tutarı artırılamaz';
             break;
         }
+        case 'workOrders': {
+            // Satış siparişi bağlantısı: var olan satır, toplam ≤ iş emri miktarı, satır başına ≤ sevk bekleyen
+            const refs = data.soRefs || [];
+            if (!Array.isArray(refs)) return 'soRefs dizi olmalı';
+            let total = 0;
+            for (const r of refs) {
+                const [no, ln] = String(r.key || '').split('/');
+                const so = db.collections.salesOrders[no];
+                const line = so && (so.lines || []).find((l) => String(l.line) === ln);
+                if (!line) return `Bağlı sipariş satırı bulunamadı: ${r.key}`;
+                if (line.kod !== data.kod) return `${r.key}: sipariş mamulü (${line.kod}) iş emri mamulüyle aynı değil`;
+                if (!(Number(r.qty) > 0)) return `${r.key}: bağlı miktar geçersiz`;
+                const prev = (db.collections.workOrders[key]?.soRefs || []).find((x) => x.key === r.key);
+                const changed = !prev || Number(prev.qty) !== Number(r.qty);
+                if (changed && Number(r.qty) > line.qty - (line.shipped || 0) + 1e-6) return `${r.key}: bağlı miktar sevk bekleyen miktarı aşıyor`;
+                total += Number(r.qty);
+            }
+            if (total > Number(data.qty) + 1e-6) return 'Siparişe bağlı toplam miktar iş emri miktarını aşıyor';
+            break;
+        }
         case 'inspections': {
             // Muayene kaydını depo açar (pending); kararı yalnızca kalite verir
             const prev = db.collections.inspections[key];

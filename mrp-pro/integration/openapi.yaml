@@ -25,7 +25,7 @@ info:
     | salesOrders | `no` | Satış siparişi — ERP'de açılır, sevk bekleyen miktar MRP talebi olur | (yalnızca ERP yazar) |
     | purchaseRequests | `no` | Satın alma talebi | createRequest, approveRequest, createPO, receiveGoods, inspectQuality |
     | purchaseOrders | `no` | Satın alma siparişi | createPO, receiveGoods, inspectQuality (kalite iadesi teslim miktarını düşürür) |
-    | workOrders | `no` | İş emri | manageWO, runMRP |
+    | workOrders | `no` | İş emri (`soRefs`: bağlı satış sipariş satırları) | manageWO, runMRP |
     | subcontracts | `no` | Fason sevk fişi | transferStock |
     | inspections | `no` | Giriş kalite muayenesi (karantina partisi) | receiveGoods (açma), inspectQuality (karar) |
     | notifications | `id` | Rol bazlı bildirim | (oturum açmış herkes) |
@@ -519,7 +519,16 @@ components:
         start: { type: string, format: date }
         end: { type: string, format: date }
         status: { type: string, enum: [planned, released, completed, cancelled] }
-        source: { type: string, description: MRP planlı sipariş no }
+        source: { type: string, description: "MRP planlı sipariş no veya satış sipariş satırı (SS-…/1)" }
+        soRefs:
+          type: array
+          description: "Satış siparişi bağlantısı (pegging). Toplam bağlı miktar iş emri miktarını, her satırda sevk bekleyen miktarı aşamaz; bağlanmayan kısım stok için üretimdir."
+          items:
+            type: object
+            required: [key, qty]
+            properties:
+              key: { type: string, example: SS-2026-0003/1, description: "Sipariş no / satır no" }
+              qty: { type: number }
     Subcontract:
       type: object
       required: [no, supplierId, status, lines]

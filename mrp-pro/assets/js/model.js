@@ -417,39 +417,91 @@
         }));
         return out;
     };
+    const WO_OPEN = ['planned', 'released'];
     /**
-     * Sipariş karşılama (basit ATP): her mamulde açık satırlar termin sırasıyla
-     * önce eldeki mamul stoğundan, sonra açık iş emirlerinden (bitiş sırasıyla) pay alır.
-     * Sonuç: Map(key → {state: stock|wo|late|open, from:[{src, qty, date}], uncovered, readyDate})
+     * Sipariş karşılama (pegging + basit ATP). Sıra:
+     *   1) Siparişe bağlı açık iş emirleri (soRefs) yalnızca bağlı oldukları satırı besler
+     *   2) Bağlı iş emri tamamlandıysa ürettiği mamul stoktan o satıra ayrılır
+     *   3) Kalan satırlar termin sırasıyla eldeki stoktan, sonra bağlanmamış iş emri miktarından pay alır
+     * opts.exclude: hesapta yok sayılacak iş emri no (yeni iş emrini bağlarken)
+     * Sonuç: Map(key → {state: stock|wo|late|open, from:[{src, qty, date, linked}], uncovered, readyDate})
      */
-    M.soCoverage = () => {
+    M.soCoverage = (opts = {}) => {
         const res = new Map();
         const byKod = new Map();
         M.salesLines().forEach((x) => { if (!byKod.has(x.kod)) byKod.set(x.kod, []); byKod.get(x.kod).push(x); });
         const today = U.iso(U.today());
+        const wos = S().workOrders.filter((w) => w.no !== opts.exclude);
         byKod.forEach((lines, kod) => {
+            const need = new Map(lines.map((x) => [x.key, x.remaining]));
+            const from = new Map(lines.map((x) => [x.key, []]));
+            const take = (key, qty, entry) => {
+                const q = Math.min(qty, need.get(key));
+                if (q <= EPS) return 0;
+                need.set(key, need.get(key) - q);
+                from.get(key).push({ ...entry, qty: U.round(q, 4) });
+                return q;
+            };
+            const kodWOs = wos.filter((w) => w.kod === kod);
+            // 1) bağlı açık iş emirleri
+            const woLeft = new Map();
+            kodWOs.filter((w) => WO_OPEN.includes(w.status)).forEach((w) => {
+                let left = +w.qty;
+                (w.soRefs || []).forEach((r) => { if (need.has(r.key) && left > EPS) left -= take(r.key, Math.min(+r.qty, left), { src: w.no, date: w.end, status: w.status, linked: true }); });
+                woLeft.set(w.no, left);
+            });
+            // 2) bağlı iş emrinin ürettiği stok o siparişe ayrılır
+            let stock = M.available(kod);
+            kodWOs.filter((w) => w.status === 'completed').forEach((w) => (w.soRefs || []).forEach((r) => {
+                if (need.has(r.key) && stock > EPS) stock -= take(r.key, Math.min(+r.qty, stock), { src: 'Stok', date: today, linked: true, wo: w.no });
+            }));
+            // 3) serbest arz: stok, sonra bağlanmamış iş emri miktarı (bitiş sırasıyla)
             const supply = [];
-            const stock = M.available(kod);
             if (stock > EPS) supply.push({ src: 'Stok', qty: stock, date: today });
-            S().workOrders.filter((w) => w.kod === kod && (w.status === 'planned' || w.status === 'released'))
-                .sort((a, b) => a.end.localeCompare(b.end))
-                .forEach((w) => supply.push({ src: w.no, qty: +w.qty, date: w.end, status: w.status }));
+            kodWOs.filter((w) => WO_OPEN.includes(w.status) && woLeft.get(w.no) > EPS).sort((a, b) => a.end.localeCompare(b.end))
+                .forEach((w) => supply.push({ src: w.no, qty: woLeft.get(w.no), date: w.end, status: w.status }));
             lines.sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.key.localeCompare(b.key)).forEach((x) => {
-                let need = x.remaining;
-                const from = [];
                 for (const s of supply) {
-                    if (need <= EPS) break;
-                    if (s.qty <= EPS) continue;
-                    const take = Math.min(need, s.qty);
-                    s.qty -= take; need -= take;
-                    from.push({ src: s.src, qty: U.round(take, 4), date: s.date, status: s.status });
+                    if (need.get(x.key) <= EPS) break;
+                    if (s.qty > EPS) s.qty -= take(x.key, s.qty, { src: s.src, date: s.date, status: s.status });
                 }
-                const readyDate = from.length ? from.reduce((m, f) => (f.date > m ? f.date : m), today) : null;
-                const state = need > EPS ? 'open' : from.every((f) => f.src === 'Stok') ? 'stock' : readyDate > x.dueDate ? 'late' : 'wo';
-                res.set(x.key, { state, from, uncovered: U.round(Math.max(0, need), 4), readyDate });
+                const f = from.get(x.key);
+                const rest = need.get(x.key);
+                const readyDate = f.length ? f.reduce((m, e) => (e.date > m ? e.date : m), today) : null;
+                const state = rest > EPS ? 'open' : f.every((e) => e.src === 'Stok') ? 'stock' : readyDate > x.dueDate ? 'late' : 'wo';
+                res.set(x.key, { state, from: f, uncovered: U.round(Math.max(0, rest), 4), readyDate });
             });
         });
         return res;
+    };
+
+    /** Sipariş satırına bağlı iş emirleri (tüm durumlar): [{w, qty}] */
+    M.soLinkedWOs = (key) => {
+        const out = [];
+        S().workOrders.forEach((w) => (w.soRefs || []).forEach((r) => { if (r.key === key) out.push({ w, qty: +r.qty }); }));
+        return out;
+    };
+    /** Sipariş satırı anahtarı → {so, line} */
+    M.soLine = (key) => {
+        const [no, ln] = String(key).split('/');
+        const so = (S().salesOrders || []).find((o) => o.no === no);
+        const line = so && (so.lines || []).find((l) => String(l.line) === ln);
+        return line ? { so, line } : null;
+    };
+    /**
+     * Yeni / mevcut iş emri için önerilen sipariş bağlantısı: aynı mamulde başka
+     * kaynakla karşılanmayan satırlara termin sırasıyla iş emri miktarı kadar.
+     */
+    M.autoPeg = (w) => {
+        const cov = M.soCoverage({ exclude: w.no });
+        let left = +w.qty;
+        const refs = [];
+        M.salesLines().filter((x) => x.kod === w.kod).sort((a, b) => a.dueDate.localeCompare(b.dueDate) || a.key.localeCompare(b.key)).forEach((x) => {
+            const c = cov.get(x.key);
+            const q = Math.min(left, c ? c.uncovered : 0);
+            if (q > EPS) { refs.push({ key: x.key, qty: U.round(q, 4) }); left -= q; }
+        });
+        return refs;
     };
 
     MRP.model = M;

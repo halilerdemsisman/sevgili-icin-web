@@ -39,7 +39,7 @@ node mrp-pro/integration/mock-erp/server.mjs   # → http://localhost:8787
 | Planlama | **Satış Siparişleri** | **ERP'de açılan müşteri siparişleri otomatik gelir** ve sevk bekleyen miktar MRP'ye talep olarak girer; satır bazında karşılama (stoktan / iş emriyle / geç / planlanmadı), MRP'ye yansımamış sipariş uyarısı, planlamaya bildirim |
 | | MRP Çalıştırma | Ana Üretim Planı (tahmin, stok hedefi), çok seviyeli MRP, planlı sipariş önerileri, istisnalar, zaman fazlı tablo, pegging |
 | | **Kapasite Planlama** | İş merkezleri (kapasite, verimlilik, saat ücreti), rota bazlı haftalık yük ısı haritası, aşırı yük tespiti |
-| | İş Emirleri | Malzeme uygunluğu, operasyon süreleri, Gantt, tamamlamada FIFO lot sarfı + mamul girişi |
+| | İş Emirleri | **Bağlı satış siparişi / müşteri**, malzeme uygunluğu, operasyon süreleri, Gantt, tamamlamada FIFO lot sarfı + mamul girişi |
 | Satın Alma | Talepler | Onay limiti, müdür onayına yönlendirme, yorumlar |
 | | Siparişler (PO) | **Teklif karşılaştırma**, fiyat listesinden otomatik fiyat (dövizli → TL), **talebi en uygun tedarikçilere bölme**, lot/lokasyonlu kısmi mal kabul, PDF |
 | | Tedarikçiler | Fiyat listesi yönetimi, **teslimat verisinden otomatik performans puanı** (zamanında teslim + kalite) |
@@ -84,9 +84,15 @@ Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartlar�
    planlama ve üretime bildirim gider, gösterge panelinde ve MRP ekranında "MRP'ye yansımadı" uyarısı çıkar.
 3. **MRP'yi çalıştırın:** her satırın sevk bekleyen miktarı (miktar − sevk edilen) bağımsız talep olur; ana plana
    ayrıca girilmez. Ana plan yalnızca sipariş dışı talepler (tahmin, stok hedefi) içindir.
-4. Önerilen iş emirlerini ve satın alma taleplerini oluşturun. Sipariş ekranındaki **Karşılama** sütunu her satırın
-   nereden karşılandığını gösterir: eldeki mamul stoğu, iş emri (bitiş tarihi) — termin sonrası bitiyorsa **Geç** —
-   ya da **Planlanmadı**.
+4. Önerilen iş emirlerini ve satın alma taleplerini oluşturun. **İş emri siparişe bağlanır:** MRP önerisinden açılan
+   iş emri, aynı mamulde başka kaynakla karşılanmayan sipariş satırlarına termin sırasıyla otomatik bağlanır; sipariş
+   detayındaki **İş emri aç** düğmesi satırın karşılanmayan miktarı için, bitişi termine ayarlı ve bağlı bir iş emri
+   açar; bağlantılar iş emri detayından (**Sipariş bağlantısı**) elle düzenlenebilir. İş emri listesinde müşteri,
+   siparişte bağlı iş emirleri görünür; bağlı iş emri tamamlanınca ürettiği mamul o siparişe ayrılır ve "sevke hazır"
+   bildirimi gider.
+   Sipariş ekranındaki **Karşılama** sütunu her satırın nereden karşılandığını gösterir: eldeki mamul stoğu, iş emri
+   (bitiş tarihi) — termin sonrası bitiyorsa **Geç** — ya da **Planlanmadı**. Önce bağlı iş emirleri, sonra stok ve
+   bağlanmamış iş emri miktarı (`*` ile işaretli) termin sırasıyla dağıtılır.
 5. Miktar / termin değişikliği, kısmi sevkiyat, iptal ve kapanış **ERP'de** yapılır ve aynı yolla MRP'ye gelir;
    sevk edilen miktar talepten düşer, iptal edilen sipariş talep olmaktan çıkar. MRP Pro siparişi değiştiremez.
 

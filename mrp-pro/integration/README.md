@@ -119,6 +119,7 @@ planlamaya bildirim ekleyin (`notifications`, `roles: ["perm:runMRP","perm:manag
 - MRP, `open` / `partial` siparişlerde her satırın `qty − shipped` miktarını talep olarak planlar; ana plana (`demands`) ayrıca yazmayın
 - Değişiklik, sevkiyat (`shipped`), iptal (`cancelled`) ve kapanışta (`closed`) kaydı güncelleyin ve `updatedAt`'i yenileyin — MRP Pro bunu "MRP'ye yansımadı" olarak gösterir
 - `salesOrders` **yalnızca ERP'ye aittir**: MRP Pro'dan gelen değişiklikler reddedilir
+- İş emirleri hangi siparişe üretildiğini `workOrders[].soRefs` (`[{key: "SS-2026-0003/1", qty: 25}]`) ile taşır; ERP'de sipariş bazlı maliyet / sevk planlaması için `mrp_work_order_so` tablosunu kullanabilirsiniz. Kural: satır var olmalı, mamul aynı olmalı, satır başına ≤ sevk bekleyen, toplam ≤ iş emri miktarı
 
 ### 4.5 Muhasebe/stok entegrasyonu için önemli koleksiyonlar
 | Olay | Koleksiyon | Ayırt edici alan |
