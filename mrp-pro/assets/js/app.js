@@ -201,7 +201,7 @@
         const html = logos.length
             ? logos.map((l) => `<span class="brand-logo"><img src="${U.esc(l.src)}" alt="${U.esc(l.name || 'Logo')}"></span>`).join('')
             : `<svg class="brand-logo" viewBox="0 0 300 100" role="img" aria-label="EXIT"><use href="#logo-exit"/></svg>
-               <svg class="brand-logo" viewBox="0 0 300 100" role="img" aria-label="bg group"><use href="#logo-bg"/></svg>`;
+               <svg class="brand-logo" viewBox="0 0 236 65" role="img" aria-label="bg group"><use href="#logo-bg"/></svg>`;
         U.$$('[data-brand-logos]').forEach((el) => { el.innerHTML = html; });
         const company = (br.company || '').trim();
         U.$$('[data-brand-company]').forEach((el) => { el.textContent = company || el.dataset.brandCompany; });
