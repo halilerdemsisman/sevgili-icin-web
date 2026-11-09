@@ -16,7 +16,7 @@
         dashboard: 'Gösterge Paneli', bom: 'Ürün Ağacı', items: 'Malzeme Kartları', costing: 'Maliyet & Kur',
         mrp: 'MRP Çalıştırma', capacity: 'Kapasite Planlama', workorders: 'İş Emirleri',
         requests: 'Satın Alma Talepleri', po: 'Satın Alma Siparişleri', suppliers: 'Tedarikçiler',
-        stock: 'Stok Durumu', movements: 'Stok Hareketleri',
+        stock: 'Stok Durumu', movements: 'Stok Hareketleri', quality: 'Kalite Kontrol',
         analysis: 'Analizler', import: 'Veri Aktarımı', reports: 'Raporlar', audit: 'Denetim Kaydı', users: 'Kullanıcılar & Roller'
     };
 
@@ -35,6 +35,7 @@
         receiveGoods:    ['Depo', 'Mal kabul (irsaliye, lot, kalite)'],
         adjustStock:     ['Depo', 'Sayım düzeltme ve Excel ile sayım aktarımı'],
         transferStock:   ['Depo', 'Lokasyon transferi ve fason sevk / dönüş'],
+        inspectQuality:  ['Kalite', 'Giriş muayenesi ve karantina kararı (kabul / iade / hurda)'],
         manageUsers:     ['Sistem', 'Kullanıcı, rol ve firma ayarları'],
         resetData:       ['Sistem', 'Demo verilerini sıfırlama, yedekten geri yükleme']
     };
@@ -50,7 +51,7 @@
     const DEFAULT_ROLES = [
         { id: 'admin', name: 'Sistem Yöneticisi', home: 'dashboard', views: ALL_VIEWS, can: { ...ALL }, approveLimit: null },
         { id: 'yonetim', name: 'Genel Müdür', home: 'dashboard',
-            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'reports', 'audit'],
+            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'quality', 'analysis', 'reports', 'audit'],
             can: { ...NONE, approveRequest: true }, approveLimit: null },
         { id: 'planlama', name: 'Üretim Planlama', home: 'mrp',
             views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'stock', 'movements', 'analysis', 'import', 'reports'],
@@ -59,14 +60,17 @@
             views: ['dashboard', 'bom', 'items', 'capacity', 'workorders', 'stock', 'movements', 'reports'],
             can: { ...NONE, manageWO: true, transferStock: true }, approveLimit: 0 },
         { id: 'satinalma', name: 'Satın Alma Uzmanı', home: 'requests',
-            views: ['dashboard', 'items', 'costing', 'mrp', 'requests', 'po', 'suppliers', 'stock', 'analysis', 'import', 'reports'],
+            views: ['dashboard', 'items', 'costing', 'mrp', 'requests', 'po', 'suppliers', 'stock', 'quality', 'analysis', 'import', 'reports'],
             can: { ...NONE, approveRequest: true, createPO: true, manageSuppliers: true }, approveLimit: 10000 },
         { id: 'satinalma_muduru', name: 'Satın Alma Müdürü', home: 'requests',
-            views: ['dashboard', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
+            views: ['dashboard', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'quality', 'analysis', 'import', 'reports', 'audit'],
             can: { ...NONE, approveRequest: true, createPO: true, manageSuppliers: true, editCost: true }, approveLimit: 500000 },
         { id: 'depo', name: 'Depo Sorumlusu', home: 'stock',
-            views: ['dashboard', 'items', 'workorders', 'po', 'stock', 'movements', 'import', 'reports'],
+            views: ['dashboard', 'items', 'workorders', 'po', 'stock', 'movements', 'quality', 'import', 'reports'],
             can: { ...NONE, receiveGoods: true, adjustStock: true, transferStock: true }, approveLimit: 0 },
+        { id: 'kalite', name: 'Kalite Kontrol', home: 'quality',
+            views: ['dashboard', 'items', 'po', 'suppliers', 'stock', 'movements', 'quality', 'reports'],
+            can: { ...NONE, inspectQuality: true }, approveLimit: 0 },
         { id: 'maliyet', name: 'Maliyet / Muhasebe', home: 'costing',
             views: ['dashboard', 'bom', 'items', 'costing', 'capacity', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
             can: { ...NONE, editCost: true }, approveLimit: 0 }
@@ -83,6 +87,7 @@
         ['satinalma', 'satin123', 'Zeynep Kaya', 'satinalma'],
         ['satinalma_muduru', 'mudur123', 'Murat Demir', 'satinalma_muduru'],
         ['depo', 'depo123', 'Emre Koç', 'depo'],
+        ['kalite', 'kal123', 'Selin Arslan', 'kalite'],
         ['maliyet', 'mal123', 'Elif Şahin', 'maliyet']
     ];
     function defaultUsers() {

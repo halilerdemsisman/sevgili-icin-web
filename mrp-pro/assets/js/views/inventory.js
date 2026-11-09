@@ -75,7 +75,7 @@
                         <td>${H.stockBadge(s)}</td><td class="num">${U.num(Math.max(0, oh) * valueOf(i.kod))}</td>
                         <td><div class="row-actions">${canAdj ? `<button class="btn btn-ghost btn-sm" data-act="stockAdjust" data-id="${esc(i.kod)}">Sayım</button>` : ''}${canTrf ? `<button class="btn btn-ghost btn-sm" data-act="stockTransfer" data-id="${esc(i.kod)}" title="Transfer">${MRP.icon('swap', 'sm')}</button>` : ''}</div></td></tr>`;
                 }).join('') || `<tr><td colspan="${9 + LOCS().length}">${H.empty('Kayıt yok')}</td></tr>`}</tbody></table></div></section>
-                <p class="muted" style="font-size:.78em;margin-top:10px;">Üretimde sarf, Fabrika ve Merkez Depo stoğundan FIFO ile yapılır; fasoncudaki stok MRP'de eldeki stok sayılır ancak sarf edilemez. Eksikler için öneriler MRP'de emniyet stoğu tamamlama olarak oluşur.</p>`;
+                <p class="muted" style="font-size:.78em;margin-top:10px;">Üretimde sarf, Fabrika ve Merkez Depo stoğundan FIFO ile yapılır; fasoncudaki ve Kalite / Karantina'daki stok MRP'de eldeki stok sayılır ancak sarf edilemez. Karantinadaki stok yalnızca Kalite Kontrol kararıyla (kabul / iade / hurda) çıkar. Eksikler için öneriler MRP'de emniyet stoğu tamamlama olarak oluşur.</p>`;
             return html;
         },
         after() {
@@ -93,7 +93,7 @@
             title: `Sayım Düzeltme — ${kod}`, size: 'sm',
             body: `<p style="margin-bottom:14px;">${esc(it.ad)}</p>
                 <div class="form-grid">
-                    <div class="field full"><label>Lokasyon</label><select id="adjLoc">${LOCS().map((l) => `<option value="${l}">${esc(locName(l))} — ${esc(U.qty(M.onHand(kod, l), it.unit))}</option>`).join('')}</select></div>
+                    <div class="field full"><label>Lokasyon</label><select id="adjLoc">${M.MANUAL_LOCS.map((l) => `<option value="${l}">${esc(locName(l))} — ${esc(U.qty(M.onHand(kod, l), it.unit))}</option>`).join('')}</select></div>
                     <div class="field"><label>Sistem stoğu</label><input id="adjCur" readonly></div>
                     <div class="field"><label>Sayılan (${esc(it.unit)}) <span class="req">*</span></label><input id="adjQty" type="number" min="0" step="any"></div>
                     <div class="field full"><label>Lot no (fazla çıkan miktar için)</label><input id="adjLot" placeholder="Boş = SAYIM-tarih"></div>
@@ -133,8 +133,8 @@
             body: `<datalist id="trItems">${items.map((i) => `<option value="${esc(i.kod)}">${esc(i.ad)}</option>`).join('')}</datalist>
                 <div class="form-grid">
                     <div class="field full"><label>Malzeme <span class="req">*</span></label><input id="trKod" list="trItems" value="${esc(kod || '')}" autocomplete="off"><span class="hint" id="trInfo"></span></div>
-                    <div class="field"><label>Çıkış</label><select id="trFrom">${LOCS().map((l) => `<option value="${l}">${esc(locName(l))}</option>`).join('')}</select></div>
-                    <div class="field"><label>Varış</label><select id="trTo">${LOCS().map((l, i) => `<option value="${l}" ${i === 1 ? 'selected' : ''}>${esc(locName(l))}</option>`).join('')}</select></div>
+                    <div class="field"><label>Çıkış</label><select id="trFrom">${M.MANUAL_LOCS.map((l) => `<option value="${l}">${esc(locName(l))}</option>`).join('')}</select></div>
+                    <div class="field"><label>Varış</label><select id="trTo">${M.MANUAL_LOCS.map((l, i) => `<option value="${l}" ${i === 1 ? 'selected' : ''}>${esc(locName(l))}</option>`).join('')}</select></div>
                     <div class="field"><label>Miktar <span class="req">*</span></label><input id="trQty" type="number" min="0" step="any"></div>
                     <div class="field"><label>Açıklama</label><input id="trNote" placeholder="Üretim hattına besleme…"></div>
                 </div>`,

@@ -31,6 +31,9 @@
             { id: 'stock', label: 'Stok Durumu', icon: 'warehouse', count: () => MRP.model.items().filter((i) => MRP.model.stockStatus(i.kod) === 'critical').length, alert: true },
             { id: 'movements', label: 'Stok Hareketleri', icon: 'swap' }
         ] },
+        { group: 'Kalite', items: [
+            { id: 'quality', label: 'Kalite Kontrol', icon: 'qc', count: () => (MRP.store.state.inspections || []).filter((x) => x.status === 'pending').length, alert: true }
+        ] },
         { group: 'Analiz & Sistem', items: [
             { id: 'analysis', label: 'Analizler', icon: 'pie' },
             { id: 'import', label: 'Veri Aktarımı (Excel)', icon: 'upload' },

@@ -43,6 +43,7 @@
             pos: [],
             workOrders: [],
             subcontracts: [],
+            inspections: [],            // giriş kalite muayeneleri (karantina partileri)
             suppliers: JSON.parse(JSON.stringify(MRP.data.SUPPLIERS)),
             priceList: MRP.data.buildPriceList(items),
             workCenters: JSON.parse(JSON.stringify(MRP.data.WORK_CENTERS)),
@@ -53,8 +54,29 @@
             seq: {},
             roles: MRP.auth.defaultRoles(),
             users: MRP.auth.defaultUsers(),
-            branding: defaultBranding()
+            branding: defaultBranding(),
+            qcSetup: true
         };
+    }
+
+    /**
+     * Kalite modülü öncesi kayıtlar için tek seferlik yükseltme: Kalite Kontrol rolü
+     * ve demo kullanıcısı eklenir, yönetici rolüne yeni yetki ve ekran verilir.
+     * Kullanıcının özelleştirdiği diğer rollere yalnızca (salt okunur) Kalite ekranı eklenir.
+     */
+    function upgrade(st) {
+        if (!Array.isArray(st.inspections)) st.inspections = [];
+        if (st.qcSetup || MRP.config.erp) return st;
+        const defs = MRP.auth.defaultRoles();
+        const roles = st.roles || (st.roles = []);
+        const admin = roles.find((r) => r.id === 'admin');
+        if (admin) { admin.can = { ...admin.can, inspectQuality: true }; if (!admin.views.includes('quality')) admin.views.push('quality'); }
+        ['yonetim', 'satinalma', 'satinalma_muduru', 'depo'].forEach((id) => { const r = roles.find((x) => x.id === id); if (r && !r.views.includes('quality')) r.views.push('quality'); });
+        if (!roles.some((r) => r.id === 'kalite')) roles.push(defs.find((r) => r.id === 'kalite'));
+        const users = st.users || (st.users = []);
+        if (!users.some((u) => u.username === 'kalite')) users.push(MRP.auth.defaultUsers().find((u) => u.username === 'kalite'));
+        st.qcSetup = true;
+        return st;
     }
 
     /** Firma adı ve logolar (Kullanıcılar & Roller → Firma Ayarları) */
@@ -78,7 +100,7 @@
         return {
             version: VERSION, createdAt: new Date().toISOString(),
             itemOverrides: {}, customItems: {}, productOverrides: {}, customProducts: [], customBoms: {}, routings: {},
-            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [],
+            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [], inspections: [],
             suppliers: [], priceList: [], workCenters: [],
             fx: { rates: { ...MRP.data.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] },
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
@@ -95,13 +117,20 @@
             const raw = localStorage.getItem(KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed && parsed.version === VERSION) { state = Object.assign(defaultState(), parsed); return state; }
+                if (parsed && parsed.version === VERSION) {
+                    const fresh = defaultState();
+                    delete fresh.qcSetup;               // eski kayıtta yoksa yükseltme çalışsın
+                    state = upgrade(Object.assign(fresh, parsed));
+                    return state;
+                }
             }
             const rawV2 = localStorage.getItem(KEY_V2);
             if (rawV2) {
                 const parsed = JSON.parse(rawV2);
                 if (parsed && parsed.version === 2) {
                     state = migrateV2(parsed);
+                    delete state.qcSetup;
+                    upgrade(state);
                     save();
                     localStorage.removeItem(KEY_V2);
                     return state;
@@ -141,7 +170,9 @@
     /** Yedekten geri yükleme (v2 veya v3 JSON) */
     function restore(obj) {
         if (!obj || (obj.version !== VERSION && obj.version !== 2)) throw new Error('Tanınmayan yedek dosyası');
-        state = obj.version === 2 ? migrateV2(obj) : Object.assign(defaultState(), obj);
+        const fresh = defaultState();
+        delete fresh.qcSetup;
+        state = upgrade(obj.version === 2 ? migrateV2(obj) : Object.assign(fresh, obj));
         save();
     }
 

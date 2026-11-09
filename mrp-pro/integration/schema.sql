@@ -21,6 +21,7 @@ CREATE TABLE mrp_item (
     safety_stock   numeric(18,4) NOT NULL DEFAULT 0,
     lot_policy     varchar(4)   NOT NULL DEFAULT 'L4L' CHECK (lot_policy IN ('L4L','FOQ','MIN')),
     lot_size       numeric(18,4) NOT NULL DEFAULT 0,
+    inspect        boolean      NOT NULL DEFAULT false,   -- giriş kalite muayenesi gerekli
     updated_at     timestamptz  NOT NULL DEFAULT now()
 );
 
@@ -88,7 +89,7 @@ CREATE TABLE mrp_lot (
     id        varchar(40) PRIMARY KEY,
     lot       varchar(60) NOT NULL,
     kod       varchar(40) NOT NULL,
-    loc       varchar(10) NOT NULL CHECK (loc IN ('MERKEZ','FABRIKA','FASON')),
+    loc       varchar(10) NOT NULL CHECK (loc IN ('MERKEZ','FABRIKA','FASON','KALITE')),  -- KALITE = karantina
     qty       numeric(18,4) NOT NULL CHECK (qty >= 0),
     at        timestamptz NOT NULL,                    -- FIFO sırası
     ref       varchar(40), supplier varchar(200)
@@ -99,7 +100,7 @@ CREATE TABLE mrp_movement (                            -- değişmez defter
     id        varchar(40) PRIMARY KEY,
     at        timestamptz NOT NULL,
     kod       varchar(40) NOT NULL,
-    type      varchar(3)  NOT NULL CHECK (type IN ('GR','GI','FG','ADJ','TRF')),
+    type      varchar(3)  NOT NULL CHECK (type IN ('GR','GI','FG','ADJ','TRF','RTV','SCR')),  -- RTV: iade, SCR: hurda
     qty       numeric(18,4) NOT NULL,
     balance   numeric(18,4),
     loc       varchar(40), to_loc varchar(10),
@@ -159,6 +160,30 @@ CREATE TABLE mrp_subcontract (
     status      varchar(10) NOT NULL CHECK (status IN ('open','closed')),
     payload     jsonb NOT NULL
 );
+
+-- ---------- Kalite kontrol ----------
+-- Muayeneye tabi kalem mal kabulde KALITE lokasyonuna girer ve burada bir kayıt açılır.
+CREATE TABLE mrp_inspection (
+    no           varchar(20) PRIMARY KEY,                -- GKK-2026-0001
+    status       varchar(10) NOT NULL CHECK (status IN ('pending','done')),
+    po_no        varchar(20) REFERENCES mrp_purchase_order(no),
+    supplier_id  varchar(20) NOT NULL REFERENCES mrp_supplier(id),
+    kod          varchar(40) NOT NULL REFERENCES mrp_item(kod),
+    lot          varchar(60) NOT NULL,
+    qty          numeric(18,4) NOT NULL CHECK (qty > 0),
+    accepted     numeric(18,4),
+    rejected     numeric(18,4),
+    decision     varchar(10) CHECK (decision IN ('return','scrap')),
+    reason       varchar(60),
+    inspected_by varchar(60),
+    received_at  timestamptz NOT NULL,
+    decided_at   timestamptz,
+    payload      jsonb NOT NULL,                           -- waybill, checks, note, targetLoc
+    CHECK (status = 'pending' OR (accepted >= 0 AND rejected >= 0 AND accepted + rejected = qty)),
+    CHECK (COALESCE(rejected, 0) = 0 OR (decision IS NOT NULL AND reason IS NOT NULL))
+);
+CREATE INDEX ON mrp_inspection (supplier_id, decided_at);
+CREATE INDEX ON mrp_inspection (status) WHERE status = 'pending';
 
 -- ---------- Sistem ----------
 CREATE TABLE mrp_settings (id varchar(10) PRIMARY KEY DEFAULT 'main', fx jsonb NOT NULL, costing jsonb NOT NULL);

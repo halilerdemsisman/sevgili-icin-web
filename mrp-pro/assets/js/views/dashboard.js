@@ -34,6 +34,11 @@
                 html += H.banner('amber', 'warehouse', `${crit.length} malzeme emniyet stoğunun yarısının altında`, crit.slice(0, 6).map((i) => i.kod).join(', ') + (crit.length > 6 ? '…' : ''),
                     MRP.auth.canView('stock') ? '<button class="btn btn-secondary btn-sm" data-act="go" data-id="stock">Stok durumu</button>' : '');
             }
+            const qcPending = (st.inspections || []).filter((x) => x.status === 'pending');
+            if (qcPending.length && MRP.auth.canView('quality')) {
+                html += H.banner('amber', 'qc', `${qcPending.length} parti giriş muayenesi bekliyor`, `Karantinadaki malzeme muayene edilmeden üretimde kullanılamaz: ${qcPending.slice(0, 5).map((x) => x.kod).join(', ')}${qcPending.length > 5 ? '…' : ''}`,
+                    '<button class="btn btn-secondary btn-sm" data-act="go" data-id="quality">Kalite kontrol</button>');
+            }
 
             html += `<div class="kpis">
                 ${H.kpi('Mamul', M.products().length.toLocaleString('tr-TR'), `${st.customProducts.length} özel ürün`, 'blue')}

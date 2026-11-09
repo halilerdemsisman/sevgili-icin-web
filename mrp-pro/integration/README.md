@@ -99,6 +99,7 @@ Ayrıntılı tanımlar `openapi.yaml`'dadır. Özet:
 - Onay limiti sunucuda da kontrol edilir (istemciye güvenilmez)
 - Talep yalnızca `approveRequest` yetkisi olan kullanıcı tarafından ve yalnızca bekleyen durumdan onaylanır/reddedilir
 - Talep toplamı kalem tutarlarının toplamına eşit olmalıdır; onaylanmış talebin tutarı sonradan artırılamaz
+- Muayene kaydını depo açar (`pending`); kararı (`done`) yalnızca `inspectQuality` yetkisi verir, kabul + ret = muayene miktarı olmalı, ret için karar (iade/hurda) ve sebep zorunludur; tamamlanmış muayene değiştirilemez
 
 Kendi kurallarınızı (muhasebe fişi, bütçe kontrolü, stok kilidi…) buraya ekleyin. Reddedilen her değişiklik için `{collection, key, reason, current}` döndürmeniz yeterli.
 

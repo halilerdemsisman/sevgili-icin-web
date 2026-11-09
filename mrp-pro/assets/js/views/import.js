@@ -234,7 +234,7 @@
             if (it.procurement === 'service') return err(i, `${kod} stoksuz (fason/hizmet) kalem`);
             const qty = num(r.qty);
             if (qty === null || isNaN(qty) || qty < 0) return err(i, 'Geçersiz sayılan miktar');
-            const loc = str(r.loc) ? (LOCS[norm(r.loc)] || (M.LOCATIONS[str(r.loc).toUpperCase()] ? str(r.loc).toUpperCase() : null)) : 'MERKEZ';
+            const loc = str(r.loc) ? (LOCS[norm(r.loc)] || (M.MANUAL_LOCS.includes(str(r.loc).toUpperCase()) ? str(r.loc).toUpperCase() : null)) : 'MERKEZ';
             if (!loc) return err(i, `Bilinmeyen lokasyon: ${r.loc}`);
             const cur = M.onHand(kod, loc);
             const diff = U.round(qty - cur, 4);

@@ -42,13 +42,14 @@ const COLLECTIONS = {
     workCenters:      { key: (r) => r.id,                      perms: ['manageCapacity', 'editCost'] },
     suppliers:        { key: (r) => r.id,                      perms: ['manageSuppliers'] },
     priceList:        { key: (r) => `${r.supplierId}|${r.kod}`, perms: ['manageSuppliers', 'editCost'] },
-    lots:             { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock'] },
-    movements:        { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock'], appendOnly: true },
+    lots:             { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock', 'inspectQuality'] },
+    movements:        { key: (r) => r.id,                      perms: ['adjustStock', 'receiveGoods', 'manageWO', 'transferStock', 'inspectQuality'], appendOnly: true },
     demands:          { key: (r) => r.id,                      perms: ['runMRP'] },
-    purchaseRequests: { key: (r) => r.no,                      perms: ['createRequest', 'approveRequest', 'createPO', 'receiveGoods'] },
-    purchaseOrders:   { key: (r) => r.no,                      perms: ['createPO', 'receiveGoods'] },
+    purchaseRequests: { key: (r) => r.no,                      perms: ['createRequest', 'approveRequest', 'createPO', 'receiveGoods', 'inspectQuality'] },
+    purchaseOrders:   { key: (r) => r.no,                      perms: ['createPO', 'receiveGoods', 'inspectQuality'] },
     workOrders:       { key: (r) => r.no,                      perms: ['manageWO', 'runMRP'] },
     subcontracts:     { key: (r) => r.no,                      perms: ['transferStock'] },
+    inspections:      { key: (r) => r.no,                      perms: ['receiveGoods', 'inspectQuality'] },
     notifications:    { key: (r) => r.id,                      perms: ['*'] },
     auditLog:         { key: (r) => r.id,                      perms: ['*'], appendOnly: true },
     settings:         { key: () => 'main',                     perms: ['editCost', 'manageUsers'] },
@@ -94,6 +95,21 @@ function validate(collection, op, key, data, user, db) {
             }
             // Onaylanmış talebin tutarı onaydan sonra artırılamaz
             if (prev && prev.status !== 'pending' && Number(data.total) > Number(prev.total) + 0.01) return 'Onaylı talebin tutarı artırılamaz';
+            break;
+        }
+        case 'inspections': {
+            // Muayene kaydını depo açar (pending); kararı yalnızca kalite verir
+            const prev = db.collections.inspections[key];
+            if (!(data.qty > 0)) return 'Muayene miktarı geçersiz';
+            if (prev && prev.status === 'done' && JSON.stringify(prev) !== JSON.stringify(data)) return 'Tamamlanmış muayene değiştirilemez';
+            if (!prev && data.status !== 'pending' && !p.inspectQuality) return 'Muayene kararı için kalite yetkisi gerekir';
+            if (data.status === 'done' && (!prev || prev.status !== 'done')) {
+                if (!p.inspectQuality) return 'Muayene kararı için kalite yetkisi gerekir';
+                const r = data.result || {};
+                if (!(r.accepted >= 0) || !(r.rejected >= 0) || Math.abs(r.accepted + r.rejected - data.qty) > 1e-6) return 'Kabul + ret, muayene miktarına eşit olmalı';
+                if (r.rejected > 0 && !['return', 'scrap'].includes(r.decision)) return 'Reddedilen miktar için karar (iade/hurda) gerekli';
+                if (r.rejected > 0 && !r.reason) return 'Ret sebebi gerekli';
+            }
             break;
         }
         case 'items': if (data.price != null && !(data.price >= 0)) return 'Fiyat negatif olamaz'; break;

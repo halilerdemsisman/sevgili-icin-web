@@ -216,6 +216,7 @@ textarea { resize: vertical; min-height: 70px; }
 .avatar.uretim { background: linear-gradient(135deg,#ef4444,#b91c1c); }
 .avatar.depo { background: linear-gradient(135deg,#06b6d4,#0e7490); }
 .avatar.maliyet { background: linear-gradient(135deg,#ec4899,#be185d); }
+.avatar.kalite { background: linear-gradient(135deg,#84cc16,#4d7c0f); }
 .user-chip .n { font-size: .82em; font-weight: 600; line-height: 1.2; }
 .user-chip .r { font-size: .7em; color: var(--text-3); }
 .content { padding: 22px 24px 40px; max-width: 1640px; width: 100%; margin: 0 auto; }
@@ -435,6 +436,16 @@ td.code { color: #1d4ed8; }
 
 /* Onay kutuları alan genişliğine yayılmasın */
 .field input[type="checkbox"], .check-chip input[type="checkbox"] { width: auto; flex-shrink: 0; }
+.field label.check-line { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: .95em; color: var(--text); font-weight: 500; cursor: pointer; }
+/* Kalite kontrol listesi */
+.qc-checks { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; }
+.qc-checks .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+.qc-checks .seg label { padding: 4px 10px; font-size: .8em; cursor: pointer; display: flex; align-items: center; gap: 4px; text-transform: none; letter-spacing: 0; color: var(--text-2); }
+.qc-checks .seg input { display: none; }
+.qc-checks .seg label:has(input:checked) { background: var(--bg-hover); color: var(--text); font-weight: 600; }
+.qc-checks .seg label.ok:has(input:checked) { background: var(--green-soft); }
+.qc-checks .seg label.nok:has(input:checked) { background: var(--red-soft); }
+@media (max-width: 600px) { .qc-checks { grid-template-columns: 1fr; } }
 
 /* ---------- ERP bağlantısı ---------- */
 .avatar { background: linear-gradient(135deg, #64748b, #475569); }
@@ -804,6 +815,7 @@ window.MRP = window.MRP || {};
         refresh: '<path d="M21 12a9 9 0 01-15.5 6.2L3 16M3 12a9 9 0 0115.5-6.2L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>',
         x: '<path d="M18 6L6 18M6 6l12 12"/>',
         check: '<path d="M20 6L9 17l-5-5"/>',
+        qc: '<circle cx="11" cy="11" r="7"/><path d="M8 11l2 2 4-4"/><path d="M16.5 16.5L21 21"/>',
         alert: '<path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
         info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
         chevronRight: '<path d="M9 18l6-6-6-6"/>',
@@ -1281,7 +1293,8 @@ window.MRP = window.MRP || {};
             const fx = currency === 'TRY' ? 1 : DEFAULT_FX[currency];
             items[kod] = {
                 kod, ad, tur, unit, price: MRP.U.round(price / fx, 4), currency, procurement,
-                leadTime: LEAD_BY_TYPE[tur] ?? 7, safetyStock: safety, lotPolicy, lotSize
+                leadTime: LEAD_BY_TYPE[tur] ?? 7, safetyStock: safety, lotPolicy, lotSize,
+                inspect: procurement === 'buy' && QC_TYPES.includes(tur)
             };
         };
         Object.values(BOM_TEMPLATES).forEach((lines) => lines.forEach(([kod, ad, tur, k, b]) => add(kod, ad, tur, k > 0 ? b / k : 0)));
@@ -1300,8 +1313,28 @@ window.MRP = window.MRP || {};
     const LOCATIONS = {
         MERKEZ: { ad: 'Merkez Depo', consume: true },
         FABRIKA: { ad: 'Fabrika / Üretim Hattı', consume: true },
-        FASON: { ad: 'Fasoncuda', consume: false }
+        FASON: { ad: 'Fasoncuda', consume: false },
+        // Giriş muayenesi bekleyen stok: sarf edilemez, elle transfer/sayım yapılamaz (yalnızca kalite kararıyla çıkar)
+        KALITE: { ad: 'Kalite / Karantina', consume: false, locked: true }
     };
+
+    // ---------------- Kalite kontrol ----------------
+    /** Varsayılan olarak giriş muayenesine tabi malzeme türleri (malzeme kartından değiştirilebilir) */
+    const QC_TYPES = ['İroko Kereste', 'Profil', 'Döşeme / Kumaş', 'Boya / Kimyasal', 'Yüzey Malzemesi'];
+    /** Muayene kontrol listesi; types verilirse yalnızca o türlerde sorulur */
+    const QC_CHECKS = [
+        { id: 'pack', label: 'Ambalaj / taşıma hasarı' },
+        { id: 'qty', label: 'Miktar ve etiket doğrulama' },
+        { id: 'dim', label: 'Ölçü / tolerans' },
+        { id: 'visual', label: 'Görsel kusur (renk, çizik, leke)' },
+        { id: 'moist', label: 'Nem oranı (%8–12)', types: ['İroko Kereste'] },
+        { id: 'grain', label: 'Budak / çatlak / lif yönü', types: ['İroko Kereste'] },
+        { id: 'coat', label: 'Kaplama / eloksal kalınlığı', types: ['Profil'] },
+        { id: 'fabric', label: 'Renk tonu ve aşınma testi', types: ['Döşeme / Kumaş'] },
+        { id: 'batch', label: 'Parti no / raf ömrü', types: ['Boya / Kimyasal'] },
+        { id: 'doc', label: 'Belge (sertifika, test raporu)' }
+    ];
+    const QC_REASONS = ['Ölçü dışı', 'Görsel kusur', 'Taşıma hasarı', 'Yanlış malzeme', 'Nem / malzeme kalitesi', 'Belge eksik', 'Miktar eksik', 'Diğer'];
 
     // ---------------- İş merkezleri ve rotalar ----------------
     /** capacity: günlük dakika, rate: saatlik maliyet (₺) */
@@ -1374,7 +1407,7 @@ window.MRP = window.MRP || {};
     MRP.data = {
         CATEGORIES, CATEGORY_STYLE, BASE_PRODUCTS, BOM_TEMPLATES, SUB_BOMS, ITEM_TYPES, UNIT_BY_TYPE,
         buildProducts, buildItemMaster, buildInitialStock, buildPriceList, SUPPLIERS,
-        CURRENCIES, DEFAULT_FX, CURRENCY_BY_TYPE, LOCATIONS, WORK_CENTERS, DEFAULT_ROUTINGS
+        CURRENCIES, DEFAULT_FX, CURRENCY_BY_TYPE, LOCATIONS, WORK_CENTERS, DEFAULT_ROUTINGS, QC_TYPES, QC_CHECKS, QC_REASONS
     };
 })(window.MRP);
 </script>
@@ -1425,6 +1458,7 @@ window.MRP = window.MRP || {};
             pos: [],
             workOrders: [],
             subcontracts: [],
+            inspections: [],            // giriş kalite muayeneleri (karantina partileri)
             suppliers: JSON.parse(JSON.stringify(MRP.data.SUPPLIERS)),
             priceList: MRP.data.buildPriceList(items),
             workCenters: JSON.parse(JSON.stringify(MRP.data.WORK_CENTERS)),
@@ -1435,8 +1469,29 @@ window.MRP = window.MRP || {};
             seq: {},
             roles: MRP.auth.defaultRoles(),
             users: MRP.auth.defaultUsers(),
-            branding: defaultBranding()
+            branding: defaultBranding(),
+            qcSetup: true
         };
+    }
+
+    /**
+     * Kalite modülü öncesi kayıtlar için tek seferlik yükseltme: Kalite Kontrol rolü
+     * ve demo kullanıcısı eklenir, yönetici rolüne yeni yetki ve ekran verilir.
+     * Kullanıcının özelleştirdiği diğer rollere yalnızca (salt okunur) Kalite ekranı eklenir.
+     */
+    function upgrade(st) {
+        if (!Array.isArray(st.inspections)) st.inspections = [];
+        if (st.qcSetup || MRP.config.erp) return st;
+        const defs = MRP.auth.defaultRoles();
+        const roles = st.roles || (st.roles = []);
+        const admin = roles.find((r) => r.id === 'admin');
+        if (admin) { admin.can = { ...admin.can, inspectQuality: true }; if (!admin.views.includes('quality')) admin.views.push('quality'); }
+        ['yonetim', 'satinalma', 'satinalma_muduru', 'depo'].forEach((id) => { const r = roles.find((x) => x.id === id); if (r && !r.views.includes('quality')) r.views.push('quality'); });
+        if (!roles.some((r) => r.id === 'kalite')) roles.push(defs.find((r) => r.id === 'kalite'));
+        const users = st.users || (st.users = []);
+        if (!users.some((u) => u.username === 'kalite')) users.push(MRP.auth.defaultUsers().find((u) => u.username === 'kalite'));
+        st.qcSetup = true;
+        return st;
     }
 
     /** Firma adı ve logolar (Kullanıcılar & Roller → Firma Ayarları) */
@@ -1460,7 +1515,7 @@ window.MRP = window.MRP || {};
         return {
             version: VERSION, createdAt: new Date().toISOString(),
             itemOverrides: {}, customItems: {}, productOverrides: {}, customProducts: [], customBoms: {}, routings: {},
-            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [],
+            lots: [], movements: [], mps: [], lastRun: null, requests: [], pos: [], workOrders: [], subcontracts: [], inspections: [],
             suppliers: [], priceList: [], workCenters: [],
             fx: { rates: { ...MRP.data.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] },
             costing: { overheadPct: 10, includeLabor: true, stdLot: 20 },
@@ -1477,13 +1532,20 @@ window.MRP = window.MRP || {};
             const raw = localStorage.getItem(KEY);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed && parsed.version === VERSION) { state = Object.assign(defaultState(), parsed); return state; }
+                if (parsed && parsed.version === VERSION) {
+                    const fresh = defaultState();
+                    delete fresh.qcSetup;               // eski kayıtta yoksa yükseltme çalışsın
+                    state = upgrade(Object.assign(fresh, parsed));
+                    return state;
+                }
             }
             const rawV2 = localStorage.getItem(KEY_V2);
             if (rawV2) {
                 const parsed = JSON.parse(rawV2);
                 if (parsed && parsed.version === 2) {
                     state = migrateV2(parsed);
+                    delete state.qcSetup;
+                    upgrade(state);
                     save();
                     localStorage.removeItem(KEY_V2);
                     return state;
@@ -1523,7 +1585,9 @@ window.MRP = window.MRP || {};
     /** Yedekten geri yükleme (v2 veya v3 JSON) */
     function restore(obj) {
         if (!obj || (obj.version !== VERSION && obj.version !== 2)) throw new Error('Tanınmayan yedek dosyası');
-        state = obj.version === 2 ? migrateV2(obj) : Object.assign(defaultState(), obj);
+        const fresh = defaultState();
+        delete fresh.qcSetup;
+        state = upgrade(obj.version === 2 ? migrateV2(obj) : Object.assign(fresh, obj));
         save();
     }
 
@@ -1600,7 +1664,7 @@ window.MRP = window.MRP || {};
         dashboard: 'Gösterge Paneli', bom: 'Ürün Ağacı', items: 'Malzeme Kartları', costing: 'Maliyet & Kur',
         mrp: 'MRP Çalıştırma', capacity: 'Kapasite Planlama', workorders: 'İş Emirleri',
         requests: 'Satın Alma Talepleri', po: 'Satın Alma Siparişleri', suppliers: 'Tedarikçiler',
-        stock: 'Stok Durumu', movements: 'Stok Hareketleri',
+        stock: 'Stok Durumu', movements: 'Stok Hareketleri', quality: 'Kalite Kontrol',
         analysis: 'Analizler', import: 'Veri Aktarımı', reports: 'Raporlar', audit: 'Denetim Kaydı', users: 'Kullanıcılar & Roller'
     };
 
@@ -1619,6 +1683,7 @@ window.MRP = window.MRP || {};
         receiveGoods:    ['Depo', 'Mal kabul (irsaliye, lot, kalite)'],
         adjustStock:     ['Depo', 'Sayım düzeltme ve Excel ile sayım aktarımı'],
         transferStock:   ['Depo', 'Lokasyon transferi ve fason sevk / dönüş'],
+        inspectQuality:  ['Kalite', 'Giriş muayenesi ve karantina kararı (kabul / iade / hurda)'],
         manageUsers:     ['Sistem', 'Kullanıcı, rol ve firma ayarları'],
         resetData:       ['Sistem', 'Demo verilerini sıfırlama, yedekten geri yükleme']
     };
@@ -1634,7 +1699,7 @@ window.MRP = window.MRP || {};
     const DEFAULT_ROLES = [
         { id: 'admin', name: 'Sistem Yöneticisi', home: 'dashboard', views: ALL_VIEWS, can: { ...ALL }, approveLimit: null },
         { id: 'yonetim', name: 'Genel Müdür', home: 'dashboard',
-            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'reports', 'audit'],
+            views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'suppliers', 'stock', 'movements', 'quality', 'analysis', 'reports', 'audit'],
             can: { ...NONE, approveRequest: true }, approveLimit: null },
         { id: 'planlama', name: 'Üretim Planlama', home: 'mrp',
             views: ['dashboard', 'bom', 'items', 'costing', 'mrp', 'capacity', 'workorders', 'requests', 'po', 'stock', 'movements', 'analysis', 'import', 'reports'],
@@ -1643,14 +1708,17 @@ window.MRP = window.MRP || {};
             views: ['dashboard', 'bom', 'items', 'capacity', 'workorders', 'stock', 'movements', 'reports'],
             can: { ...NONE, manageWO: true, transferStock: true }, approveLimit: 0 },
         { id: 'satinalma', name: 'Satın Alma Uzmanı', home: 'requests',
-            views: ['dashboard', 'items', 'costing', 'mrp', 'requests', 'po', 'suppliers', 'stock', 'analysis', 'import', 'reports'],
+            views: ['dashboard', 'items', 'costing', 'mrp', 'requests', 'po', 'suppliers', 'stock', 'quality', 'analysis', 'import', 'reports'],
             can: { ...NONE, approveRequest: true, createPO: true, manageSuppliers: true }, approveLimit: 10000 },
         { id: 'satinalma_muduru', name: 'Satın Alma Müdürü', home: 'requests',
-            views: ['dashboard', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
+            views: ['dashboard', 'items', 'costing', 'mrp', 'capacity', 'requests', 'po', 'suppliers', 'stock', 'movements', 'quality', 'analysis', 'import', 'reports', 'audit'],
             can: { ...NONE, approveRequest: true, createPO: true, manageSuppliers: true, editCost: true }, approveLimit: 500000 },
         { id: 'depo', name: 'Depo Sorumlusu', home: 'stock',
-            views: ['dashboard', 'items', 'workorders', 'po', 'stock', 'movements', 'import', 'reports'],
+            views: ['dashboard', 'items', 'workorders', 'po', 'stock', 'movements', 'quality', 'import', 'reports'],
             can: { ...NONE, receiveGoods: true, adjustStock: true, transferStock: true }, approveLimit: 0 },
+        { id: 'kalite', name: 'Kalite Kontrol', home: 'quality',
+            views: ['dashboard', 'items', 'po', 'suppliers', 'stock', 'movements', 'quality', 'reports'],
+            can: { ...NONE, inspectQuality: true }, approveLimit: 0 },
         { id: 'maliyet', name: 'Maliyet / Muhasebe', home: 'costing',
             views: ['dashboard', 'bom', 'items', 'costing', 'capacity', 'po', 'suppliers', 'stock', 'movements', 'analysis', 'import', 'reports', 'audit'],
             can: { ...NONE, editCost: true }, approveLimit: 0 }
@@ -1667,6 +1735,7 @@ window.MRP = window.MRP || {};
         ['satinalma', 'satin123', 'Zeynep Kaya', 'satinalma'],
         ['satinalma_muduru', 'mudur123', 'Murat Demir', 'satinalma_muduru'],
         ['depo', 'depo123', 'Emre Koç', 'depo'],
+        ['kalite', 'kal123', 'Selin Arslan', 'kalite'],
         ['maliyet', 'mal123', 'Elif Şahin', 'maliyet']
     ];
     function defaultUsers() {
@@ -1760,7 +1829,9 @@ window.MRP = window.MRP || {};
         GI: { label: 'Üretime Sarf', badge: 'badge-amber' },
         FG: { label: 'Üretimden Giriş', badge: 'badge-blue' },
         ADJ: { label: 'Sayım Düzeltme', badge: 'badge-violet' },
-        TRF: { label: 'Transfer', badge: 'badge-cyan' }
+        TRF: { label: 'Transfer', badge: 'badge-cyan' },
+        RTV: { label: 'Tedarikçiye İade', badge: 'badge-red' },
+        SCR: { label: 'Hurda / Fire', badge: 'badge-gray' }
     };
     const PROCUREMENT = { buy: 'Satın Alma', make: 'Üretim', service: 'Fason / Hizmet' };
     const LOT_POLICIES = { L4L: 'Lot-for-Lot (ihtiyaç kadar)', FOQ: 'Sabit Parti (katları)', MIN: 'Minimum Sipariş' };
@@ -1984,10 +2055,12 @@ window.MRP = window.MRP || {};
     };
     /** Üretimde kullanılabilir stok (fasoncudaki hariç) */
     M.CONSUME_LOCS = Object.keys(D.LOCATIONS).filter((k) => D.LOCATIONS[k].consume);
+    /** Elle transfer / sayım yapılabilen lokasyonlar (karantina hariç) */
+    M.MANUAL_LOCS = Object.keys(D.LOCATIONS).filter((k) => !D.LOCATIONS[k].locked);
     M.available = (kod) => M.onHand(kod, M.CONSUME_LOCS);
 
     /** FIFO sıralı lotlar */
-    M.lots = (kod, loc) => S().lots.filter((l) => l.kod === kod && (!loc || l.loc === loc) && l.qty > EPS)
+    M.lots = (kod, loc, lotNo) => S().lots.filter((l) => l.kod === kod && (!loc || l.loc === loc) && (!lotNo || l.lot === lotNo) && l.qty > EPS)
         .sort((a, b) => a.at.localeCompare(b.at));
 
     M.stockStatus = (kod) => {
@@ -2007,12 +2080,12 @@ window.MRP = window.MRP || {};
     );
 
     /** FIFO ile lotlardan düşer; düşülen parçaları döndürür */
-    function takeFIFO(kod, locs, qty) {
+    function takeFIFO(kod, locs, qty, lotNo) {
         const taken = [];
         let rem = qty;
         [].concat(locs).forEach((loc) => {
             if (rem <= EPS) return;
-            M.lots(kod, loc).forEach((l) => {
+            M.lots(kod, loc, lotNo).forEach((l) => {
                 if (rem <= EPS) return;
                 const q = Math.min(l.qty, rem);
                 l.qty = U.round(l.qty - q, 4);
@@ -2028,15 +2101,16 @@ window.MRP = window.MRP || {};
      *  - qty > 0 (GR, FG, ADJ+) → loc'a yeni lot açar (lot verilmezse otomatik numara)
      *  - qty < 0 (GI, ADJ−)     → loc listesinden FIFO düşer
      *  - TRF                    → loc(lar)dan toLoc'a FIFO taşır (lot numaraları korunur)
+     *  - onlyLot verilirse çıkış/transfer yalnızca o lot numarasından yapılır (kalite kararı)
      * @returns {object} hareket kaydı
      */
-    M.move = ({ kod, qty, type, loc = 'MERKEZ', toLoc = null, lot = '', ref = '', note = '', supplier = '' }) => {
+    M.move = ({ kod, qty, type, loc = 'MERKEZ', toLoc = null, lot = '', ref = '', note = '', supplier = '', onlyLot = '' }) => {
         const st = S();
         const it = M.item(kod);
         const now = new Date().toISOString();
         let lots = [];
         if (type === 'TRF') {
-            const r = takeFIFO(kod, loc, qty);
+            const r = takeFIFO(kod, loc, qty, onlyLot);
             r.taken.forEach((t) => st.lots.push({ id: U.uid('lot'), lot: t.lot, kod, loc: toLoc, qty: t.qty, at: t.at, ref: t.ref, supplier: t.supplier }));
             lots = r.taken.map((t) => ({ lot: t.lot, qty: t.qty }));
             qty = U.sum(r.taken, (t) => t.qty);
@@ -2045,7 +2119,7 @@ window.MRP = window.MRP || {};
             st.lots.push({ id: U.uid('lot'), lot: lotNo, kod, loc, qty: U.round(qty, 4), at: now, ref, supplier });
             lots = [{ lot: lotNo, qty }];
         } else if (qty < 0) {
-            const r = takeFIFO(kod, loc, -qty);
+            const r = takeFIFO(kod, loc, -qty, onlyLot);
             lots = r.taken.map((t) => ({ lot: t.lot, qty: -t.qty }));
             if (r.missing) lots.push({ lot: '(eksik)', qty: -r.missing });
             qty = -U.sum(r.taken, (t) => t.qty);
@@ -2083,19 +2157,40 @@ window.MRP = window.MRP || {};
         .sort((a, b) => a.priceTRY - b.priceTRY);
     M.offer = (supplierId, kod) => S().priceList.find((o) => o.supplierId === supplierId && o.kod === kod) || null;
 
-    /** Teslimat kayıtlarından otomatik performans: zamanında teslim ve kalite oranı */
+    /**
+     * Teslimat ve muayene kayıtlarından otomatik performans.
+     * Kalite oranı: kapıda reddedilen teslimat = 0, muayenesiz kabul = 1,
+     * muayene edilen her parti = kabul edilen miktar / muayene edilen miktar.
+     */
     M.supplierPerformance = (id) => {
         const pos = S().pos.filter((p) => p.supplierId === id && (p.receipts || []).length);
         if (!pos.length) return null;
-        let onTime = 0, receipts = 0, rejected = 0;
+        const insp = (S().inspections || []).filter((x) => x.supplierId === id);
+        const inspectedRc = new Set(insp.map((x) => x.receiptId));
+        let onTime = 0, events = 0, score = 0;
         pos.forEach((p) => {
             const first = p.receipts.find((r) => r.quality !== 'rejected');
             if (first && first.at.slice(0, 10) <= p.deliveryDate) onTime++;
-            p.receipts.forEach((r) => { receipts++; if (r.quality === 'rejected') rejected++; });
+            p.receipts.forEach((r) => {
+                if (r.quality === 'rejected') { events++; return; }
+                if (!inspectedRc.has(r.id)) { events++; score++; }
+            });
         });
+        insp.filter((x) => x.status === 'done' && x.qty > 0).forEach((x) => { events++; score += x.result.accepted / x.qty; });
         const onTimePct = onTime / pos.length;
-        const qualityPct = receipts ? 1 - rejected / receipts : 1;
+        const qualityPct = events ? score / events : 1;
         return { orders: pos.length, onTimePct, qualityPct, score: U.round(1 + 4 * (0.6 * onTimePct + 0.4 * qualityPct), 1) };
+    };
+
+    /** Tedarikçi bazında giriş kalite istatistiği */
+    M.supplierQuality = (id) => {
+        const insp = (S().inspections || []).filter((x) => x.supplierId === id && x.status === 'done');
+        const doorRejects = U.sum(S().pos.filter((p) => p.supplierId === id), (p) => (p.receipts || []).filter((r) => r.quality === 'rejected').length);
+        const lots = insp.length;
+        const full = insp.filter((x) => x.result.rejected <= 0).length;
+        const ratio = lots ? U.sum(insp, (x) => x.result.rejected / x.qty) / lots : 0;
+        return { lots, full, partial: lots - full, doorRejects, ppm: Math.round(ratio * 1e6), acceptPct: lots ? 1 - ratio : null,
+            rejectedValue: U.sum(insp, (x) => x.result.rejected * M.priceTRY(x.kod)) };
     };
     /** Etkin puan: teslimat verisi varsa otomatik, yoksa elle girilen puan */
     M.supplierScore = (s) => { const p = M.supplierPerformance(s.id); return p ? p.score : s.puan; };
@@ -2367,7 +2462,7 @@ window.MRP = window.MRP || {};
     const TOKEN_KEY = 'mrppro.erp.token';
     const CLIENT_KEY = 'mrppro.erp.client';
     const CACHE_KEY = 'mrppro.erp.cache.' + C.apiBase;
-    const SEQ_PREFIXES = ['STT', 'PO', 'IE', 'HRK', 'LOT', 'MPS', 'FSV', 'TED'];
+    const SEQ_PREFIXES = ['STT', 'PO', 'IE', 'HRK', 'LOT', 'MPS', 'FSV', 'TED', 'GKK'];
     const SEQ_BLOCK = 50;
 
     // ======================================================================
@@ -2388,6 +2483,7 @@ window.MRP = window.MRP || {};
         purchaseOrders:   { kind: 'array', path: 'pos', key: 'no' },
         workOrders:       { kind: 'array', path: 'workOrders', key: 'no' },
         subcontracts:     { kind: 'array', path: 'subcontracts', key: 'no' },
+        inspections:      { kind: 'array', path: 'inspections', key: 'no' },
         notifications:    { kind: 'array', path: 'notifications', key: 'id' },
         auditLog:         { kind: 'array', path: 'audit', key: 'id' },
         settings:         { kind: 'settings' },                                       // anahtar: 'main'
@@ -2883,6 +2979,9 @@ window.MRP = window.MRP || {};
         { group: 'Depo', items: [
             { id: 'stock', label: 'Stok Durumu', icon: 'warehouse', count: () => MRP.model.items().filter((i) => MRP.model.stockStatus(i.kod) === 'critical').length, alert: true },
             { id: 'movements', label: 'Stok Hareketleri', icon: 'swap' }
+        ] },
+        { group: 'Kalite', items: [
+            { id: 'quality', label: 'Kalite Kontrol', icon: 'qc', count: () => (MRP.store.state.inspections || []).filter((x) => x.status === 'pending').length, alert: true }
         ] },
         { group: 'Analiz & Sistem', items: [
             { id: 'analysis', label: 'Analizler', icon: 'pie' },
@@ -3381,6 +3480,11 @@ window.MRP = window.MRP || {};
                 html += H.banner('amber', 'warehouse', `${crit.length} malzeme emniyet stoğunun yarısının altında`, crit.slice(0, 6).map((i) => i.kod).join(', ') + (crit.length > 6 ? '…' : ''),
                     MRP.auth.canView('stock') ? '<button class="btn btn-secondary btn-sm" data-act="go" data-id="stock">Stok durumu</button>' : '');
             }
+            const qcPending = (st.inspections || []).filter((x) => x.status === 'pending');
+            if (qcPending.length && MRP.auth.canView('quality')) {
+                html += H.banner('amber', 'qc', `${qcPending.length} parti giriş muayenesi bekliyor`, `Karantinadaki malzeme muayene edilmeden üretimde kullanılamaz: ${qcPending.slice(0, 5).map((x) => x.kod).join(', ')}${qcPending.length > 5 ? '…' : ''}`,
+                    '<button class="btn btn-secondary btn-sm" data-act="go" data-id="quality">Kalite kontrol</button>');
+            }
 
             html += `<div class="kpis">
                 ${H.kpi('Mamul', M.products().length.toLocaleString('tr-TR'), `${st.customProducts.length} özel ürün`, 'blue')}
@@ -3738,6 +3842,7 @@ window.MRP = window.MRP || {};
                         : `<dt>Birim fiyat</dt><dd>${esc(M.fmtMoney(it.price, it.currency))}${it.currency !== 'TRY' ? ` <span class="muted">= ${U.cur(M.priceTRY(kod), 2)}</span>` : ''}</dd>`}
                     <dt>Tedarik süresi</dt><dd>${it.leadTime} gün</dd>
                     <dt>Parti politikası</dt><dd>${esc(M.LOT_POLICIES[it.lotPolicy])}${it.lotSize ? ` · ${esc(U.qty(it.lotSize, it.unit))}` : ''}</dd>
+                    ${it.procurement === 'buy' ? `<dt>Giriş muayenesi</dt><dd>${it.inspect ? '<span class="badge badge-amber">Gerekli — karantinaya alınır</span>' : '<span class="badge badge-gray">Yok — doğrudan stoğa</span>'}</dd>` : ''}
                 </dl>
                 <dl class="dl card card-body">
                     <dt>Eldeki stok</dt><dd>${stocked ? esc(U.qty(M.onHand(kod), it.unit)) : '–'}</dd>
@@ -3766,16 +3871,17 @@ window.MRP = window.MRP || {};
                 : '<p class="muted">Bu kalem için hareket kaydı yok.</p>'}`;
         const buttons = [{ label: 'Kapat' }];
         if (it.procurement === 'make' && MRP.auth.can('manageCapacity')) buttons.push({ label: 'Rotayı Düzenle', icon: 'gauge', onClick: () => { setTimeout(() => editRouting(kod)); } });
-        if (MRP.auth.can('editItem') || MRP.auth.can('editCost')) buttons.push({ label: 'Kartı Düzenle', cls: 'btn-primary', icon: 'edit', onClick: () => { setTimeout(() => openEditItem(kod)); } });
+        if (MRP.auth.can('editItem') || MRP.auth.can('editCost') || (MRP.auth.can('inspectQuality') && it.procurement === 'buy')) buttons.push({ label: 'Kartı Düzenle', cls: 'btn-primary', icon: 'edit', onClick: () => { setTimeout(() => openEditItem(kod)); } });
         UI.modal({ title: `${it.kod} — ${it.ad}`, size: 'lg', body, buttons });
     }
 
     function openEditItem(kod) {
-        if (!MRP.auth.can('editItem') && !MRP.auth.can('editCost')) return H.guard('editItem');
+        if (!MRP.auth.can('editItem') && !MRP.auth.can('editCost') && !MRP.auth.can('inspectQuality')) return H.guard('editItem');
         const it = M.item(kod);
         const isCustom = !!S().customItems[kod];
         const canParams = MRP.auth.can('editItem');
         const canPrice = MRP.auth.can('editCost') || canParams;
+        const canQc = it.procurement === 'buy' && (canParams || MRP.auth.can('inspectQuality'));
         const ro = (ok) => (ok ? '' : 'readonly');
         UI.modal({
             title: `Malzeme Kartı — ${it.kod}`, size: 'md',
@@ -3788,6 +3894,8 @@ window.MRP = window.MRP || {};
                 <div class="field"><label>Emniyet stoğu (${esc(it.unit)})</label><input id="eiSS" type="number" min="0" step="any" value="${it.safetyStock}" ${ro(canParams && it.procurement !== 'service')}></div>
                 <div class="field"><label>Parti politikası</label><select id="eiLot" ${canParams ? '' : 'disabled'}>${Object.entries(M.LOT_POLICIES).map(([k, v]) => `<option value="${k}" ${it.lotPolicy === k ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
                 <div class="field"><label>Parti / min. miktar</label><input id="eiLotSize" type="number" min="0" step="any" value="${it.lotSize}" ${ro(canParams)}><span class="hint">L4L için kullanılmaz.</span></div>
+                ${it.procurement === 'buy' ? `<div class="field full"><label class="check-line"><input type="checkbox" id="eiInspect" ${it.inspect ? 'checked' : ''} ${canQc ? '' : 'disabled'}> Giriş kalite muayenesi gerekli</label>
+                    <span class="hint">İşaretliyse mal kabulde bu kalem Kalite / Karantina lokasyonuna girer; kalite kararıyla stoğa alınır.</span></div>` : ''}
             </div>`,
             onOpen: (ctx) => {
                 const upd = () => { const h = ctx.$('#eiTry'); if (h) h.textContent = `= ${U.cur(U.toNum(ctx.$('#eiPrice').value) * M.fxRate(ctx.$('#eiCur').value), 2)} (güncel kur)`; };
@@ -3805,6 +3913,8 @@ window.MRP = window.MRP || {};
                     };
                     if (ch.lotPolicy !== 'L4L' && !ch.lotSize) { UI.toast('Parti miktarı gerekli', 'Seçilen politika için parti/min. miktar girin.', 'warn'); return false; }
                     if (!canParams) { delete ch.leadTime; delete ch.safetyStock; delete ch.lotPolicy; delete ch.lotSize; }
+                    if (!canPrice) { delete ch.price; delete ch.currency; }
+                    if (canQc) ch.inspect = ctx.$('#eiInspect').checked;
                     if (it.procurement === 'make') { delete ch.price; delete ch.currency; }
                     if (isCustom) Object.assign(S().customItems[kod], ch, canParams ? { ad: ctx.$('#eiAd').value.trim() || it.ad } : {});
                     else S().itemOverrides[kod] = { ...(S().itemOverrides[kod] || {}), ...ch };
@@ -4881,7 +4991,7 @@ window.MRP = window.MRP || {};
                 <div class="totals"><dl class="dl"><dt>Ara toplam</dt><dd>${U.cur(t.sub)}</dd><dt>İskonto</dt><dd>−${U.cur(t.disc)}</dd><dt>KDV</dt><dd>${U.cur(t.vat)}</dd><dt class="grand">Genel toplam</dt><dd class="grand">${U.cur(t.grand)}</dd></dl></div>
                 <div class="grid grid-2" style="margin-top:16px;">
                     <div><h3 style="font-size:.9em;margin-bottom:8px;">Mal kabul kayıtları</h3>${(p.receipts || []).length ? `<div class="timeline">${p.receipts.map((rc) => `<div class="ev"><div>
-                        <b>İrsaliye ${esc(rc.waybill)}</b> · ${rc.quality === 'rejected' ? '<span class="badge badge-red">Reddedildi</span>' : '<span class="badge badge-green">Kabul</span>'}
+                        <b>İrsaliye ${esc(rc.waybill)}</b> · ${rc.quality === 'rejected' ? '<span class="badge badge-red">Reddedildi</span>' : '<span class="badge badge-green">Teslim alındı</span>'}${(rc.inspections || []).length ? ` · <span class="badge badge-amber">${rc.inspections.length} parti muayene</span>` : ''}
                         <div class="d">${esc(rc.by)} · ${esc(U.dateTime(rc.at))} · ${rc.lines.length} kalem${rc.note ? ' · ' + esc(rc.note) : ''}</div></div></div>`).join('')}</div>` : '<p class="muted" style="font-size:.85em;">Henüz teslimat yok.</p>'}</div>
                     <div><h3 style="font-size:.9em;margin-bottom:8px;">Geçmiş</h3><div class="timeline">${(p.history || []).map((h) => `<div class="ev"><div><b>${esc(h.action)}</b>${h.note ? ` — ${esc(h.note)}` : ''}<div class="d">${esc(h.by)} · ${esc(U.dateTime(h.at))}</div></div></div>`).join('')}</div></div>
                 </div>`
@@ -4906,15 +5016,16 @@ window.MRP = window.MRP || {};
         if (!p || !(p.status === 'open' || p.status === 'partial')) return;
         const ctx = UI.modal({
             title: `Mal Kabul — ${p.no}`, size: 'lg',
-            body: `${H.banner('green', 'truck', p.supplierName, `Beklenen teslim: ${U.date(U.parseDate(p.deliveryDate))}. Kısmi teslimat desteklenir; kalan miktar sipariş açık kalır.`)}
+            body: `${H.banner('green', 'truck', p.supplierName, `Beklenen teslim: ${U.date(U.parseDate(p.deliveryDate))}. Kısmi teslimat desteklenir; kalan miktar sipariş açık kalır. "Muayene" işaretli kalemler Kalite / Karantina'ya girer, kalite kararıyla stoğa alınır.`)}
                 <div class="form-grid">
                     <div class="field"><label>İrsaliye no <span class="req">*</span></label><input id="rcWaybill" autocomplete="off"></div>
-                    <div class="field"><label>Kalite kontrol</label><select id="rcQuality"><option value="ok">Kabul — stoğa al</option><option value="rejected">Ret — iade (stoğa alınmaz)</option></select></div>
-                    <div class="field"><label>Giriş lokasyonu</label><select id="rcLoc">${Object.entries(M.LOCATIONS).filter(([k]) => k !== 'FASON').map(([k, l]) => `<option value="${k}">${esc(l.ad)}</option>`).join('')}</select></div>
+                    <div class="field"><label>Teslimat kararı</label><select id="rcQuality"><option value="ok">Teslim al (muayeneli kalemler karantinaya)</option><option value="rejected">Kapıda ret — iade (stoğa alınmaz)</option></select></div>
+                    <div class="field"><label>Giriş lokasyonu</label><select id="rcLoc">${M.CONSUME_LOCS.map((k) => `<option value="${k}">${esc(M.LOCATIONS[k].ad)}</option>`).join('')}</select><span class="hint">Muayeneli kalemler kabulden sonra buraya aktarılır.</span></div>
                     <div class="field"><label>Lot / parti no</label><input id="rcLot" placeholder="Boş bırakılırsa otomatik" autocomplete="off"><span class="hint">Tedarikçi parti numarası — izlenebilirlik için.</span></div>
                 </div>
-                <div class="table-wrap" style="margin-top:14px;max-height:320px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th class="num">Sipariş</th><th class="num">Önceki</th><th class="num">Kalan</th><th class="num">Bu Teslimat</th></tr></thead><tbody>
-                ${p.lines.map((l, i) => { const rem = Math.max(0, l.qty - (l.received || 0)); return `<tr><td class="mono">${esc(l.kod)}</td><td>${esc(l.ad)}</td>
+                <div class="table-wrap" style="margin-top:14px;max-height:320px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th>Kontrol</th><th class="num">Sipariş</th><th class="num">Önceki</th><th class="num">Kalan</th><th class="num">Bu Teslimat</th></tr></thead><tbody>
+                ${p.lines.map((l, i) => { const rem = Math.max(0, l.qty - (l.received || 0)); const it = M.item(l.kod); return `<tr><td class="mono">${esc(l.kod)}</td><td>${esc(l.ad)}</td>
+                    <td>${it && it.inspect ? '<span class="badge badge-amber">Muayene</span>' : '<span class="badge badge-gray">Doğrudan</span>'}</td>
                     <td class="num">${esc(U.qty(l.qty, l.unit))}</td><td class="num">${esc(U.qty(l.received || 0, l.unit))}</td><td class="num">${esc(U.qty(rem, l.unit))}</td>
                     <td class="num"><input class="input input-sm rc-qty" data-i="${i}" type="number" min="0" step="any" value="${U.round(rem, 3)}" style="width:110px;text-align:right;"></td></tr>`; }).join('')}
                 </tbody></table></div>
@@ -4937,7 +5048,8 @@ window.MRP = window.MRP || {};
         const over = lines.filter((x) => (p.lines[x.i].received || 0) + x.qty > p.lines[x.i].qty * 1.1 + 1e-9);
         if (over.length) { UI.toast('Fazla teslimat', 'Sipariş miktarının %10\'undan fazlası kabul edilemez.', 'warn'); return false; }
 
-        const rc = { waybill, quality, note, at: new Date().toISOString(), by: me().name, lines: lines.map((x) => ({ kod: p.lines[x.i].kod, qty: x.qty })) };
+        const rc = { id: U.uid('rc'), waybill, quality, note, at: new Date().toISOString(), by: me().name, lines: lines.map((x) => ({ kod: p.lines[x.i].kod, qty: x.qty })) };
+        const inspections = [];
         p.receipts = p.receipts || [];
         p.receipts.push(rc);
         if (quality === 'rejected') {
@@ -4949,8 +5061,23 @@ window.MRP = window.MRP || {};
                 const l = p.lines[x.i];
                 l.received = U.round((l.received || 0) + x.qty, 3);
                 const it = M.item(l.kod);
-                if (it) M.move({ kod: l.kod, qty: x.qty, type: 'GR', loc, lot: lotBase || '', ref: p.no, supplier: p.supplierName, note: it.procurement === 'service' ? `Fason hizmet teslimi · İrsaliye ${waybill}` : `İrsaliye ${waybill}` });
+                if (!it) return;
+                if (it.inspect && it.procurement === 'buy') {
+                    // Giriş muayenesi: karantinaya lot açılır, muayene kaydı oluşturulur
+                    const m = M.move({ kod: l.kod, qty: x.qty, type: 'GR', loc: 'KALITE', lot: lotBase || '', ref: p.no, supplier: p.supplierName, note: `İrsaliye ${waybill} · giriş muayenesi bekliyor` });
+                    const insp = {
+                        no: MRP.store.nextNo('GKK'), status: 'pending', receiptId: rc.id, poNo: p.no, supplierId: p.supplierId, supplierName: p.supplierName,
+                        waybill, kod: l.kod, ad: l.ad, tur: it.tur, unit: l.unit || it.unit, qty: U.round(x.qty, 4), lot: m.lots[0].lot, targetLoc: loc,
+                        receivedAt: rc.at, receivedBy: me().name, result: null
+                    };
+                    S().inspections.unshift(insp);
+                    inspections.push(insp);
+                } else M.move({ kod: l.kod, qty: x.qty, type: 'GR', loc, lot: lotBase || '', ref: p.no, supplier: p.supplierName, note: it.procurement === 'service' ? `Fason hizmet teslimi · İrsaliye ${waybill}` : `İrsaliye ${waybill}` });
             });
+            if (inspections.length) {
+                rc.inspections = inspections.map((x) => x.no);
+                MRP.store.notify('quality', 'Giriş muayenesi bekliyor', `${p.no} · ${p.supplierName} · ${inspections.length} parti karantinada`, ['perm:inspectQuality'], 'quality');
+            }
             const done = p.lines.every((l) => (l.received || 0) >= l.qty - 1e-9);
             p.status = done ? 'received' : 'partial';
             log(p, done ? 'Tamamı teslim alındı' : 'Kısmi teslim alındı', `İrsaliye ${waybill}`);
@@ -4959,7 +5086,8 @@ window.MRP = window.MRP || {};
             MRP.store.notify('po', 'Mal kabul yapıldı', `${p.no} · ${lines.length} kalem${done ? '' : ' (kısmi)'}`, ['perm:runMRP', 'perm:createPO', 'perm:manageWO'], 'po');
         }
         app().commit();
-        UI.toast(quality === 'rejected' ? 'Teslimat reddedildi' : 'Mal kabul kaydedildi', quality === 'rejected' ? 'Stok değişmedi.' : 'Stoklar güncellendi.', quality === 'rejected' ? 'warn' : 'success');
+        UI.toast(quality === 'rejected' ? 'Teslimat reddedildi' : 'Mal kabul kaydedildi',
+            quality === 'rejected' ? 'Stok değişmedi.' : inspections.length ? `${inspections.length} parti Kalite / Karantina'da muayene bekliyor.` : 'Stoklar güncellendi.', quality === 'rejected' ? 'warn' : 'success');
     }
 
     function printPO(no) {
@@ -5004,7 +5132,7 @@ window.MRP = window.MRP || {};
         poReceive: (no) => openReceive(no),
         poPdf: (no) => printPO(no)
     });
-    MRP.purchasing = { poTotals };
+    MRP.purchasing = { poTotals, findPO, findReq, syncRequest, log };
 
     // =====================================================================
     // TEDARİKÇİLER
@@ -5249,7 +5377,7 @@ window.MRP = window.MRP || {};
                         <td>${H.stockBadge(s)}</td><td class="num">${U.num(Math.max(0, oh) * valueOf(i.kod))}</td>
                         <td><div class="row-actions">${canAdj ? `<button class="btn btn-ghost btn-sm" data-act="stockAdjust" data-id="${esc(i.kod)}">Sayım</button>` : ''}${canTrf ? `<button class="btn btn-ghost btn-sm" data-act="stockTransfer" data-id="${esc(i.kod)}" title="Transfer">${MRP.icon('swap', 'sm')}</button>` : ''}</div></td></tr>`;
                 }).join('') || `<tr><td colspan="${9 + LOCS().length}">${H.empty('Kayıt yok')}</td></tr>`}</tbody></table></div></section>
-                <p class="muted" style="font-size:.78em;margin-top:10px;">Üretimde sarf, Fabrika ve Merkez Depo stoğundan FIFO ile yapılır; fasoncudaki stok MRP'de eldeki stok sayılır ancak sarf edilemez. Eksikler için öneriler MRP'de emniyet stoğu tamamlama olarak oluşur.</p>`;
+                <p class="muted" style="font-size:.78em;margin-top:10px;">Üretimde sarf, Fabrika ve Merkez Depo stoğundan FIFO ile yapılır; fasoncudaki ve Kalite / Karantina'daki stok MRP'de eldeki stok sayılır ancak sarf edilemez. Karantinadaki stok yalnızca Kalite Kontrol kararıyla (kabul / iade / hurda) çıkar. Eksikler için öneriler MRP'de emniyet stoğu tamamlama olarak oluşur.</p>`;
             return html;
         },
         after() {
@@ -5267,7 +5395,7 @@ window.MRP = window.MRP || {};
             title: `Sayım Düzeltme — ${kod}`, size: 'sm',
             body: `<p style="margin-bottom:14px;">${esc(it.ad)}</p>
                 <div class="form-grid">
-                    <div class="field full"><label>Lokasyon</label><select id="adjLoc">${LOCS().map((l) => `<option value="${l}">${esc(locName(l))} — ${esc(U.qty(M.onHand(kod, l), it.unit))}</option>`).join('')}</select></div>
+                    <div class="field full"><label>Lokasyon</label><select id="adjLoc">${M.MANUAL_LOCS.map((l) => `<option value="${l}">${esc(locName(l))} — ${esc(U.qty(M.onHand(kod, l), it.unit))}</option>`).join('')}</select></div>
                     <div class="field"><label>Sistem stoğu</label><input id="adjCur" readonly></div>
                     <div class="field"><label>Sayılan (${esc(it.unit)}) <span class="req">*</span></label><input id="adjQty" type="number" min="0" step="any"></div>
                     <div class="field full"><label>Lot no (fazla çıkan miktar için)</label><input id="adjLot" placeholder="Boş = SAYIM-tarih"></div>
@@ -5307,8 +5435,8 @@ window.MRP = window.MRP || {};
             body: `<datalist id="trItems">${items.map((i) => `<option value="${esc(i.kod)}">${esc(i.ad)}</option>`).join('')}</datalist>
                 <div class="form-grid">
                     <div class="field full"><label>Malzeme <span class="req">*</span></label><input id="trKod" list="trItems" value="${esc(kod || '')}" autocomplete="off"><span class="hint" id="trInfo"></span></div>
-                    <div class="field"><label>Çıkış</label><select id="trFrom">${LOCS().map((l) => `<option value="${l}">${esc(locName(l))}</option>`).join('')}</select></div>
-                    <div class="field"><label>Varış</label><select id="trTo">${LOCS().map((l, i) => `<option value="${l}" ${i === 1 ? 'selected' : ''}>${esc(locName(l))}</option>`).join('')}</select></div>
+                    <div class="field"><label>Çıkış</label><select id="trFrom">${M.MANUAL_LOCS.map((l) => `<option value="${l}">${esc(locName(l))}</option>`).join('')}</select></div>
+                    <div class="field"><label>Varış</label><select id="trTo">${M.MANUAL_LOCS.map((l, i) => `<option value="${l}" ${i === 1 ? 'selected' : ''}>${esc(locName(l))}</option>`).join('')}</select></div>
                     <div class="field"><label>Miktar <span class="req">*</span></label><input id="trQty" type="number" min="0" step="any"></div>
                     <div class="field"><label>Açıklama</label><input id="trNote" placeholder="Üretim hattına besleme…"></div>
                 </div>`,
@@ -5581,6 +5709,328 @@ window.MRP = window.MRP || {};
         mvType: (v) => { mvState.type = v; mvState.page = 1; app().render(); },
         mvSearch: (v) => { mvState.q = v; mvState.page = 1; rerenderMv(); },
         mvPage: (p) => { mvState.page = +p; app().render(); }
+    });
+})(window.MRP);
+</script>
+<script>
+/* assets/js/views/quality.js */
+/* ==========================================================================
+   MRP Pro — Kalite Kontrol: giriş muayenesi, karantina kararı
+   (kabul / tedarikçiye iade / hurda), uygunsuzluk raporu, tedarikçi kalitesi
+   --------------------------------------------------------------------------
+   Akış: muayeneye tabi kalem mal kabulde Kalite / Karantina (KALITE)
+   lokasyonuna lot olarak girer ve bir muayene kaydı (GKK-…) açılır.
+   Kalite kararı:
+     - kabul  → lot KALITE'den hedef lokasyona transfer (TRF)
+     - iade   → lot KALITE'den düşülür (RTV); sipariş satırının teslim alınan
+                miktarı azaltılır, sipariş yeniden teslimat bekler (MRP görür)
+     - hurda  → lot KALITE'den düşülür (SCR); sipariş teslim alınmış sayılır
+   ========================================================================== */
+(function (MRP) {
+    'use strict';
+    const U = MRP.U, UI = MRP.UI, H = MRP.H, M = MRP.model, D = MRP.data;
+    const esc = U.esc;
+    const S = () => MRP.store.state;
+    const app = () => MRP.app;
+    const me = () => MRP.auth.current();
+    const P = () => MRP.purchasing;
+
+    const qState = { tab: 'pending', q: '' };
+    const DECISION = { return: ['badge-red', 'Tedarikçiye iade'], scrap: ['badge-gray', 'Hurda / fire'] };
+    const CHECK_RES = { ok: 'Uygun', nok: 'Uygun değil', na: 'Uygulanmadı' };
+    const DAY = 864e5;
+
+    const list = () => S().inspections || [];
+    const find = (no) => list().find((x) => x.no === no);
+    const ageDays = (iso) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / DAY));
+    const checksFor = (x) => D.QC_CHECKS.filter((c) => !c.types || c.types.includes(x.tur || (M.item(x.kod) || {}).tur));
+    /** Lotun karantinada kalan miktarı */
+    const lotQty = (x) => U.round(U.sum(M.lots(x.kod, 'KALITE', x.lot), (l) => l.qty), 4);
+    const resultBadge = (x) => {
+        if (x.status === 'pending') return '<span class="badge badge-amber">Muayene bekliyor</span>';
+        const r = x.result;
+        if (r.rejected <= 0) return '<span class="badge badge-green">Kabul</span>';
+        if (r.accepted <= 0) return '<span class="badge badge-red">Ret</span>';
+        return '<span class="badge badge-violet">Kısmi kabul</span>';
+    };
+
+    MRP.views.quality = {
+        title: 'Kalite Kontrol',
+        subtitle: 'Giriş muayenesi, karantina kararı, uygunsuzluk ve tedarikçi kalitesi',
+        render() {
+            const all = list();
+            const pending = all.filter((x) => x.status === 'pending').sort((a, b) => a.receivedAt.localeCompare(b.receivedAt));
+            const since = Date.now() - 90 * DAY;
+            const recent = all.filter((x) => x.status === 'done' && new Date(x.result.at).getTime() >= since);
+            const acceptPct = recent.length ? U.sum(recent, (x) => x.result.accepted / x.qty) / recent.length : null;
+            const rejectedLots = recent.filter((x) => x.result.rejected > 0);
+            const quarantineValue = U.sum(pending, (x) => x.qty * M.priceTRY(x.kod));
+            const oldest = pending.length ? ageDays(pending[0].receivedAt) : 0;
+            const suppliers = supplierRows();
+
+            let html = `<div class="kpis">
+                ${H.kpi('Muayene Bekleyen', pending.length, pending.length ? `${U.compactCur(quarantineValue)} karantinada · en eski ${oldest} gün` : 'Karantina boş', pending.length ? (oldest >= 3 ? 'red' : 'amber') : 'green')}
+                ${H.kpi('Kabul Oranı', acceptPct == null ? '–' : `%${U.num(acceptPct * 100, 1)}`, `Son 90 gün · ${recent.length} parti`, acceptPct == null ? '' : acceptPct >= 0.98 ? 'green' : acceptPct >= 0.9 ? 'amber' : 'red')}
+                ${H.kpi('Reddedilen Parti', rejectedLots.length, 'Son 90 gün (kısmi dahil)', rejectedLots.length ? 'violet' : 'green')}
+                ${H.kpi('Ret Değeri', U.compactCur(U.sum(rejectedLots, (x) => x.result.rejected * M.priceTRY(x.kod))), 'İade + hurda · güncel fiyatla', 'blue')}
+            </div>`;
+            html += H.tabs([['pending', 'Muayene bekleyen', pending.length], ['done', 'Muayene geçmişi', all.length - pending.length], ['suppliers', 'Tedarikçi kalitesi', suppliers.length], ['rules', 'Muayene kuralları', null]], qState.tab, 'qcTab');
+
+            if (qState.tab === 'pending') return html + renderPending(pending);
+            if (qState.tab === 'done') return html + renderDone(all.filter((x) => x.status === 'done'));
+            if (qState.tab === 'suppliers') return html + renderSuppliers(suppliers);
+            return html + renderRules();
+        },
+        after() {
+            const el = document.getElementById('qcSearch');
+            if (el && qState.q) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+        }
+    };
+
+    function renderPending(pending) {
+        const can = MRP.auth.can('inspectQuality');
+        if (!pending.length) return H.card('Muayene bekleyen parti yok', '', H.empty('Karantina boş', 'Muayeneye tabi kalemler mal kabulde buraya düşer.'));
+        return `<section class="card"><div class="table-wrap"><table><thead><tr><th>Muayene</th><th>Kabul</th><th>Bekleme</th><th>Tedarikçi</th><th>Sipariş / İrsaliye</th><th>Kalem</th><th>Lot</th><th class="num">Miktar</th><th class="num">Değer ₺</th><th></th></tr></thead><tbody>
+            ${pending.map((x) => {
+                const d = ageDays(x.receivedAt);
+                return `<tr class="${d >= 3 ? 'r-crit' : d >= 2 ? 'r-warn' : ''}"><td class="mono strong">${esc(x.no)}</td><td>${esc(U.dateTime(x.receivedAt))}</td>
+                    <td><span class="badge ${d >= 3 ? 'badge-red' : d >= 2 ? 'badge-amber' : 'badge-gray'}">${d} gün</span></td>
+                    <td>${esc(x.supplierName)}</td><td class="mono">${esc(x.poNo)}<br><span class="muted">${esc(x.waybill)}</span></td>
+                    <td>${H.itemLink(x.kod)}<br><span class="muted">${esc(x.ad)}</span></td><td class="mono">${esc(x.lot)}</td>
+                    <td class="num strong">${esc(U.qty(x.qty, x.unit))}</td><td class="num">${U.num(x.qty * M.priceTRY(x.kod))}</td>
+                    <td>${can ? `<button class="btn btn-primary btn-sm" data-act="qcInspect" data-id="${esc(x.no)}">${MRP.icon('qc', 'sm')} Muayene et</button>` : '<span class="muted">Kalite yetkisi gerekir</span>'}</td></tr>`;
+            }).join('')}</tbody></table></div></section>
+            <p class="muted" style="font-size:.78em;margin-top:10px;">Karantinadaki stok MRP'de eldeki stok sayılır ancak üretime sarf edilemez ve elle transfer edilemez. 2 günden uzun bekleyen partiler sarı, 3 günü geçenler kırmızı işaretlenir.</p>`;
+    }
+
+    function renderDone(done) {
+        const q = qState.q.toLocaleLowerCase('tr');
+        const rows = done.filter((x) => !q || [x.no, x.kod, x.ad, x.supplierName, x.poNo, x.lot, x.waybill].some((v) => String(v || '').toLocaleLowerCase('tr').includes(q)))
+            .sort((a, b) => b.result.at.localeCompare(a.result.at));
+        return `<div class="toolbar"><input class="input" id="qcSearch" placeholder="Muayene no, kalem, tedarikçi, lot…" value="${esc(qState.q)}" data-input="qcSearch"></div>
+            <section class="card"><div class="table-wrap"><table><thead><tr><th>Muayene</th><th>Karar tarihi</th><th>Tedarikçi</th><th>Kalem</th><th>Lot</th><th class="num">Miktar</th><th class="num">Kabul</th><th class="num">Ret</th><th>Sonuç</th><th>Ret kararı</th><th>Muayene eden</th><th></th></tr></thead><tbody>
+            ${rows.map((x) => `<tr><td class="mono strong">${esc(x.no)}</td><td>${esc(U.dateTime(x.result.at))}</td><td>${esc(x.supplierName)}</td>
+                <td>${H.itemLink(x.kod)}<br><span class="muted">${esc(x.ad)}</span></td><td class="mono">${esc(x.lot)}</td>
+                <td class="num">${esc(U.qty(x.qty, x.unit))}</td><td class="num">${esc(U.qty(x.result.accepted))}</td>
+                <td class="num ${x.result.rejected > 0 ? 'tp-neg' : ''}">${esc(U.qty(x.result.rejected))}</td><td>${resultBadge(x)}</td>
+                <td>${x.result.rejected > 0 ? H.badge(DECISION, x.result.decision) : '<span class="muted">–</span>'}</td><td>${esc(x.result.by)}</td>
+                <td><button class="btn btn-ghost btn-sm" data-act="qcDetail" data-id="${esc(x.no)}">Detay</button></td></tr>`).join('')
+            || `<tr><td colspan="12">${H.empty('Kayıt yok', q ? 'Aramayla eşleşen muayene yok.' : 'Tamamlanan muayeneler burada listelenir.')}</td></tr>`}</tbody></table></div></section>`;
+    }
+
+    function supplierRows() {
+        const ids = new Set(list().map((x) => x.supplierId));
+        S().pos.forEach((p) => { if ((p.receipts || []).some((r) => r.quality === 'rejected')) ids.add(p.supplierId); });
+        return [...ids].map((id) => ({ s: S().suppliers.find((x) => x.id === id) || { id, ad: id }, q: M.supplierQuality(id), pending: list().filter((x) => x.supplierId === id && x.status === 'pending').length }))
+            .sort((a, b) => b.q.ppm - a.q.ppm || b.q.doorRejects - a.q.doorRejects);
+    }
+
+    function renderSuppliers(rows) {
+        if (!rows.length) return H.card('Tedarikçi kalitesi', '', H.empty('Henüz muayene verisi yok', 'Muayeneler tamamlandıkça tedarikçi bazında kabul oranı ve PPM hesaplanır.'));
+        return `<section class="card"><div class="table-wrap"><table><thead><tr><th>Tedarikçi</th><th class="num">Muayene edilen parti</th><th class="num">Tam kabul</th><th class="num">Ret / kısmi</th><th class="num">Kapıda ret</th><th class="num">Bekleyen</th><th class="num">Kabul oranı</th><th class="num">PPM</th><th class="num">Ret değeri ₺</th><th class="num">Tedarikçi puanı</th></tr></thead><tbody>
+            ${rows.map(({ s, q, pending }) => `<tr><td class="strong">${esc(s.ad)}</td><td class="num">${q.lots}</td><td class="num">${q.full}</td>
+                <td class="num ${q.partial ? 'tp-neg' : ''}">${q.partial}</td><td class="num ${q.doorRejects ? 'tp-neg' : ''}">${q.doorRejects}</td><td class="num">${pending || '·'}</td>
+                <td class="num">${q.acceptPct == null ? '–' : `%${U.num(q.acceptPct * 100, 1)}`}</td>
+                <td class="num"><span class="badge ${q.ppm > 50000 ? 'badge-red' : q.ppm > 10000 ? 'badge-amber' : 'badge-green'}">${q.ppm.toLocaleString('tr-TR')}</span></td>
+                <td class="num">${U.num(q.rejectedValue)}</td><td class="num strong">${s.kategoriler ? U.num(M.supplierScore(s), 1) : '–'}</td></tr>`).join('')}</tbody></table></div></section>
+            <p class="muted" style="font-size:.78em;margin-top:10px;">PPM: muayene edilen partilerde ortalama ret oranı × 1.000.000. Kabul oranı tedarikçi puanının %40'lık kalite bileşenine yansır (zamanında teslim %60); puan, teklif karşılaştırma ve tedarikçi önerisinde kullanılır.</p>`;
+    }
+
+    function renderRules() {
+        const canEdit = MRP.auth.can('editItem') || MRP.auth.can('inspectQuality');
+        const buy = M.items().filter((i) => i.procurement === 'buy');
+        const byType = {};
+        buy.forEach((i) => { (byType[i.tur] = byType[i.tur] || { tur: i.tur, total: 0, inspect: 0 }).total++; if (i.inspect) byType[i.tur].inspect++; });
+        return H.card('Malzeme türüne göre muayene kapsamı', 'Kalem bazında değiştirmek için malzeme kartında "Giriş kalite muayenesi gerekli" seçeneğini kullanın', `<div class="table-wrap"><table>
+            <thead><tr><th>Malzeme türü</th><th class="num">Kalem</th><th class="num">Muayeneli</th><th>Kontrol listesi</th><th></th></tr></thead><tbody>
+            ${Object.values(byType).sort((a, b) => a.tur.localeCompare(b.tur, 'tr')).map((t) => `<tr><td class="strong">${esc(t.tur)}</td><td class="num">${t.total}</td>
+                <td class="num">${t.inspect === t.total ? `<span class="badge badge-amber">Tümü (${t.inspect})</span>` : t.inspect ? `<span class="badge badge-violet">${t.inspect}</span>` : '<span class="badge badge-gray">Yok</span>'}</td>
+                <td style="font-size:.85em;">${esc(D.QC_CHECKS.filter((c) => !c.types || c.types.includes(t.tur)).map((c) => c.label).join(' · '))}</td>
+                <td>${canEdit ? `<div class="row-actions"><button class="btn btn-ghost btn-sm" data-act="qcTypeRule" data-id="${esc(t.tur)}|1" ${t.inspect === t.total ? 'disabled' : ''}>Tümünü muayeneye al</button>
+                    <button class="btn btn-ghost btn-sm" data-act="qcTypeRule" data-id="${esc(t.tur)}|0" ${t.inspect ? '' : 'disabled'}>Muayeneden çıkar</button></div>` : ''}</td></tr>`).join('')}</tbody></table></div>`);
+    }
+
+    /** Bir türdeki tüm satın alınan kalemlerin muayene kuralını değiştirir */
+    async function setTypeRule(id) {
+        if (!MRP.auth.can('editItem') && !H.guard('inspectQuality')) return;
+        const [tur, on] = id.split('|');
+        const flag = on === '1';
+        const items = M.items().filter((i) => i.procurement === 'buy' && i.tur === tur && !!i.inspect !== flag);
+        if (!items.length) return;
+        if (!(await UI.confirm(`${tur} türündeki ${items.length} kalem ${flag ? 'giriş muayenesine alınacak' : 'giriş muayenesinden çıkarılacak'}. Bekleyen muayeneler etkilenmez.`, { title: 'Muayene kuralı', okLabel: 'Uygula' }))) return;
+        items.forEach((i) => {
+            if (S().customItems[i.kod]) S().customItems[i.kod].inspect = flag;
+            else S().itemOverrides[i.kod] = { ...(S().itemOverrides[i.kod] || {}), inspect: flag };
+        });
+        MRP.store.audit('Muayene kuralı değişti', `${tur}: ${items.length} kalem → ${flag ? 'muayeneli' : 'muayenesiz'}`);
+        app().commit();
+        UI.toast('Muayene kuralı güncellendi', `${tur} · ${items.length} kalem`, 'success');
+    }
+
+    // ---------------- Muayene formu ----------------
+    function inspect(no) {
+        if (!H.guard('inspectQuality')) return;
+        const x = find(no);
+        if (!x || x.status !== 'pending') return;
+        const checks = checksFor(x);
+        const locOpts = M.CONSUME_LOCS.map((k) => `<option value="${k}" ${k === x.targetLoc ? 'selected' : ''}>${esc(M.LOCATIONS[k].ad)}</option>`).join('');
+        UI.modal({
+            title: `Giriş Muayenesi — ${x.no}`, size: 'lg',
+            body: `<dl class="dl card card-body" style="margin-bottom:14px;grid-template-columns:repeat(4,auto 1fr);">
+                    <dt>Kalem</dt><dd><b class="mono">${esc(x.kod)}</b> ${esc(x.ad)}</dd><dt>Miktar</dt><dd class="strong">${esc(U.qty(x.qty, x.unit))}</dd>
+                    <dt>Tedarikçi</dt><dd>${esc(x.supplierName)}</dd><dt>Lot</dt><dd class="mono">${esc(x.lot)}</dd>
+                    <dt>Sipariş</dt><dd class="mono">${esc(x.poNo)}</dd><dt>İrsaliye</dt><dd>${esc(x.waybill)}</dd>
+                    <dt>Mal kabul</dt><dd>${esc(U.dateTime(x.receivedAt))} · ${esc(x.receivedBy)}</dd><dt>Bekleme</dt><dd>${ageDays(x.receivedAt)} gün</dd></dl>
+                <div class="form-section"><h3>Kontrol listesi</h3><div class="qc-checks">
+                    ${checks.map((c) => `<span>${esc(c.label)}</span><span class="seg">
+                        <label class="ok"><input type="radio" name="qc_${c.id}" value="ok" checked>Uygun</label>
+                        <label class="nok"><input type="radio" name="qc_${c.id}" value="nok">Uygun değil</label>
+                        <label><input type="radio" name="qc_${c.id}" value="na">—</label></span>`).join('')}
+                </div><p class="hint" id="qcHint" style="margin-top:8px;"></p></div>
+                <div class="form-section"><h3>Karar</h3><div class="form-grid">
+                    <div class="field"><label>Kabul edilen (${esc(x.unit)}) <span class="req">*</span></label><input id="qcAcc" type="number" min="0" max="${x.qty}" step="any" value="${x.qty}"></div>
+                    <div class="field"><label>Reddedilen (${esc(x.unit)})</label><input id="qcRej" readonly value="0"></div>
+                    <div class="field"><label>Kabul edilen → lokasyon</label><select id="qcLoc">${locOpts}</select></div>
+                    <div class="field"><label>Reddedilen için karar</label><select id="qcDec" disabled><option value="return">Tedarikçiye iade (sipariş yeniden açılır)</option><option value="scrap">Hurda / fire (stoktan düşülür)</option></select></div>
+                    <div class="field"><label>Ret sebebi</label><select id="qcReason" disabled><option value="">Seçin…</option>${D.QC_REASONS.map((r) => `<option>${esc(r)}</option>`).join('')}</select></div>
+                    <div class="field full"><label>Not / bulgu</label><textarea id="qcNote" placeholder="Ölçüm değerleri, kusur açıklaması, şartlı kabul gerekçesi…"></textarea></div>
+                </div></div>`,
+            onOpen: (ctx) => {
+                const upd = () => {
+                    const acc = Math.min(x.qty, Math.max(0, U.toNum(ctx.$('#qcAcc').value)));
+                    const rej = U.round(x.qty - acc, 4);
+                    ctx.$('#qcRej').value = U.qty(rej, x.unit);
+                    ctx.$('#qcDec').disabled = rej <= 0;
+                    ctx.$('#qcReason').disabled = rej <= 0;
+                    const fails = ctx.$$('.qc-checks input[value="nok"]:checked').length;
+                    ctx.$('#qcHint').textContent = fails ? `${fails} kontrol uygun değil — ${rej > 0 ? 'ret sebebi seçin.' : 'tamamı kabul edilecekse şartlı kabul gerekçesini nota yazın.'}` : 'Tüm kontroller uygunsa kabul miktarı tam miktar bırakılabilir.';
+                };
+                ctx.$('#qcAcc').addEventListener('input', upd);
+                ctx.$$('.qc-checks input').forEach((i) => i.addEventListener('change', upd));
+                upd();
+            },
+            buttons: [{ label: 'Vazgeç' }, { label: 'Tamamını reddet', cls: 'btn-secondary', onClick: (ctx) => { ctx.$('#qcAcc').value = 0; ctx.$('#qcAcc').dispatchEvent(new Event('input')); return false; } },
+                { label: 'Kararı Kaydet', cls: 'btn-success', icon: 'check', onClick: (ctx) => submit(ctx, x, checks) }]
+        });
+    }
+
+    function submit(ctx, x, checks) {
+        const accRaw = U.toNum(ctx.$('#qcAcc').value, NaN);
+        if (!(accRaw >= 0) || accRaw > x.qty + 1e-9) { UI.toast('Geçersiz kabul miktarı', `0 ile ${U.qty(x.qty, x.unit)} arasında olmalı.`, 'warn'); return false; }
+        const accepted = U.round(accRaw, 4);
+        const rejected = U.round(x.qty - accepted, 4);
+        const res = Object.fromEntries(checks.map((c) => [c.id, (ctx.$(`input[name="qc_${c.id}"]:checked`) || {}).value || 'na']));
+        const fails = Object.values(res).filter((v) => v === 'nok').length;
+        const decision = rejected > 0 ? ctx.$('#qcDec').value : null;
+        const reason = rejected > 0 ? ctx.$('#qcReason').value : '';
+        const note = ctx.$('#qcNote').value.trim();
+        const targetLoc = ctx.$('#qcLoc').value;
+        if (rejected > 0 && !reason) { UI.toast('Ret sebebi seçin', 'Reddedilen miktar için sebep zorunludur.', 'warn'); return false; }
+        if (fails && rejected <= 0 && !note) { UI.toast('Şartlı kabul gerekçesi', 'Uygun olmayan kontrol varken tamamı kabul ediliyorsa nota gerekçe yazın.', 'warn'); return false; }
+        if (lotQty(x) + 1e-9 < x.qty) { UI.toast('Karantina stoğu değişmiş', `Lot ${x.lot} için karantinada ${U.qty(lotQty(x), x.unit)} var; kayıt ERP/başka kullanıcı tarafından değiştirilmiş olabilir.`, 'error', 6000); return false; }
+
+        if (accepted > 0) M.move({ kod: x.kod, qty: accepted, type: 'TRF', loc: 'KALITE', toLoc: targetLoc, onlyLot: x.lot, ref: x.no, note: `Kalite kabul · ${x.poNo}` });
+        if (rejected > 0) {
+            M.move({ kod: x.kod, qty: -rejected, type: decision === 'return' ? 'RTV' : 'SCR', loc: 'KALITE', onlyLot: x.lot, ref: x.no, supplier: x.supplierName,
+                note: `${decision === 'return' ? 'Tedarikçiye iade' : 'Hurda'} · ${reason}${note ? ' — ' + note : ''}` });
+            if (decision === 'return') reopenForReplacement(x, rejected, reason);
+        }
+        x.status = 'done';
+        x.result = { accepted, rejected, decision, reason, checks: res, note, targetLoc, by: me().name, at: new Date().toISOString() };
+
+        const label = rejected <= 0 ? 'kabul' : accepted <= 0 ? 'ret' : 'kısmi kabul';
+        MRP.store.audit('Giriş muayenesi', `${x.no} · ${x.kod} lot ${x.lot}: ${label} (kabul ${U.qty(accepted)}, ret ${U.qty(rejected)}${decision ? ', ' + DECISION[decision][1] : ''})`);
+        if (rejected > 0) {
+            MRP.store.notify('quality', `Kalite reddi — ${DECISION[decision][1]}`, `${x.no} · ${x.supplierName} · ${x.kod}: ${U.qty(rejected, x.unit)} (${reason})`,
+                ['perm:createPO', 'perm:runMRP', 'perm:receiveGoods'], 'quality');
+        } else {
+            MRP.store.notify('quality', 'Muayene tamamlandı — kabul', `${x.no} · ${x.kod} ${U.qty(accepted, x.unit)} → ${M.LOCATIONS[targetLoc].ad}`, ['perm:receiveGoods', 'perm:manageWO'], 'stock');
+        }
+        app().commit();
+        UI.toast(`Muayene kaydedildi — ${label}`, rejected > 0 ? `${U.qty(rejected, x.unit)} ${DECISION[decision][1].toLocaleLowerCase('tr')}` : `${U.qty(accepted, x.unit)} stoğa alındı`, rejected > 0 ? 'warn' : 'success');
+    }
+
+    /** İade: siparişin teslim alınan miktarı düşer, sipariş ve talep yeniden teslimat bekler */
+    function reopenForReplacement(x, qty, reason) {
+        const p = P().findPO(x.poNo);
+        if (!p || p.status === 'cancelled') return;
+        const line = p.lines.find((l) => l.kod === x.kod && (l.received || 0) >= qty - 1e-9) || p.lines.find((l) => l.kod === x.kod);
+        if (!line) return;
+        line.received = U.round(Math.max(0, (line.received || 0) - qty), 4);
+        line.returned = U.round((line.returned || 0) + qty, 4);
+        if (p.status === 'received') p.status = 'partial';
+        P().log(p, 'Kalite iadesi', `${x.no} · ${x.kod} ${U.qty(qty, x.unit)} (${reason}) — yeniden teslimat bekleniyor`);
+        const r = P().findReq(p.requestNo);
+        if (r && r.status === 'closed') { r.status = 'ordered'; P().log(r, 'Yeniden açıldı', `${p.no}: kalite iadesi`); }
+    }
+
+    // ---------------- Detay ve uygunsuzluk raporu ----------------
+    function detail(no) {
+        const x = find(no);
+        if (!x || x.status !== 'done') return;
+        const r = x.result;
+        const checks = checksFor(x);
+        const buttons = [{ label: 'Kapat' }];
+        if (r.rejected > 0) buttons.unshift({ label: 'Uygunsuzluk Raporu (PDF)', cls: 'btn-secondary', icon: 'download', onClick: () => { printNCR(x); return false; } });
+        UI.modal({
+            title: `${x.no} — ${x.kod}`, size: 'lg', buttons,
+            body: `<div class="grid grid-2" style="margin-bottom:14px;">
+                <dl class="dl card card-body"><dt>Kalem</dt><dd>${esc(x.ad)}</dd><dt>Tedarikçi</dt><dd>${esc(x.supplierName)}</dd><dt>Sipariş / İrsaliye</dt><dd class="mono">${esc(x.poNo)} / ${esc(x.waybill)}</dd>
+                    <dt>Lot</dt><dd class="mono">${esc(x.lot)}</dd><dt>Mal kabul</dt><dd>${esc(U.dateTime(x.receivedAt))} · ${esc(x.receivedBy)}</dd></dl>
+                <dl class="dl card card-body"><dt>Sonuç</dt><dd>${resultBadge(x)}</dd><dt>Muayene edilen</dt><dd>${esc(U.qty(x.qty, x.unit))}</dd>
+                    <dt>Kabul</dt><dd>${esc(U.qty(r.accepted, x.unit))}${r.accepted > 0 ? ` → ${esc(M.LOCATIONS[r.targetLoc] ? M.LOCATIONS[r.targetLoc].ad : r.targetLoc)}` : ''}</dd>
+                    <dt>Ret</dt><dd>${r.rejected > 0 ? `${esc(U.qty(r.rejected, x.unit))} · ${H.badge(DECISION, r.decision)} · ${esc(r.reason)}` : '–'}</dd>
+                    <dt>Muayene eden</dt><dd>${esc(r.by)} · ${esc(U.dateTime(r.at))}</dd></dl></div>
+                <div class="table-wrap"><table><thead><tr><th>Kontrol</th><th>Sonuç</th></tr></thead><tbody>
+                    ${checks.map((c) => { const v = r.checks[c.id] || 'na'; return `<tr><td>${esc(c.label)}</td><td><span class="badge ${v === 'ok' ? 'badge-green' : v === 'nok' ? 'badge-red' : 'badge-gray'}">${CHECK_RES[v]}</span></td></tr>`; }).join('')}
+                </tbody></table></div>
+                ${r.note ? `<p style="margin-top:12px;"><b>Not:</b> ${esc(r.note)}</p>` : ''}`
+        });
+    }
+
+    function printNCR(x) {
+        if (!window.jspdf) return UI.toast('PDF kütüphanesi yüklenemedi', 'İnternet bağlantınızı kontrol edin.', 'error');
+        const T = U.pdfText, r = x.result;
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pw = doc.internal.pageSize.getWidth();
+        doc.setFillColor(17, 23, 41); doc.rect(0, 0, pw, 28, 'F');
+        doc.setTextColor(239, 68, 68); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+        doc.text(T('UYGUNSUZLUK RAPORU'), 14, 13);
+        doc.setTextColor(230, 233, 242); doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+        doc.text(`${x.no}  |  ${T(U.date(r.at))}${S().branding && S().branding.company ? '  |  ' + T(S().branding.company) : ''}`, 14, 21);
+        doc.setTextColor(23, 32, 51); doc.setFontSize(9.5);
+        const info = [['Tedarikçi', x.supplierName], ['Sipariş / İrsaliye', `${x.poNo} / ${x.waybill}`], ['Malzeme', `${x.kod} - ${x.ad}`], ['Lot', x.lot],
+            ['Teslim alınan', U.qty(x.qty, x.unit)], ['Kabul edilen', U.qty(r.accepted, x.unit)], ['Reddedilen', U.qty(r.rejected, x.unit)],
+            ['Ret sebebi', r.reason], ['Karar', DECISION[r.decision][1]], ['Muayene eden', `${r.by} - ${U.dateTime(r.at)}`]];
+        info.forEach(([k, v], i) => { doc.setFont('helvetica', 'bold'); doc.text(T(k) + ':', 14, 38 + i * 6); doc.setFont('helvetica', 'normal'); doc.text(T(String(v)).slice(0, 90), 52, 38 + i * 6); });
+        doc.autoTable({
+            startY: 102,
+            head: [['Kontrol', 'Sonuç'].map(T)],
+            body: checksFor(x).map((c) => [T(c.label), T(CHECK_RES[r.checks[c.id] || 'na'])]),
+            theme: 'grid', headStyles: { fillColor: [17, 23, 41], textColor: [239, 68, 68], fontSize: 8.5 }, bodyStyles: { fontSize: 8.5 },
+            margin: { left: 14, right: 14 },
+            didParseCell: (d) => { if (d.section === 'body' && d.column.index === 1 && d.cell.raw === T('Uygun değil')) d.cell.styles.textColor = [200, 30, 30]; }
+        });
+        let y = doc.lastAutoTable.finalY + 8;
+        if (r.note) { doc.setFont('helvetica', 'bold'); doc.text(T('Bulgu / not:'), 14, y); doc.setFont('helvetica', 'normal'); doc.text(doc.splitTextToSize(T(r.note), pw - 28), 14, y + 6); y += 18; }
+        doc.setFontSize(9);
+        doc.text(T(r.decision === 'return' ? 'Reddedilen miktarın iadesi ve aynı miktarın yeniden teslimi talep edilmektedir. Düzeltici faaliyet bildiriminiz rica olunur.'
+            : 'Reddedilen miktar hurdaya ayrılmıştır. Düzeltici faaliyet bildiriminiz rica olunur.'), 14, y + 4, { maxWidth: pw - 28 });
+        const sy = Math.max(y + 30, 240);
+        doc.line(14, sy, 80, sy); doc.line(pw - 80, sy, pw - 14, sy);
+        doc.text(T('Kalite Kontrol'), 14, sy + 5); doc.text(T('Tedarikçi onayı'), pw - 80, sy + 5);
+        doc.save(`${x.no}_uygunsuzluk.pdf`);
+        MRP.store.audit('Uygunsuzluk raporu yazdırıldı', x.no);
+    }
+
+    const rerender = U.debounce(() => app().render(), 250);
+    Object.assign(MRP.actions, {
+        qcTab: (id) => { qState.tab = id; app().render(); },
+        qcSearch: (v) => { qState.q = v; rerender(); },
+        qcInspect: (id) => inspect(id),
+        qcDetail: (id) => detail(id),
+        qcTypeRule: (id) => setTypeRule(id)
     });
 })(window.MRP);
 </script>
@@ -6512,7 +6962,7 @@ window.MRP = window.MRP || {};
             if (it.procurement === 'service') return err(i, `${kod} stoksuz (fason/hizmet) kalem`);
             const qty = num(r.qty);
             if (qty === null || isNaN(qty) || qty < 0) return err(i, 'Geçersiz sayılan miktar');
-            const loc = str(r.loc) ? (LOCS[norm(r.loc)] || (M.LOCATIONS[str(r.loc).toUpperCase()] ? str(r.loc).toUpperCase() : null)) : 'MERKEZ';
+            const loc = str(r.loc) ? (LOCS[norm(r.loc)] || (M.MANUAL_LOCS.includes(str(r.loc).toUpperCase()) ? str(r.loc).toUpperCase() : null)) : 'MERKEZ';
             if (!loc) return err(i, `Bilinmeyen lokasyon: ${r.loc}`);
             const cur = M.onHand(kod, loc);
             const diff = U.round(qty - cur, 4);

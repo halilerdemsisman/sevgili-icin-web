@@ -18,7 +18,9 @@
         GI: { label: 'Üretime Sarf', badge: 'badge-amber' },
         FG: { label: 'Üretimden Giriş', badge: 'badge-blue' },
         ADJ: { label: 'Sayım Düzeltme', badge: 'badge-violet' },
-        TRF: { label: 'Transfer', badge: 'badge-cyan' }
+        TRF: { label: 'Transfer', badge: 'badge-cyan' },
+        RTV: { label: 'Tedarikçiye İade', badge: 'badge-red' },
+        SCR: { label: 'Hurda / Fire', badge: 'badge-gray' }
     };
     const PROCUREMENT = { buy: 'Satın Alma', make: 'Üretim', service: 'Fason / Hizmet' };
     const LOT_POLICIES = { L4L: 'Lot-for-Lot (ihtiyaç kadar)', FOQ: 'Sabit Parti (katları)', MIN: 'Minimum Sipariş' };
@@ -242,10 +244,12 @@
     };
     /** Üretimde kullanılabilir stok (fasoncudaki hariç) */
     M.CONSUME_LOCS = Object.keys(D.LOCATIONS).filter((k) => D.LOCATIONS[k].consume);
+    /** Elle transfer / sayım yapılabilen lokasyonlar (karantina hariç) */
+    M.MANUAL_LOCS = Object.keys(D.LOCATIONS).filter((k) => !D.LOCATIONS[k].locked);
     M.available = (kod) => M.onHand(kod, M.CONSUME_LOCS);
 
     /** FIFO sıralı lotlar */
-    M.lots = (kod, loc) => S().lots.filter((l) => l.kod === kod && (!loc || l.loc === loc) && l.qty > EPS)
+    M.lots = (kod, loc, lotNo) => S().lots.filter((l) => l.kod === kod && (!loc || l.loc === loc) && (!lotNo || l.lot === lotNo) && l.qty > EPS)
         .sort((a, b) => a.at.localeCompare(b.at));
 
     M.stockStatus = (kod) => {
@@ -265,12 +269,12 @@
     );
 
     /** FIFO ile lotlardan düşer; düşülen parçaları döndürür */
-    function takeFIFO(kod, locs, qty) {
+    function takeFIFO(kod, locs, qty, lotNo) {
         const taken = [];
         let rem = qty;
         [].concat(locs).forEach((loc) => {
             if (rem <= EPS) return;
-            M.lots(kod, loc).forEach((l) => {
+            M.lots(kod, loc, lotNo).forEach((l) => {
                 if (rem <= EPS) return;
                 const q = Math.min(l.qty, rem);
                 l.qty = U.round(l.qty - q, 4);
@@ -286,15 +290,16 @@
      *  - qty > 0 (GR, FG, ADJ+) → loc'a yeni lot açar (lot verilmezse otomatik numara)
      *  - qty < 0 (GI, ADJ−)     → loc listesinden FIFO düşer
      *  - TRF                    → loc(lar)dan toLoc'a FIFO taşır (lot numaraları korunur)
+     *  - onlyLot verilirse çıkış/transfer yalnızca o lot numarasından yapılır (kalite kararı)
      * @returns {object} hareket kaydı
      */
-    M.move = ({ kod, qty, type, loc = 'MERKEZ', toLoc = null, lot = '', ref = '', note = '', supplier = '' }) => {
+    M.move = ({ kod, qty, type, loc = 'MERKEZ', toLoc = null, lot = '', ref = '', note = '', supplier = '', onlyLot = '' }) => {
         const st = S();
         const it = M.item(kod);
         const now = new Date().toISOString();
         let lots = [];
         if (type === 'TRF') {
-            const r = takeFIFO(kod, loc, qty);
+            const r = takeFIFO(kod, loc, qty, onlyLot);
             r.taken.forEach((t) => st.lots.push({ id: U.uid('lot'), lot: t.lot, kod, loc: toLoc, qty: t.qty, at: t.at, ref: t.ref, supplier: t.supplier }));
             lots = r.taken.map((t) => ({ lot: t.lot, qty: t.qty }));
             qty = U.sum(r.taken, (t) => t.qty);
@@ -303,7 +308,7 @@
             st.lots.push({ id: U.uid('lot'), lot: lotNo, kod, loc, qty: U.round(qty, 4), at: now, ref, supplier });
             lots = [{ lot: lotNo, qty }];
         } else if (qty < 0) {
-            const r = takeFIFO(kod, loc, -qty);
+            const r = takeFIFO(kod, loc, -qty, onlyLot);
             lots = r.taken.map((t) => ({ lot: t.lot, qty: -t.qty }));
             if (r.missing) lots.push({ lot: '(eksik)', qty: -r.missing });
             qty = -U.sum(r.taken, (t) => t.qty);
@@ -341,19 +346,40 @@
         .sort((a, b) => a.priceTRY - b.priceTRY);
     M.offer = (supplierId, kod) => S().priceList.find((o) => o.supplierId === supplierId && o.kod === kod) || null;
 
-    /** Teslimat kayıtlarından otomatik performans: zamanında teslim ve kalite oranı */
+    /**
+     * Teslimat ve muayene kayıtlarından otomatik performans.
+     * Kalite oranı: kapıda reddedilen teslimat = 0, muayenesiz kabul = 1,
+     * muayene edilen her parti = kabul edilen miktar / muayene edilen miktar.
+     */
     M.supplierPerformance = (id) => {
         const pos = S().pos.filter((p) => p.supplierId === id && (p.receipts || []).length);
         if (!pos.length) return null;
-        let onTime = 0, receipts = 0, rejected = 0;
+        const insp = (S().inspections || []).filter((x) => x.supplierId === id);
+        const inspectedRc = new Set(insp.map((x) => x.receiptId));
+        let onTime = 0, events = 0, score = 0;
         pos.forEach((p) => {
             const first = p.receipts.find((r) => r.quality !== 'rejected');
             if (first && first.at.slice(0, 10) <= p.deliveryDate) onTime++;
-            p.receipts.forEach((r) => { receipts++; if (r.quality === 'rejected') rejected++; });
+            p.receipts.forEach((r) => {
+                if (r.quality === 'rejected') { events++; return; }
+                if (!inspectedRc.has(r.id)) { events++; score++; }
+            });
         });
+        insp.filter((x) => x.status === 'done' && x.qty > 0).forEach((x) => { events++; score += x.result.accepted / x.qty; });
         const onTimePct = onTime / pos.length;
-        const qualityPct = receipts ? 1 - rejected / receipts : 1;
+        const qualityPct = events ? score / events : 1;
         return { orders: pos.length, onTimePct, qualityPct, score: U.round(1 + 4 * (0.6 * onTimePct + 0.4 * qualityPct), 1) };
+    };
+
+    /** Tedarikçi bazında giriş kalite istatistiği */
+    M.supplierQuality = (id) => {
+        const insp = (S().inspections || []).filter((x) => x.supplierId === id && x.status === 'done');
+        const doorRejects = U.sum(S().pos.filter((p) => p.supplierId === id), (p) => (p.receipts || []).filter((r) => r.quality === 'rejected').length);
+        const lots = insp.length;
+        const full = insp.filter((x) => x.result.rejected <= 0).length;
+        const ratio = lots ? U.sum(insp, (x) => x.result.rejected / x.qty) / lots : 0;
+        return { lots, full, partial: lots - full, doorRejects, ppm: Math.round(ratio * 1e6), acceptPct: lots ? 1 - ratio : null,
+            rejectedValue: U.sum(insp, (x) => x.result.rejected * M.priceTRY(x.kod)) };
     };
     /** Etkin puan: teslimat verisi varsa otomatik, yoksa elle girilen puan */
     M.supplierScore = (s) => { const p = M.supplierPerformance(s.id); return p ? p.score : s.puan; };

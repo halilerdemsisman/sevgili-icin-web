@@ -413,7 +413,7 @@
                 <div class="totals"><dl class="dl"><dt>Ara toplam</dt><dd>${U.cur(t.sub)}</dd><dt>İskonto</dt><dd>−${U.cur(t.disc)}</dd><dt>KDV</dt><dd>${U.cur(t.vat)}</dd><dt class="grand">Genel toplam</dt><dd class="grand">${U.cur(t.grand)}</dd></dl></div>
                 <div class="grid grid-2" style="margin-top:16px;">
                     <div><h3 style="font-size:.9em;margin-bottom:8px;">Mal kabul kayıtları</h3>${(p.receipts || []).length ? `<div class="timeline">${p.receipts.map((rc) => `<div class="ev"><div>
-                        <b>İrsaliye ${esc(rc.waybill)}</b> · ${rc.quality === 'rejected' ? '<span class="badge badge-red">Reddedildi</span>' : '<span class="badge badge-green">Kabul</span>'}
+                        <b>İrsaliye ${esc(rc.waybill)}</b> · ${rc.quality === 'rejected' ? '<span class="badge badge-red">Reddedildi</span>' : '<span class="badge badge-green">Teslim alındı</span>'}${(rc.inspections || []).length ? ` · <span class="badge badge-amber">${rc.inspections.length} parti muayene</span>` : ''}
                         <div class="d">${esc(rc.by)} · ${esc(U.dateTime(rc.at))} · ${rc.lines.length} kalem${rc.note ? ' · ' + esc(rc.note) : ''}</div></div></div>`).join('')}</div>` : '<p class="muted" style="font-size:.85em;">Henüz teslimat yok.</p>'}</div>
                     <div><h3 style="font-size:.9em;margin-bottom:8px;">Geçmiş</h3><div class="timeline">${(p.history || []).map((h) => `<div class="ev"><div><b>${esc(h.action)}</b>${h.note ? ` — ${esc(h.note)}` : ''}<div class="d">${esc(h.by)} · ${esc(U.dateTime(h.at))}</div></div></div>`).join('')}</div></div>
                 </div>`
@@ -438,15 +438,16 @@
         if (!p || !(p.status === 'open' || p.status === 'partial')) return;
         const ctx = UI.modal({
             title: `Mal Kabul — ${p.no}`, size: 'lg',
-            body: `${H.banner('green', 'truck', p.supplierName, `Beklenen teslim: ${U.date(U.parseDate(p.deliveryDate))}. Kısmi teslimat desteklenir; kalan miktar sipariş açık kalır.`)}
+            body: `${H.banner('green', 'truck', p.supplierName, `Beklenen teslim: ${U.date(U.parseDate(p.deliveryDate))}. Kısmi teslimat desteklenir; kalan miktar sipariş açık kalır. "Muayene" işaretli kalemler Kalite / Karantina'ya girer, kalite kararıyla stoğa alınır.`)}
                 <div class="form-grid">
                     <div class="field"><label>İrsaliye no <span class="req">*</span></label><input id="rcWaybill" autocomplete="off"></div>
-                    <div class="field"><label>Kalite kontrol</label><select id="rcQuality"><option value="ok">Kabul — stoğa al</option><option value="rejected">Ret — iade (stoğa alınmaz)</option></select></div>
-                    <div class="field"><label>Giriş lokasyonu</label><select id="rcLoc">${Object.entries(M.LOCATIONS).filter(([k]) => k !== 'FASON').map(([k, l]) => `<option value="${k}">${esc(l.ad)}</option>`).join('')}</select></div>
+                    <div class="field"><label>Teslimat kararı</label><select id="rcQuality"><option value="ok">Teslim al (muayeneli kalemler karantinaya)</option><option value="rejected">Kapıda ret — iade (stoğa alınmaz)</option></select></div>
+                    <div class="field"><label>Giriş lokasyonu</label><select id="rcLoc">${M.CONSUME_LOCS.map((k) => `<option value="${k}">${esc(M.LOCATIONS[k].ad)}</option>`).join('')}</select><span class="hint">Muayeneli kalemler kabulden sonra buraya aktarılır.</span></div>
                     <div class="field"><label>Lot / parti no</label><input id="rcLot" placeholder="Boş bırakılırsa otomatik" autocomplete="off"><span class="hint">Tedarikçi parti numarası — izlenebilirlik için.</span></div>
                 </div>
-                <div class="table-wrap" style="margin-top:14px;max-height:320px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th class="num">Sipariş</th><th class="num">Önceki</th><th class="num">Kalan</th><th class="num">Bu Teslimat</th></tr></thead><tbody>
-                ${p.lines.map((l, i) => { const rem = Math.max(0, l.qty - (l.received || 0)); return `<tr><td class="mono">${esc(l.kod)}</td><td>${esc(l.ad)}</td>
+                <div class="table-wrap" style="margin-top:14px;max-height:320px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th>Kontrol</th><th class="num">Sipariş</th><th class="num">Önceki</th><th class="num">Kalan</th><th class="num">Bu Teslimat</th></tr></thead><tbody>
+                ${p.lines.map((l, i) => { const rem = Math.max(0, l.qty - (l.received || 0)); const it = M.item(l.kod); return `<tr><td class="mono">${esc(l.kod)}</td><td>${esc(l.ad)}</td>
+                    <td>${it && it.inspect ? '<span class="badge badge-amber">Muayene</span>' : '<span class="badge badge-gray">Doğrudan</span>'}</td>
                     <td class="num">${esc(U.qty(l.qty, l.unit))}</td><td class="num">${esc(U.qty(l.received || 0, l.unit))}</td><td class="num">${esc(U.qty(rem, l.unit))}</td>
                     <td class="num"><input class="input input-sm rc-qty" data-i="${i}" type="number" min="0" step="any" value="${U.round(rem, 3)}" style="width:110px;text-align:right;"></td></tr>`; }).join('')}
                 </tbody></table></div>
@@ -469,7 +470,8 @@
         const over = lines.filter((x) => (p.lines[x.i].received || 0) + x.qty > p.lines[x.i].qty * 1.1 + 1e-9);
         if (over.length) { UI.toast('Fazla teslimat', 'Sipariş miktarının %10\'undan fazlası kabul edilemez.', 'warn'); return false; }
 
-        const rc = { waybill, quality, note, at: new Date().toISOString(), by: me().name, lines: lines.map((x) => ({ kod: p.lines[x.i].kod, qty: x.qty })) };
+        const rc = { id: U.uid('rc'), waybill, quality, note, at: new Date().toISOString(), by: me().name, lines: lines.map((x) => ({ kod: p.lines[x.i].kod, qty: x.qty })) };
+        const inspections = [];
         p.receipts = p.receipts || [];
         p.receipts.push(rc);
         if (quality === 'rejected') {
@@ -481,8 +483,23 @@
                 const l = p.lines[x.i];
                 l.received = U.round((l.received || 0) + x.qty, 3);
                 const it = M.item(l.kod);
-                if (it) M.move({ kod: l.kod, qty: x.qty, type: 'GR', loc, lot: lotBase || '', ref: p.no, supplier: p.supplierName, note: it.procurement === 'service' ? `Fason hizmet teslimi · İrsaliye ${waybill}` : `İrsaliye ${waybill}` });
+                if (!it) return;
+                if (it.inspect && it.procurement === 'buy') {
+                    // Giriş muayenesi: karantinaya lot açılır, muayene kaydı oluşturulur
+                    const m = M.move({ kod: l.kod, qty: x.qty, type: 'GR', loc: 'KALITE', lot: lotBase || '', ref: p.no, supplier: p.supplierName, note: `İrsaliye ${waybill} · giriş muayenesi bekliyor` });
+                    const insp = {
+                        no: MRP.store.nextNo('GKK'), status: 'pending', receiptId: rc.id, poNo: p.no, supplierId: p.supplierId, supplierName: p.supplierName,
+                        waybill, kod: l.kod, ad: l.ad, tur: it.tur, unit: l.unit || it.unit, qty: U.round(x.qty, 4), lot: m.lots[0].lot, targetLoc: loc,
+                        receivedAt: rc.at, receivedBy: me().name, result: null
+                    };
+                    S().inspections.unshift(insp);
+                    inspections.push(insp);
+                } else M.move({ kod: l.kod, qty: x.qty, type: 'GR', loc, lot: lotBase || '', ref: p.no, supplier: p.supplierName, note: it.procurement === 'service' ? `Fason hizmet teslimi · İrsaliye ${waybill}` : `İrsaliye ${waybill}` });
             });
+            if (inspections.length) {
+                rc.inspections = inspections.map((x) => x.no);
+                MRP.store.notify('quality', 'Giriş muayenesi bekliyor', `${p.no} · ${p.supplierName} · ${inspections.length} parti karantinada`, ['perm:inspectQuality'], 'quality');
+            }
             const done = p.lines.every((l) => (l.received || 0) >= l.qty - 1e-9);
             p.status = done ? 'received' : 'partial';
             log(p, done ? 'Tamamı teslim alındı' : 'Kısmi teslim alındı', `İrsaliye ${waybill}`);
@@ -491,7 +508,8 @@
             MRP.store.notify('po', 'Mal kabul yapıldı', `${p.no} · ${lines.length} kalem${done ? '' : ' (kısmi)'}`, ['perm:runMRP', 'perm:createPO', 'perm:manageWO'], 'po');
         }
         app().commit();
-        UI.toast(quality === 'rejected' ? 'Teslimat reddedildi' : 'Mal kabul kaydedildi', quality === 'rejected' ? 'Stok değişmedi.' : 'Stoklar güncellendi.', quality === 'rejected' ? 'warn' : 'success');
+        UI.toast(quality === 'rejected' ? 'Teslimat reddedildi' : 'Mal kabul kaydedildi',
+            quality === 'rejected' ? 'Stok değişmedi.' : inspections.length ? `${inspections.length} parti Kalite / Karantina'da muayene bekliyor.` : 'Stoklar güncellendi.', quality === 'rejected' ? 'warn' : 'success');
     }
 
     function printPO(no) {
@@ -536,7 +554,7 @@
         poReceive: (no) => openReceive(no),
         poPdf: (no) => printPO(no)
     });
-    MRP.purchasing = { poTotals };
+    MRP.purchasing = { poTotals, findPO, findReq, syncRequest, log };
 
     // =====================================================================
     // TEDARİKÇİLER

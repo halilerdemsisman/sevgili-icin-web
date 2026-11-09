@@ -23,7 +23,7 @@
     const TOKEN_KEY = 'mrppro.erp.token';
     const CLIENT_KEY = 'mrppro.erp.client';
     const CACHE_KEY = 'mrppro.erp.cache.' + C.apiBase;
-    const SEQ_PREFIXES = ['STT', 'PO', 'IE', 'HRK', 'LOT', 'MPS', 'FSV', 'TED'];
+    const SEQ_PREFIXES = ['STT', 'PO', 'IE', 'HRK', 'LOT', 'MPS', 'FSV', 'TED', 'GKK'];
     const SEQ_BLOCK = 50;
 
     // ======================================================================
@@ -44,6 +44,7 @@
         purchaseOrders:   { kind: 'array', path: 'pos', key: 'no' },
         workOrders:       { kind: 'array', path: 'workOrders', key: 'no' },
         subcontracts:     { kind: 'array', path: 'subcontracts', key: 'no' },
+        inspections:      { kind: 'array', path: 'inspections', key: 'no' },
         notifications:    { kind: 'array', path: 'notifications', key: 'id' },
         auditLog:         { kind: 'array', path: 'audit', key: 'id' },
         settings:         { kind: 'settings' },                                       // anahtar: 'main'

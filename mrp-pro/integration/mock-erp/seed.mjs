@@ -46,6 +46,7 @@ export function seedUsers() {
         ['satinalma', 'satin123', 'Zeynep Kaya', 'satinalma'],
         ['satinalma_muduru', 'mudur123', 'Murat Demir', 'satinalma_muduru'],
         ['depo', 'depo123', 'Emre Koç', 'depo'],
+        ['kalite', 'kal123', 'Selin Arslan', 'kalite'],
         ['maliyet', 'mal123', 'Elif Şahin', 'maliyet']
     ].map(([username, password, name, roleId]) => {
         const r = roles[roleId];
@@ -92,6 +93,6 @@ export function seedCollections() {
         'SIP-1003': { id: 'SIP-1003', kod: 'BG.100.A', qty: 60, dueDate: iso(28), note: 'Sezon stoğu' }
     };
     c.settings = { main: { fx: { rates: { ...D.DEFAULT_FX }, updatedAt: null, source: 'ERP', history: [] }, costing: { overheadPct: 10, includeLabor: true, stdLot: 20 } } };
-    for (const k of ['movements', 'purchaseRequests', 'purchaseOrders', 'workOrders', 'subcontracts', 'notifications', 'auditLog', 'mrpRun']) c[k] = {};
+    for (const k of ['movements', 'purchaseRequests', 'purchaseOrders', 'workOrders', 'subcontracts', 'inspections', 'notifications', 'auditLog', 'mrpRun']) c[k] = {};
     return c;
 }

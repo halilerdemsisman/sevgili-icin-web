@@ -19,13 +19,14 @@ info:
     | workCenters | `id` | İş merkezi | manageCapacity, editCost |
     | suppliers | `id` | Tedarikçi | manageSuppliers |
     | priceList | `supplierId\|kod` | Tedarikçi fiyatı | manageSuppliers, editCost |
-    | lots | `id` | Lot bakiyesi (stok = lotların toplamı) | adjustStock, receiveGoods, manageWO, transferStock |
-    | movements | `id` | Stok hareketi (değişmez) | adjustStock, receiveGoods, manageWO, transferStock |
+    | lots | `id` | Lot bakiyesi (stok = lotların toplamı) | adjustStock, receiveGoods, manageWO, transferStock, inspectQuality |
+    | movements | `id` | Stok hareketi (değişmez) | adjustStock, receiveGoods, manageWO, transferStock, inspectQuality |
     | demands | `id` | Bağımsız talep / satış siparişi (MPS) | runMRP |
-    | purchaseRequests | `no` | Satın alma talebi | createRequest, approveRequest, createPO, receiveGoods |
-    | purchaseOrders | `no` | Satın alma siparişi | createPO, receiveGoods |
+    | purchaseRequests | `no` | Satın alma talebi | createRequest, approveRequest, createPO, receiveGoods, inspectQuality |
+    | purchaseOrders | `no` | Satın alma siparişi | createPO, receiveGoods, inspectQuality (kalite iadesi teslim miktarını düşürür) |
     | workOrders | `no` | İş emri | manageWO, runMRP |
     | subcontracts | `no` | Fason sevk fişi | transferStock |
+    | inspections | `no` | Giriş kalite muayenesi (karantina partisi) | receiveGoods (açma), inspectQuality (karar) |
     | notifications | `id` | Rol bazlı bildirim | (oturum açmış herkes) |
     | auditLog | `id` | Denetim kaydı (değişmez) | (oturum açmış herkes) |
     | settings | `main` | Döviz kurları, maliyet parametreleri, firma logoları | editCost, manageUsers |
@@ -115,6 +116,7 @@ paths:
                       purchaseOrders: { type: array, items: { $ref: "#/components/schemas/PurchaseOrder" } }
                       workOrders: { type: array, items: { $ref: "#/components/schemas/WorkOrder" } }
                       subcontracts: { type: array, items: { $ref: "#/components/schemas/Subcontract" } }
+                      inspections: { type: array, items: { $ref: "#/components/schemas/Inspection" } }
                       notifications: { type: array, items: { $ref: "#/components/schemas/Notification" } }
                       auditLog: { type: array, items: { $ref: "#/components/schemas/AuditEntry" } }
                       settings: { type: array, items: { $ref: "#/components/schemas/Settings" } }
@@ -258,12 +260,13 @@ components:
             manageWO: { type: boolean }
             adjustStock: { type: boolean, description: Sayım düzeltme }
             transferStock: { type: boolean, description: Lokasyon transferi ve fason sevk/dönüş }
+            inspectQuality: { type: boolean, description: "Giriş muayenesi ve karantina kararı (kabul / iade / hurda)" }
             manageUsers: { type: boolean, description: "Firma ayarları (logo); ERP modunda kullanıcılar ERP'de yönetilir" }
     Change:
       type: object
       required: [collection, op, key]
       properties:
-        collection: { type: string, enum: [items, products, boms, routings, workCenters, suppliers, priceList, lots, movements, demands, purchaseRequests, purchaseOrders, workOrders, subcontracts, notifications, auditLog, settings, mrpRun] }
+        collection: { type: string, enum: [items, products, boms, routings, workCenters, suppliers, priceList, lots, movements, demands, purchaseRequests, purchaseOrders, workOrders, subcontracts, inspections, notifications, auditLog, settings, mrpRun] }
         op: { type: string, enum: [upsert, delete] }
         key: { type: string }
         data: { type: object, description: "upsert için kaydın tamamı (koleksiyon şeması)" }
@@ -291,6 +294,7 @@ components:
         safetyStock: { type: number }
         lotPolicy: { type: string, enum: [L4L, FOQ, MIN] }
         lotSize: { type: number }
+        inspect: { type: boolean, description: "Giriş kalite muayenesi gerekli (mal kabulde KALITE lokasyonuna girer)" }
     Product:
       type: object
       required: [kod, ad, kategori]
@@ -362,7 +366,7 @@ components:
         id: { type: string }
         lot: { type: string, description: Lot / parti numarası }
         kod: { type: string }
-        loc: { type: string, enum: [MERKEZ, FABRIKA, FASON] }
+        loc: { type: string, enum: [MERKEZ, FABRIKA, FASON, KALITE], description: "KALITE = karantina (muayene bekleyen)" }
         qty: { type: number, minimum: 0 }
         at: { type: string, format: date-time, description: "Giriş zamanı (FIFO sırası)" }
         ref: { type: string }
@@ -374,7 +378,7 @@ components:
         id: { type: string }
         at: { type: string, format: date-time }
         kod: { type: string }
-        type: { type: string, enum: [GR, GI, FG, ADJ, TRF], description: "mal kabul / üretime sarf / üretimden giriş / sayım / transfer" }
+        type: { type: string, enum: [GR, GI, FG, ADJ, TRF, RTV, SCR], description: "mal kabul / üretime sarf / üretimden giriş / sayım / transfer / tedarikçiye iade / hurda" }
         qty: { type: number, description: "İşaretli (+ giriş, − çıkış); TRF'de taşınan miktar" }
         balance: { type: number }
         loc: { type: string }
@@ -463,6 +467,37 @@ components:
         expectedAt: { type: string, format: date }
         status: { type: string, enum: [open, closed] }
         lines: { type: array, items: { type: object, properties: { kod: { type: string }, qty: { type: number }, returned: { type: number } } } }
+    Inspection:
+      type: object
+      required: [no, status, poNo, supplierId, kod, qty, lot]
+      properties:
+        no: { type: string, example: GKK-2026-0001 }
+        status: { type: string, enum: [pending, done] }
+        receiptId: { type: string }
+        poNo: { type: string }
+        supplierId: { type: string }
+        supplierName: { type: string }
+        waybill: { type: string }
+        kod: { type: string }
+        ad: { type: string }
+        unit: { type: string }
+        qty: { type: number }
+        lot: { type: string, description: "KALITE lokasyonundaki lot numarası" }
+        targetLoc: { type: string, enum: [MERKEZ, FABRIKA] }
+        receivedAt: { type: string, format: date-time }
+        result:
+          type: object
+          nullable: true
+          description: "status=done iken dolu; accepted + rejected = qty"
+          properties:
+            accepted: { type: number }
+            rejected: { type: number }
+            decision: { type: string, enum: [return, scrap], nullable: true }
+            reason: { type: string }
+            checks: { type: object, additionalProperties: { type: string, enum: [ok, nok, na] } }
+            note: { type: string }
+            by: { type: string }
+            at: { type: string, format: date-time }
     Notification:
       type: object
       properties: { id: { type: string }, type: { type: string }, title: { type: string }, message: { type: string }, roles: { type: array, items: { type: string } }, readBy: { type: array, items: { type: string } }, at: { type: string } }

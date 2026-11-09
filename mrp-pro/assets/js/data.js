@@ -346,7 +346,8 @@
             const fx = currency === 'TRY' ? 1 : DEFAULT_FX[currency];
             items[kod] = {
                 kod, ad, tur, unit, price: MRP.U.round(price / fx, 4), currency, procurement,
-                leadTime: LEAD_BY_TYPE[tur] ?? 7, safetyStock: safety, lotPolicy, lotSize
+                leadTime: LEAD_BY_TYPE[tur] ?? 7, safetyStock: safety, lotPolicy, lotSize,
+                inspect: procurement === 'buy' && QC_TYPES.includes(tur)
             };
         };
         Object.values(BOM_TEMPLATES).forEach((lines) => lines.forEach(([kod, ad, tur, k, b]) => add(kod, ad, tur, k > 0 ? b / k : 0)));
@@ -365,8 +366,28 @@
     const LOCATIONS = {
         MERKEZ: { ad: 'Merkez Depo', consume: true },
         FABRIKA: { ad: 'Fabrika / Üretim Hattı', consume: true },
-        FASON: { ad: 'Fasoncuda', consume: false }
+        FASON: { ad: 'Fasoncuda', consume: false },
+        // Giriş muayenesi bekleyen stok: sarf edilemez, elle transfer/sayım yapılamaz (yalnızca kalite kararıyla çıkar)
+        KALITE: { ad: 'Kalite / Karantina', consume: false, locked: true }
     };
+
+    // ---------------- Kalite kontrol ----------------
+    /** Varsayılan olarak giriş muayenesine tabi malzeme türleri (malzeme kartından değiştirilebilir) */
+    const QC_TYPES = ['İroko Kereste', 'Profil', 'Döşeme / Kumaş', 'Boya / Kimyasal', 'Yüzey Malzemesi'];
+    /** Muayene kontrol listesi; types verilirse yalnızca o türlerde sorulur */
+    const QC_CHECKS = [
+        { id: 'pack', label: 'Ambalaj / taşıma hasarı' },
+        { id: 'qty', label: 'Miktar ve etiket doğrulama' },
+        { id: 'dim', label: 'Ölçü / tolerans' },
+        { id: 'visual', label: 'Görsel kusur (renk, çizik, leke)' },
+        { id: 'moist', label: 'Nem oranı (%8–12)', types: ['İroko Kereste'] },
+        { id: 'grain', label: 'Budak / çatlak / lif yönü', types: ['İroko Kereste'] },
+        { id: 'coat', label: 'Kaplama / eloksal kalınlığı', types: ['Profil'] },
+        { id: 'fabric', label: 'Renk tonu ve aşınma testi', types: ['Döşeme / Kumaş'] },
+        { id: 'batch', label: 'Parti no / raf ömrü', types: ['Boya / Kimyasal'] },
+        { id: 'doc', label: 'Belge (sertifika, test raporu)' }
+    ];
+    const QC_REASONS = ['Ölçü dışı', 'Görsel kusur', 'Taşıma hasarı', 'Yanlış malzeme', 'Nem / malzeme kalitesi', 'Belge eksik', 'Miktar eksik', 'Diğer'];
 
     // ---------------- İş merkezleri ve rotalar ----------------
     /** capacity: günlük dakika, rate: saatlik maliyet (₺) */
@@ -439,6 +460,6 @@
     MRP.data = {
         CATEGORIES, CATEGORY_STYLE, BASE_PRODUCTS, BOM_TEMPLATES, SUB_BOMS, ITEM_TYPES, UNIT_BY_TYPE,
         buildProducts, buildItemMaster, buildInitialStock, buildPriceList, SUPPLIERS,
-        CURRENCIES, DEFAULT_FX, CURRENCY_BY_TYPE, LOCATIONS, WORK_CENTERS, DEFAULT_ROUTINGS
+        CURRENCIES, DEFAULT_FX, CURRENCY_BY_TYPE, LOCATIONS, WORK_CENTERS, DEFAULT_ROUTINGS, QC_TYPES, QC_CHECKS, QC_REASONS
     };
 })(window.MRP);

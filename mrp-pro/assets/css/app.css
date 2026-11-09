@@ -204,6 +204,7 @@ textarea { resize: vertical; min-height: 70px; }
 .avatar.uretim { background: linear-gradient(135deg,#ef4444,#b91c1c); }
 .avatar.depo { background: linear-gradient(135deg,#06b6d4,#0e7490); }
 .avatar.maliyet { background: linear-gradient(135deg,#ec4899,#be185d); }
+.avatar.kalite { background: linear-gradient(135deg,#84cc16,#4d7c0f); }
 .user-chip .n { font-size: .82em; font-weight: 600; line-height: 1.2; }
 .user-chip .r { font-size: .7em; color: var(--text-3); }
 .content { padding: 22px 24px 40px; max-width: 1640px; width: 100%; margin: 0 auto; }
@@ -423,6 +424,16 @@ td.code { color: #1d4ed8; }
 
 /* Onay kutuları alan genişliğine yayılmasın */
 .field input[type="checkbox"], .check-chip input[type="checkbox"] { width: auto; flex-shrink: 0; }
+.field label.check-line { display: flex; align-items: center; gap: 8px; text-transform: none; letter-spacing: 0; font-size: .95em; color: var(--text); font-weight: 500; cursor: pointer; }
+/* Kalite kontrol listesi */
+.qc-checks { display: grid; grid-template-columns: 1fr auto; gap: 6px 14px; align-items: center; }
+.qc-checks .seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+.qc-checks .seg label { padding: 4px 10px; font-size: .8em; cursor: pointer; display: flex; align-items: center; gap: 4px; text-transform: none; letter-spacing: 0; color: var(--text-2); }
+.qc-checks .seg input { display: none; }
+.qc-checks .seg label:has(input:checked) { background: var(--bg-hover); color: var(--text); font-weight: 600; }
+.qc-checks .seg label.ok:has(input:checked) { background: var(--green-soft); }
+.qc-checks .seg label.nok:has(input:checked) { background: var(--red-soft); }
+@media (max-width: 600px) { .qc-checks { grid-template-columns: 1fr; } }
 
 /* ---------- ERP bağlantısı ---------- */
 .avatar { background: linear-gradient(135deg, #64748b, #475569); }

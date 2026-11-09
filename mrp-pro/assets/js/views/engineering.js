@@ -269,6 +269,7 @@
                         : `<dt>Birim fiyat</dt><dd>${esc(M.fmtMoney(it.price, it.currency))}${it.currency !== 'TRY' ? ` <span class="muted">= ${U.cur(M.priceTRY(kod), 2)}</span>` : ''}</dd>`}
                     <dt>Tedarik süresi</dt><dd>${it.leadTime} gün</dd>
                     <dt>Parti politikası</dt><dd>${esc(M.LOT_POLICIES[it.lotPolicy])}${it.lotSize ? ` · ${esc(U.qty(it.lotSize, it.unit))}` : ''}</dd>
+                    ${it.procurement === 'buy' ? `<dt>Giriş muayenesi</dt><dd>${it.inspect ? '<span class="badge badge-amber">Gerekli — karantinaya alınır</span>' : '<span class="badge badge-gray">Yok — doğrudan stoğa</span>'}</dd>` : ''}
                 </dl>
                 <dl class="dl card card-body">
                     <dt>Eldeki stok</dt><dd>${stocked ? esc(U.qty(M.onHand(kod), it.unit)) : '–'}</dd>
@@ -297,16 +298,17 @@
                 : '<p class="muted">Bu kalem için hareket kaydı yok.</p>'}`;
         const buttons = [{ label: 'Kapat' }];
         if (it.procurement === 'make' && MRP.auth.can('manageCapacity')) buttons.push({ label: 'Rotayı Düzenle', icon: 'gauge', onClick: () => { setTimeout(() => editRouting(kod)); } });
-        if (MRP.auth.can('editItem') || MRP.auth.can('editCost')) buttons.push({ label: 'Kartı Düzenle', cls: 'btn-primary', icon: 'edit', onClick: () => { setTimeout(() => openEditItem(kod)); } });
+        if (MRP.auth.can('editItem') || MRP.auth.can('editCost') || (MRP.auth.can('inspectQuality') && it.procurement === 'buy')) buttons.push({ label: 'Kartı Düzenle', cls: 'btn-primary', icon: 'edit', onClick: () => { setTimeout(() => openEditItem(kod)); } });
         UI.modal({ title: `${it.kod} — ${it.ad}`, size: 'lg', body, buttons });
     }
 
     function openEditItem(kod) {
-        if (!MRP.auth.can('editItem') && !MRP.auth.can('editCost')) return H.guard('editItem');
+        if (!MRP.auth.can('editItem') && !MRP.auth.can('editCost') && !MRP.auth.can('inspectQuality')) return H.guard('editItem');
         const it = M.item(kod);
         const isCustom = !!S().customItems[kod];
         const canParams = MRP.auth.can('editItem');
         const canPrice = MRP.auth.can('editCost') || canParams;
+        const canQc = it.procurement === 'buy' && (canParams || MRP.auth.can('inspectQuality'));
         const ro = (ok) => (ok ? '' : 'readonly');
         UI.modal({
             title: `Malzeme Kartı — ${it.kod}`, size: 'md',
@@ -319,6 +321,8 @@
                 <div class="field"><label>Emniyet stoğu (${esc(it.unit)})</label><input id="eiSS" type="number" min="0" step="any" value="${it.safetyStock}" ${ro(canParams && it.procurement !== 'service')}></div>
                 <div class="field"><label>Parti politikası</label><select id="eiLot" ${canParams ? '' : 'disabled'}>${Object.entries(M.LOT_POLICIES).map(([k, v]) => `<option value="${k}" ${it.lotPolicy === k ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select></div>
                 <div class="field"><label>Parti / min. miktar</label><input id="eiLotSize" type="number" min="0" step="any" value="${it.lotSize}" ${ro(canParams)}><span class="hint">L4L için kullanılmaz.</span></div>
+                ${it.procurement === 'buy' ? `<div class="field full"><label class="check-line"><input type="checkbox" id="eiInspect" ${it.inspect ? 'checked' : ''} ${canQc ? '' : 'disabled'}> Giriş kalite muayenesi gerekli</label>
+                    <span class="hint">İşaretliyse mal kabulde bu kalem Kalite / Karantina lokasyonuna girer; kalite kararıyla stoğa alınır.</span></div>` : ''}
             </div>`,
             onOpen: (ctx) => {
                 const upd = () => { const h = ctx.$('#eiTry'); if (h) h.textContent = `= ${U.cur(U.toNum(ctx.$('#eiPrice').value) * M.fxRate(ctx.$('#eiCur').value), 2)} (güncel kur)`; };
@@ -336,6 +340,8 @@
                     };
                     if (ch.lotPolicy !== 'L4L' && !ch.lotSize) { UI.toast('Parti miktarı gerekli', 'Seçilen politika için parti/min. miktar girin.', 'warn'); return false; }
                     if (!canParams) { delete ch.leadTime; delete ch.safetyStock; delete ch.lotPolicy; delete ch.lotSize; }
+                    if (!canPrice) { delete ch.price; delete ch.currency; }
+                    if (canQc) ch.inspect = ctx.$('#eiInspect').checked;
                     if (it.procurement === 'make') { delete ch.price; delete ch.currency; }
                     if (isCustom) Object.assign(S().customItems[kod], ch, canParams ? { ad: ctx.$('#eiAd').value.trim() || it.ad } : {});
                     else S().itemOverrides[kod] = { ...(S().itemOverrides[kod] || {}), ...ch };

@@ -42,8 +42,9 @@ node mrp-pro/integration/mock-erp/server.mjs   # → http://localhost:8787
 | Satın Alma | Talepler | Onay limiti, müdür onayına yönlendirme, yorumlar |
 | | Siparişler (PO) | **Teklif karşılaştırma**, fiyat listesinden otomatik fiyat (dövizli → TL), **talebi en uygun tedarikçilere bölme**, lot/lokasyonlu kısmi mal kabul, PDF |
 | | Tedarikçiler | Fiyat listesi yönetimi, **teslimat verisinden otomatik performans puanı** (zamanında teslim + kalite) |
-| Depo | Stok Durumu | **Çoklu lokasyon** (Merkez / Fabrika / Fasoncu), transfer, gerekçeli sayım, **fason sevk ve dönüş**, **lot izlenebilirliği**, **barkod okutma** |
-| | Stok Hareketleri | Lot ve lokasyon bilgili hareket defteri |
+| Depo | Stok Durumu | **Çoklu lokasyon** (Merkez / Fabrika / Fasoncu / Kalite-Karantina), transfer, gerekçeli sayım, **fason sevk ve dönüş**, **lot izlenebilirliği**, **barkod okutma** |
+| | Stok Hareketleri | Lot ve lokasyon bilgili hareket defteri (mal kabul, sarf, transfer, sayım, **iade**, **hurda**) |
+| Kalite | **Kalite Kontrol** | **Giriş muayenesi** (malzeme türüne göre kontrol listesi), **karantina**, kabul / tedarikçiye iade / hurda kararı, **uygunsuzluk raporu (PDF)**, tedarikçi bazında kabul oranı ve **PPM**, muayene kuralları |
 | Analiz & Sistem | **Analizler** | Maliyet sapması, ABC, stok devir hızı / hareketsiz stok, kur riski, **senaryo (what-if)** analizi |
 | | **Veri Aktarımı** | Excel/CSV ile malzeme, ürün, reçete, stok sayımı, ana plan ve fiyat listesi; şablon, önizleme, satır bazlı doğrulama; JSON yedekten geri yükleme |
 | | Raporlar / Denetim | CSV, çok sayfalı Excel, PDF yönetim özeti, JSON yedek, denetim kaydı |
@@ -75,6 +76,22 @@ Standart maliyet = (Malzeme + İşçilik) × (1 + Genel gider %)
 
 Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartları, ana plan ve fiyat listesi şablonları mevcut verilerle dolu gelir). Sütun başlıkları Türkçe karakter ve büyük/küçük harf duyarsız eşleşir; ERP çıktısındaki yaygın başlıklar (ör. "Stok Kodu", "Malzeme Adı", "Termin Tarihi") tanınır. Sayılar `1.234,56` veya `1234.56`, tarihler `gg.aa.yyyy`, `yyyy-aa-gg` ya da Excel tarih hücresi olabilir. Hatalı satırlar listelenir ve atlanır.
 
+## Kalite kontrol akışı
+
+1. **Muayene kuralı:** Malzeme kartında "Giriş kalite muayenesi gerekli" işaretlidir (varsayılan: İroko kereste, profil,
+   kumaş, boya/kimyasal, yüzey malzemesi). Tür bazında toplu değişiklik **Kalite Kontrol → Muayene kuralları**'ndadır.
+2. **Mal kabul (depo):** Muayeneli kalem seçilen depoya değil **Kalite / Karantina** lokasyonuna lot olarak girer ve
+   bir muayene kaydı (`GKK-yıl-no`) açılır; kalite bölümüne bildirim gider. Karantinadaki stok MRP'de eldeki stok
+   sayılır ama **üretime sarf edilemez**, elle transfer veya sayım yapılamaz.
+3. **Muayene (kalite):** Kontrol listesi (ambalaj, miktar, ölçü, görsel, belge + türe özel: nem, budak, kaplama…),
+   kabul edilen miktar ve hedef lokasyon; reddedilen miktar için sebep ve karar:
+   - **Kabul** → lot karantinadan depoya aktarılır
+   - **Tedarikçiye iade** → stoktan düşülür, siparişin teslim alınan miktarı azalır; sipariş (ve kapanmış talep)
+     yeniden açılır, MRP eksik miktarı açık sipariş olarak görür
+   - **Hurda** → stoktan düşülür, sipariş teslim alınmış sayılır
+4. **Raporlama:** Ret içeren muayeneler için tedarikçiye gönderilecek **uygunsuzluk raporu (PDF)**; tedarikçi bazında
+   kabul oranı, PPM ve ret değeri. Kabul oranı tedarikçi puanının kalite bileşenine yansır.
+
 ## Bölümler, roller ve demo hesaplar
 
 Her bölüm kendi rolüyle girer, **kendi açılış ekranında** başlar ve yalnızca işine yarayan ekranları görür.
@@ -90,10 +107,11 @@ Ekranı görmek salt okunurdur; değiştirmek için rolün o işleme yetkisi olm
 | Satın Alma Müdürü | `satinalma_muduru` | `mudur123` | Talepler | 500.000 ₺'ye kadar onay, sipariş, tedarikçi, fiyat |
 | Depo Sorumlusu | `depo` | `depo123` | Stok Durumu | Mal kabul, sayım, transfer, fason sevk/dönüş, barkod |
 | Maliyet / Muhasebe | `maliyet` | `mal123` | Maliyet & Kur | Fiyat, kur, genel gider, saat ücretleri; analizler |
+| Kalite Kontrol | `kalite` | `kal123` | Kalite Kontrol | Giriş muayenesi, karantina kararı (kabul / iade / hurda), muayene kuralları |
 
 Roller **Kullanıcılar & Roller** ekranından yönetilir (yönetici):
 - **Yetki matrisi:** hangi bölümün hangi ekranı gördüğü (○) veya düzenlediği (●)
-- **Roller:** ekranlar, işlem yetkileri, açılış ekranı ve onay limiti; yeni bölüm rolü (ör. Kalite Kontrol)
+- **Roller:** ekranlar, işlem yetkileri, açılış ekranı ve onay limiti; yeni bölüm rolü (ör. Bakım, Sevkiyat)
 - **Kullanıcılar:** ekleme, rol atama, parola belirleme (yalnızca SHA-256 özeti saklanır), pasife alma
 - **Firma Ayarları:** resmî logo dosyalarını (SVG / PNG / JPG, en fazla 3) ve firma adını yükleme
 
@@ -127,5 +145,5 @@ mrp-pro/
     ├── embed.js        # gömülü mod: üst sayfayla postMessage köprüsü
     ├── app.js          # kabuk, yönlendirme, olay delegasyonu
     └── views/          # ekranlar (dashboard, engineering, costing, planning, capacity,
-                        #           purchasing, inventory, analysis, import, system)
+                        #           purchasing, inventory, quality, analysis, import, system, users)
 ```
