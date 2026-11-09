@@ -34,6 +34,13 @@
                 html += H.banner('amber', 'warehouse', `${crit.length} malzeme emniyet stoğunun yarısının altında`, crit.slice(0, 6).map((i) => i.kod).join(', ') + (crit.length > 6 ? '…' : ''),
                     MRP.auth.canView('stock') ? '<button class="btn btn-secondary btn-sm" data-act="go" data-id="stock">Stok durumu</button>' : '');
             }
+            if (MRP.expedite && MRP.auth.canView('expedite')) {
+                const ex = st.pos.filter((p) => p.status === 'open' || p.status === 'partial').map(MRP.expedite.classify);
+                const lt = ex.filter((c) => c.late), rk = ex.filter((c) => c.risk);
+                if (lt.length || rk.length) html += H.banner('red', 'clock', `${lt.length} satın alma siparişi gecikti${rk.length ? ` · ${rk.length} tanesi üretimi etkiliyor` : ''}`,
+                    lt.concat(rk.filter((c) => !c.late)).slice(0, 4).map((c) => `${c.p.no} (${c.p.supplierName})`).join(', '),
+                    '<button class="btn btn-secondary btn-sm" data-act="go" data-id="expedite">Teslim takibi</button>');
+            }
             const soNew = MRP.sales ? MRP.sales.unplanned() : [];
             if (soNew.length && MRP.auth.canView('sales')) {
                 html += H.banner('blue', 'doc', `${soNew.length} yeni / değişen satış siparişi MRP'ye yansımadı`, soNew.slice(0, 4).map((o) => `${o.no} · ${o.customer}`).join(', ') + (soNew.length > 4 ? '…' : ''),

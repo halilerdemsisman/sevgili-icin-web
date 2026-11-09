@@ -508,6 +508,32 @@ components:
                   origPrice: { type: number, description: Döviz cinsinden liste fiyatı }
                   fxRate: { type: number, description: Siparişte kullanılan kur }
         receipts: { type: array, items: { type: object, properties: { waybill: { type: string }, quality: { type: string, enum: [ok, rejected] }, at: { type: string }, lines: { type: array, items: { type: object } } } } }
+        ack:
+          type: object
+          nullable: true
+          description: "Tedarikçi teyidi. MRP planlı girişte ack.date, yoksa deliveryDate kullanılır"
+          properties:
+            status: { type: string, enum: [confirmed, changed], description: "changed: teyitli tarih istenenden sonra" }
+            date: { type: string, format: date }
+            ref: { type: string, description: Tedarikçi sipariş / teyit no }
+            note: { type: string }
+            at: { type: string, format: date-time, description: İlk teyit zamanı }
+            updatedAt: { type: string, format: date-time }
+            by: { type: string }
+        followups:
+          type: array
+          description: Tedarikçi takip kayıtları
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              at: { type: string, format: date-time }
+              by: { type: string }
+              channel: { type: string, enum: [phone, email, visit, other] }
+              note: { type: string }
+              promised: { type: string, format: date, nullable: true, description: Tedarikçinin verdiği yeni tarih }
+              next: { type: string, format: date, nullable: true }
+        nextFollowUp: { type: string, format: date, nullable: true }
     WorkOrder:
       type: object
       required: [no, kod, qty, start, end, status]

@@ -42,6 +42,7 @@ node mrp-pro/integration/mock-erp/server.mjs   # → http://localhost:8787
 | | İş Emirleri | **Bağlı satış siparişi / müşteri**, malzeme uygunluğu, operasyon süreleri, Gantt, tamamlamada FIFO lot sarfı + mamul girişi |
 | Satın Alma | Talepler | Onay limiti, müdür onayına yönlendirme, yorumlar |
 | | Siparişler (PO) | **Teklif karşılaştırma**, fiyat listesinden otomatik fiyat (dövizli → TL), **talebi en uygun tedarikçilere bölme**, lot/lokasyonlu kısmi mal kabul, PDF |
+| | **Teslim Takibi** | **Tedarikçi sipariş teyidi** (teyitli tarih MRP'ye girer), geciken / teyitsiz / bu hafta gelecek siparişler, **hazır hatırlatma e-postası**, görüşme kaydı ve sonraki takip günü, **gecikmenin etkilediği iş emri ve müşteri siparişi**, tedarikçi teslim performansı (istenen ve teyitli tarihe göre zamanında, ortalama gecikme, teyit süresi) |
 | | Tedarikçiler | Fiyat listesi yönetimi, **teslimat verisinden otomatik performans puanı** (zamanında teslim + kalite) |
 | Depo | Stok Durumu | **Çoklu lokasyon** (Merkez / Fabrika / Fasoncu / Kalite-Karantina), transfer, gerekçeli sayım, **fason sevk ve dönüş**, **lot izlenebilirliği**, **barkod okutma** |
 | | Stok Hareketleri | Lot ve lokasyon bilgili hareket defteri (mal kabul, sarf, transfer, sayım, **iade**, **hurda**) |
@@ -76,6 +77,20 @@ Standart maliyet = (Malzeme + İşçilik) × (1 + Genel gider %)
 ## Excel ile veri aktarımı
 
 Veri Aktarımı ekranında her tip için şablon indirilebilir (malzeme kartları, ana plan ve fiyat listesi şablonları mevcut verilerle dolu gelir). Sütun başlıkları Türkçe karakter ve büyük/küçük harf duyarsız eşleşir; ERP çıktısındaki yaygın başlıklar (ör. "Stok Kodu", "Malzeme Adı", "Termin Tarihi") tanınır. Sayılar `1.234,56` veya `1234.56`, tarihler `gg.aa.yyyy`, `yyyy-aa-gg` ya da Excel tarih hücresi olabilir. Hatalı satırlar listelenir ve atlanır.
+
+## Tedarikçi teslim takibi
+
+1. Satın alma siparişi oluşunca tedarikçiden **teyit** beklenir; 2 gün içinde teyit kaydı girilmezse sipariş
+   **Teslim Takibi → Takip Gereken** listesine düşer.
+2. **Teyit:** tedarikçinin onayladığı tarih ve sipariş no kaydedilir. MRP planlı girişte artık bu tarihi kullanır;
+   tarih istenenden sonraysa ya da siparişteki kalemi bekleyen iş emri bu tarihten önce başlıyorsa planlama, üretim ve
+   satın almaya bildirim gider (etkilenen iş emri ve müşteri adıyla).
+3. **Hatırlat:** duruma göre hazır e-posta (teyit isteği / teslim tarihi geçti / yaklaşan teslim). E-posta MRP Pro'dan
+   gönderilmez; kendi e-posta uygulamanızda açılır veya kopyalanır. "Gönderildi" ile takip kaydına eklenir.
+4. **Görüşme notu:** telefon / e-posta / ziyaret notu, tedarikçinin verdiği yeni tarih (teyitli tarihi günceller) ve
+   sonraki takip günü. Takip günü gelen sipariş yeniden listeye düşer.
+5. **Etki:** her siparişte, kalemlerini bekleyen (stoğu yetmeyen) açık iş emirleri, en erken ihtiyaç tarihi ve bağlı
+   müşteri siparişleri gösterilir; müşteri siparişini etkileyen gecikmeler en üstte ve gösterge panelinde uyarılır.
 
 ## Sonlu kapasite çizelgesi
 

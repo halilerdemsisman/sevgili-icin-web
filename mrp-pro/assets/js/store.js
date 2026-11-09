@@ -55,7 +55,8 @@
             users: MRP.auth.defaultUsers(),
             branding: defaultBranding(),
             qcSetup: true,
-            soSetup: true
+            soSetup: true,
+            exSetup: true
         };
     }
 
@@ -83,6 +84,7 @@
         if (MRP.config.erp) return st;
         upgradeQC(st);
         upgradeSales(st);
+        upgradeExpedite(st);
         dropShopfloor(st);
         return st;
     }
@@ -93,6 +95,14 @@
             if (['admin', 'yonetim', 'planlama', 'uretim'].includes(r.id) && !r.views.includes('sales')) r.views.splice(Math.max(0, r.views.indexOf('mrp')), 0, 'sales');
         });
         st.soSetup = true;
+    }
+    /** Teslim takibi ekranı mevcut rollere eklenir */
+    function upgradeExpedite(st) {
+        if (st.exSetup) return;
+        (st.roles || []).forEach((r) => {
+            if (['admin', 'yonetim', 'planlama', 'satinalma', 'satinalma_muduru', 'depo'].includes(r.id) && !r.views.includes('expedite')) r.views.push('expedite');
+        });
+        st.exSetup = true;
     }
     /** Kaldırılan atölye takibinden kalan rol/ekran/yetki izleri temizlenir */
     function dropShopfloor(st) {
@@ -155,7 +165,7 @@
                 const parsed = JSON.parse(raw);
                 if (parsed && parsed.version === VERSION) {
                     const fresh = defaultState();
-                    delete fresh.qcSetup; delete fresh.soSetup; delete fresh.salesOrders;   // eski kayıtta yoksa yükseltme çalışsın; demo sipariş eklenmez
+                    delete fresh.qcSetup; delete fresh.soSetup; delete fresh.exSetup; delete fresh.salesOrders;   // eski kayıtta yoksa yükseltme çalışsın; demo sipariş eklenmez
                     state = upgrade(Object.assign(fresh, parsed));
                     return state;
                 }
@@ -165,7 +175,7 @@
                 const parsed = JSON.parse(rawV2);
                 if (parsed && parsed.version === 2) {
                     state = migrateV2(parsed);
-                    delete state.qcSetup; delete state.soSetup;
+                    delete state.qcSetup; delete state.soSetup; delete state.exSetup;
                     upgrade(state);
                     save();
                     localStorage.removeItem(KEY_V2);
@@ -207,7 +217,7 @@
     function restore(obj) {
         if (!obj || (obj.version !== VERSION && obj.version !== 2)) throw new Error('Tanınmayan yedek dosyası');
         const fresh = defaultState();
-        delete fresh.qcSetup; delete fresh.soSetup; delete fresh.salesOrders;
+        delete fresh.qcSetup; delete fresh.soSetup; delete fresh.exSetup; delete fresh.salesOrders;
         state = upgrade(obj.version === 2 ? migrateV2(obj) : Object.assign(fresh, obj));
         save();
     }

@@ -72,7 +72,7 @@
 
         // 3) Açık satın alma siparişleri ve henüz siparişe dönmemiş talepler → planlı giriş
         st.pos.filter((p) => p.status === 'open' || p.status === 'partial').forEach((p) => p.lines.forEach((l) => {
-            push(receipts, l.kod, { date: p.deliveryDate, qty: l.qty - (l.received || 0), src: p.no, kind: 'PO' });
+            push(receipts, l.kod, { date: M.poExpected(p), qty: l.qty - (l.received || 0), src: p.no, kind: 'PO' });
         }));
         st.requests.filter((r) => r.status === 'pending' || r.status === 'approved').forEach((r) => r.lines.forEach((l) => {
             push(receipts, l.kod, { date: l.needDate || r.deadline || today, qty: l.qty, src: r.no, kind: 'REQ' });

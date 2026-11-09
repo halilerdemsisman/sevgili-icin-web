@@ -26,6 +26,7 @@
         { group: 'Satın Alma', items: [
             { id: 'requests', label: 'Satın Alma Talepleri', icon: 'cart', count: () => MRP.store.state.requests.filter((r) => r.status === 'pending').length },
             { id: 'po', label: 'Satın Alma Siparişleri', icon: 'truck', count: () => MRP.store.state.pos.filter((p) => p.status === 'open' || p.status === 'partial').length },
+            { id: 'expedite', label: 'Teslim Takibi', icon: 'clock', count: () => (MRP.expedite ? MRP.expedite.actionCount() : 0), alert: true },
             { id: 'suppliers', label: 'Tedarikçiler', icon: 'users' }
         ] },
         { group: 'Depo', items: [

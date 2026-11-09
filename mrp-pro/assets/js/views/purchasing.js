@@ -366,7 +366,7 @@
             const tabs = [['active', 'Açık / Kısmi', by(['open', 'partial']).length], ['received', 'Teslim Alınan', by(['received']).length], ['cancelled', 'İptal', by(['cancelled']).length], ['all', 'Tümü', all.length]];
             const list = poState.tab === 'active' ? by(['open', 'partial']) : poState.tab === 'all' ? all : by([poState.tab]);
             const today = U.iso(U.today());
-            const late = by(['open', 'partial']).filter((p) => p.deliveryDate < today);
+            const late = by(['open', 'partial']).filter((p) => M.poExpected(p) < today);
             let html = H.tabs(tabs, poState.tab, 'poTab');
             if (late.length) html += H.banner('amber', 'truck', `${late.length} siparişin teslim tarihi geçti`, late.map((p) => `${p.no} (${p.supplierName})`).join(', '));
             html += `<section class="card"><div class="table-wrap"><table>
@@ -374,10 +374,12 @@
                 <tbody>${list.map((p) => {
                     const t = poTotals(p);
                     const prog = poProgress(p);
-                    const isLate = (p.status === 'open' || p.status === 'partial') && p.deliveryDate < today;
+                    const isLate = (p.status === 'open' || p.status === 'partial') && M.poExpected(p) < today;
+                    const isOpenPO = p.status === 'open' || p.status === 'partial';
                     return `<tr class="${isLate ? 'r-warn' : ''}"><td><button class="link mono" data-act="poDetail" data-id="${esc(p.no)}">${esc(p.no)}</button></td>
                         <td class="strong">${esc(p.supplierName)}</td><td class="mono">${esc(p.requestNo)}</td>
-                        <td class="nowrap">${esc(U.date(U.parseDate(p.deliveryDate)))} ${isLate ? '<span class="badge badge-red">Gecikti</span>' : ''}</td>
+                        <td class="nowrap">${esc(U.date(U.parseDate(M.poExpected(p))))} ${isLate ? '<span class="badge badge-red">Gecikti</span>' : ''}
+                            ${p.ack ? (p.ack.date !== p.deliveryDate ? `<div class="muted" style="font-size:11px;">teyitli · istenen ${esc(U.date(U.parseDate(p.deliveryDate)))}</div>` : '<div class="muted" style="font-size:11px;">teyitli</div>') : isOpenPO ? '<div class="muted" style="font-size:11px;">teyit yok</div>' : ''}</td>
                         <td class="num">${p.lines.length}</td><td class="num strong">${U.num(t.grand)}</td>
                         <td><span class="bar"><span style="width:${prog}%;background:${prog >= 100 ? 'var(--green)' : 'var(--blue)'};"></span></span> <span class="muted">${U.num(prog, 0)}%</span></td>
                         <td>${H.badge(H.PO_STATUS, p.status)}</td>
@@ -396,12 +398,13 @@
         const t = poTotals(p);
         const buttons = [{ label: 'Kapat' }, { label: 'PDF', icon: 'print', onClick: () => { printPO(no); return false; } }];
         if (p.status === 'open' && !(p.receipts || []).length && MRP.auth.can('createPO')) buttons.splice(1, 0, { label: 'Siparişi İptal Et', cls: 'btn-danger', onClick: () => { setTimeout(() => cancelPO(no)); } });
+        if ((p.status === 'open' || p.status === 'partial') && MRP.auth.can('createPO')) buttons.splice(1, 0, { label: 'Teyit / takip', cls: 'btn-secondary', onClick: () => { setTimeout(() => MRP.actions.exAck(no)); } });
         if ((p.status === 'open' || p.status === 'partial') && MRP.auth.can('receiveGoods')) buttons.push({ label: 'Mal Kabul', cls: 'btn-success', onClick: () => { setTimeout(() => openReceive(no)); } });
         UI.modal({
             title: `${p.no} — ${p.supplierName}`, size: 'xl', buttons,
             body: `<dl class="dl card card-body" style="margin-bottom:14px;grid-template-columns:repeat(4,auto 1fr);">
                     <dt>Durum</dt><dd>${H.badge(H.PO_STATUS, p.status)}</dd><dt>Talep</dt><dd class="mono">${esc(p.requestNo)}</dd>
-                    <dt>Teslim tarihi</dt><dd>${esc(U.date(U.parseDate(p.deliveryDate)))}</dd><dt>Vade</dt><dd>${p.paymentTerm ? p.paymentTerm + ' gün' : 'Peşin'}</dd>
+                    <dt>Teslim tarihi</dt><dd>${esc(U.date(U.parseDate(p.deliveryDate)))}${p.ack ? ` · <b>teyit: ${esc(U.date(U.parseDate(p.ack.date)))}</b>${p.ack.ref ? ` <span class="mono muted">${esc(p.ack.ref)}</span>` : ''}` : ' · <span class="muted">teyit yok</span>'}</dd><dt>Vade</dt><dd>${p.paymentTerm ? p.paymentTerm + ' gün' : 'Peşin'}</dd>
                     <dt>Yetkili</dt><dd>${esc(p.supplierContact || '–')}</dd><dt>Adres</dt><dd>${esc(p.address || '–')}</dd></dl>
                 <div class="table-wrap" style="max-height:300px;"><table><thead><tr><th>Kod</th><th>Kalem</th><th class="num">Sipariş</th><th class="num">Teslim Alınan</th><th class="num">Kalan</th>
                     <th class="num">Birim Fiyat</th><th class="num">İsk.</th><th class="num">KDV</th><th class="num">Toplam ₺</th></tr></thead><tbody>

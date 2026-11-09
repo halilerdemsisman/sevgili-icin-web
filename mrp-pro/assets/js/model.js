@@ -504,5 +504,57 @@
         return refs;
     };
 
+    // ======================================================================
+    // Tedarikçi teslim takibi
+    // ======================================================================
+    /** Beklenen teslim: tedarikçinin teyit ettiği tarih, yoksa istenen tarih */
+    M.poExpected = (p) => (p.ack && p.ack.date) || p.deliveryDate;
+    /** Teslim bekleyen satırlar */
+    M.poOpenLines = (p) => (p.lines || []).map((l) => ({ ...l, open: U.round(Math.max(0, l.qty - (l.received || 0)), 4) })).filter((l) => l.open > EPS);
+    /**
+     * Gecikmenin etkisi: siparişteki kalemleri kullanan açık iş emirleri
+     * (bileşende stok eksikse) ve onlara bağlı satış siparişleri.
+     * needDate: bu kalemlere ihtiyaç duyan en erken iş emri başlangıcı.
+     */
+    M.poImpact = (p) => {
+        const kods = new Set(M.poOpenLines(p).map((l) => l.kod));
+        const wos = [];
+        let needDate = null;
+        S().workOrders.filter((w) => w.status === 'planned' || w.status === 'released').forEach((w) => {
+            const hit = M.bom(w.kod).filter((b) => kods.has(b.kod) && M.available(b.kod) < b.k * w.qty - EPS);
+            if (!hit.length) return;
+            wos.push({ w, kods: hit.map((b) => b.kod) });
+            if (!needDate || w.start < needDate) needDate = w.start;
+        });
+        const sos = new Map();
+        wos.forEach(({ w }) => (w.soRefs || []).forEach((r) => { const x = M.soLine(r.key); if (x && ['open', 'partial'].includes(x.so.status)) sos.set(r.key, { key: r.key, customer: x.so.customer, due: x.line.dueDate || x.so.dueDate }); }));
+        return { wos, sos: [...sos.values()], needDate };
+    };
+    /**
+     * Tedarikçi teslim performansı (teslim alınmış siparişler):
+     * istenen tarihe ve teyit edilen tarihe göre zamanında oranı, ortalama gecikme,
+     * ortalama teyit süresi (gün)
+     */
+    M.supplierDelivery = (id) => {
+        const pos = S().pos.filter((p) => (!id || p.supplierId === id) && p.status !== 'cancelled');
+        const recv = pos.filter((p) => (p.receipts || []).some((r) => r.quality !== 'rejected'));
+        let onReq = 0, onAck = 0, ackN = 0, delay = 0;
+        recv.forEach((p) => {
+            const d = p.receipts.find((r) => r.quality !== 'rejected').at.slice(0, 10);
+            if (d <= p.deliveryDate) onReq++;
+            if (p.ack && p.ack.date) { ackN++; if (d <= p.ack.date) onAck++; }
+            delay += Math.max(0, U.diffDays(d, p.deliveryDate));
+        });
+        const acked = pos.filter((p) => p.ack && p.ack.at);
+        return {
+            orders: pos.length, received: recv.length,
+            onTimeReq: recv.length ? onReq / recv.length : null,
+            onTimeAck: ackN ? onAck / ackN : null,
+            avgDelay: recv.length ? delay / recv.length : null,
+            ackDays: acked.length ? U.sum(acked, (p) => Math.max(0, (new Date(p.ack.at) - new Date(p.createdAt)) / 864e5)) / acked.length : null,
+            ackRate: pos.length ? acked.length / pos.length : null
+        };
+    };
+
     MRP.model = M;
 })(window.MRP);

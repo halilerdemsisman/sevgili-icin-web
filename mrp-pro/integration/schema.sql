@@ -179,6 +179,8 @@ CREATE TABLE mrp_purchase_order (
     request_no     varchar(20) REFERENCES mrp_purchase_request(no),
     supplier_id    varchar(20) NOT NULL REFERENCES mrp_supplier(id),
     delivery_date  date NOT NULL,
+    confirmed_date date,                               -- tedarikçi teyidi (payload.ack.date); MRP bunu kullanır
+    next_follow_up date,                               -- teslim takibi (payload.followups)
     payment_term   integer NOT NULL DEFAULT 30,
     status         varchar(10) NOT NULL CHECK (status IN ('open','partial','received','cancelled')),
     created_at     timestamptz NOT NULL DEFAULT now(),
