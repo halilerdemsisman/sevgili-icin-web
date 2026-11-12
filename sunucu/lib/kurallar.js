@@ -46,7 +46,7 @@ const maskeliSozluk = o => Object.fromEntries(Object.entries(nesne(o) ? o : {}).
 const ayniKayit = (s, r) => { const a = s.tarih ?? s.zaman, b = r.tarih ?? r.zaman; return a == null || b == null || a === b; };
 
 class Kurallar {
-  /** @param ctx {{ham(k):string|undefined, yeniNo(on,yil,hane):string}} */
+  /** @param ctx {{ham(k):string|undefined, yeniNo(on,yil,hane):string, fiyatlar?: import('./fiyat').Fiyatlar}} */
   constructor(ctx) { this.ctx = ctx; }
 
   // ---------- temsilci kapsamı ----------
@@ -115,7 +115,7 @@ class Kurallar {
       if (!s || !nesne(g)) return { red: 'kullanıcı kaydı yok' };
       const y = { ...s };
       for (const [a, v] of Object.entries(g)) {
-        if (['kul', 'rol', 'durum', 'tarih'].includes(a)) continue;
+        if (['kul', 'rol', 'durum', 'tarih', 'sifreDegistir', 'kvkk'].includes(a)) continue;
         if (a === 'sifre') { if (v !== MASKE && tarayiciOzetiMi(v)) y.sifre = v; continue; }
         y[a] = v;
       }
@@ -143,6 +143,7 @@ class Kurallar {
           let kabul = false;
           if (gt && gt.durum === 'bekliyor') kabul = !st || (st.id === gt.id ? st.durum === 'bekliyor' : st.durum !== 'bekliyor');
           if (kabul) y.talep = gt; else if (st) y.talep = st; else delete y.talep;
+          if (s.durum === 'yeni' && JSON.stringify(y.kalemler) !== JSON.stringify(s.kalemler)) this._fiyat(y, ot, not);
         }
         L[i] = y; continue;
       }
@@ -152,16 +153,24 @@ class Kurallar {
       const y = { ...r, kul: ot.kul };
       for (const f of SATIS_ALANLARI) delete y[f];
       if (ILK_DURUM[k]) y.durum = ILK_DURUM[k];
-      if (k === 'exb-siparisler') delete y.talep;
+      if (k === 'exb-siparisler') { delete y.talep; delete y.fiyatKontrol; }
       if (s) {
         const p = String(r[a]).match(/^([A-Z]+)-(\d{4})-(\d+)$/);
         if (!p) continue;
         y[a] = this.ctx.yeniNo(p[1], +p[2], p[3].length);
         not.push(`${r[a]} → ${y[a]}`);
       }
+      if (k === 'exb-siparisler') this._fiyat(y, ot, not);
       yer.set(y[a], L.length); L.push(y);
     }
     return { deger: JSON.stringify(L), not };
+  }
+
+  // sipariş fiyatlarını sunucu katalogundan denetle (fiyat modülü varsa)
+  _fiyat(o, ot, not) {
+    if (!this.ctx.fiyatlar) return;
+    const d = this.ctx.fiyatlar.denetle(o, ot.kul);
+    d.forEach(x => not.push(`fiyat düzeltildi ${o.no} ${x.ad} ${x.secenek}: ${x.gelen} → ${x.beklenen ?? 'teklif'}`));
   }
 
   _satisYaz(k, gelen, ot) {
@@ -207,6 +216,8 @@ class Kurallar {
         if (k === 'exb-kullanicilar' && !K.has(kul)) continue;
       }
       const yeni = { ...(s || {}), ...g, kul };
+      // şifre değiştirme zorunluluğunu yalnız sunucu yönetir (eski kopya yazan istemci geri getiremesin)
+      if (s && s.sifreDegistir) yeni.sifreDegistir = true; else delete yeni.sifreDegistir;
       if (k === 'exs-kullanicilar' && K && s) yeni.rol = s.rol; // temsilci kendi rolünü değiştiremez
       if (g.sifre === MASKE || !tarayiciOzetiMi(g.sifre)) { if (s && s.sifre) yeni.sifre = s.sifre; else delete yeni.sifre; }
       y[kul] = yeni;

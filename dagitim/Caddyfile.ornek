@@ -1,0 +1,16 @@
+# /etc/caddy/Caddyfile · ALAN_ADI kur.sh tarafından gerçek adla değiştirilir.
+# Caddy HTTPS sertifikasını (Let's Encrypt) kendisi alır ve yeniler.
+ALAN_ADI {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+	reverse_proxy 127.0.0.1:8080
+	log {
+		output file /var/log/caddy/exit.log {
+			roll_size 20MiB
+			roll_keep 10
+		}
+	}
+}

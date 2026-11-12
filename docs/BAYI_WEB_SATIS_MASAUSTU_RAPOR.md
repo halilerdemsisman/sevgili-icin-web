@@ -1,7 +1,7 @@
 # EXIT Garden: Bayi Web Sitesi ve Satış Masaüstü Uygulaması
 ## Analiz ve Faz Planı
 
-Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0 ve Faz 1a tamamlandı)
+Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0, Faz 1a ve Faz 1b-1 tamamlandı)
 Girdi: `Bayi_Satis_Kod.zip` (iki HTML uygulama, sunucu, PWA, modüller, ekran görüntüleri) ve `BAYI_SATIS_RAPOR.md`.
 
 Hedef:
@@ -28,15 +28,21 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 |---|---|---|
 | 0 | Hazırlık ve kaynak düzeni | Kod repoda, görseller dosya, katalog JSON, mevcut davranışın test kaydı |
 | 1a | Güvenli geçiş sunucusu (giriş, yetki, numara, dosyalar) — mevcut ekranlarla | Veriler korunuyor; sipariş no sunucuda; dosyalar diskte; internete açılabilir |
-| 1b | Veritabanı ve REST API | SQLite, sunucuda fiyat/limit doğrulaması; Faz 2–3'ün temeli |
+| 1b-1 | Canlıya geçiş (VPS) | Sunucuda fiyat denetimi, şifre değiştirme/sıfırlama, VPS kurulum ve taşınma paketi |
+| 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda; Faz 2–3'ün temeli |
 | 2 | Bayi web sitesi | `bayi.exitgarden.com`, responsive, PWA, API'ye bağlı |
 | 3 | Satış masaüstü uygulaması | Windows kurulumu, otomatik güncelleme, masaüstü özellikleri |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 2 ve Faz 3, Faz 1b tamamlandıktan sonra paralel yürüyebilir.
+Faz 2 ve Faz 3, Faz 1b-2 tamamlandıktan sonra paralel yürüyebilir.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ (bkz. bölüm 5) · Faz 1b ⏳ sıradaki.
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ (bkz. bölüm 5) · **sıradaki adım: canlı verinin VPS'e taşınması** (`dagitim/TASINMA.md`) · ardından Faz 1b-2.
+
+**Verilen kararlar (12 Kasım 2026):**
+- Sunucu VPS'te olacak.
+- Mevcut `veri.json` canlı kullanımda; taşınacak.
+- Bayiler hesaplarını kendileri açacak.
 
 Faz 1a ile rapordaki kritik sorunların (🔴) tamamı kapatıldı ve testlerle doğrulandı. Sistem, önüne HTTPS konarak bayilere internetten açılabilir durumdadır (kurulum: `sunucu/KURULUM.md`).
 
@@ -92,8 +98,8 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | G3 | 🔴 | Şifre özeti tuzsuz SHA-256 (`'exitbayi:' + şifre`). Sızarsa sözlük saldırısıyla kolayca çözülür | `ozet()`, bkz. bölüm 8 | ✅ 1a (scrypt; eski özetler ilk girişte yükseltilir) |
 | G4 | 🔴 | Yetki (temsilci/bayi ayrımı, onay yetkisi) yalnız arayüzde. Tarayıcı konsolundan her şey değiştirilebilir | `ben` nesnesi istemcide | ✅ 1a (sunucu süzer ve denetler) |
 | G5 | 🟠 | Varsayılan yönetici `satis / 1234`; giriş ekranında yazıyor | `satis/sablon.html:83`; testle doğrulandı (G5) | ✅ 1a |
-| G6 | 🟠 | Claude API anahtarı tarayıcıda saklanıp doğrudan tarayıcıdan çağrılıyor | `satis/parcalar/03-ana.js:299` | ⏳ 1b |
-| G7 | 🟠 | Sunucu HTTP; oturum yönetimi, hız sınırı, kilitleme, işlem kaydının sunucuda tutulması yok | | ◐ 1a: oturum, deneme sınırı, işlem kaydı, güvenlik başlıkları; HTTPS kurulum belgesinde (Caddy) |
+| G6 | 🟠 | Claude API anahtarı tarayıcıda saklanıp doğrudan tarayıcıdan çağrılıyor | `satis/parcalar/03-ana.js:299` | ⏳ 1b-2 |
+| G7 | 🟠 | Sunucu HTTP; oturum yönetimi, hız sınırı, kilitleme, işlem kaydının sunucuda tutulması yok | | ✅ 1a + 1b-1 (oturum, deneme sınırı, işlem kaydı, güvenlik başlıkları; VPS paketinde Caddy ile HTTPS, HSTS, güvenlik duvarı) |
 | G8 | 🟡 | HTML'in büyük kısmı `innerHTML` ile kuruluyor (bayi 48, satış 67 yer). `esc()` yardımcı fonksiyonu var; bayilerin girdiği metinlerin (firma adı, not, açıklama) her yerde kaçışlandığı denetlenmeli (XSS riski) | | ⏳ 2–3 |
 
 ### 3.2 Veri bütünlüğü
@@ -101,8 +107,8 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 |---|---|---|---|
 | V1 | 🔴 | **Sipariş numarası çakışması.** Numara tarayıcıda `o yılki sipariş sayısı + 1` ile üretiliyor (`kaynak/bayi/parcalar/03-ana.js:294`). İki bayi 4 saniyelik senkron aralığında sipariş verirse ikisi de aynı numarayı alır. Sunucu `exb-siparisler`'i `no`'ya göre birleştirirken aynı no'lu kayıtta yeni geleni tutar; **ilk sipariş sessizce silinir**. Faz 0 testinde iki bayi aynı anda sipariş verdi, sunucuda tek sipariş kaldı. Aynı numaralandırma deseni iade (`IAD-`), online ödeme (`OL-`) ve teklif (`OT-`) numaralarında da var. | ✅ 1a (numara sunucudan; çakışan yeniden numaralanır) |
 | V2 | 🔴 | **Dosyalar localStorage'da.** Dekont (PDF ≤1,5 MB veya küçültülmüş fotoğraf), iade fotoğrafları, logo base64 olarak ortak anahtarlara yazılıyor. Her istemci tüm ortak veriyi `localStorage`'a yazar; Chromium'da ölçülen sınır ~8 milyon karakter. Sınır aşılınca senkron katmanındaki yükleme döngüsü ilk hatada durur: rozet "Sunucuya bağlı" der, ama o anahtar ve **sonrasındaki anahtarlar tarayıcıda yoktur** (Faz 0 testinde `exb-odeme` ve `exs-cari` yüklenmedi). Eksik veriyle çalışan kullanıcı birleştirme dışındaki bir anahtarı (ör. cari) güncellerse sunucudaki tam veriyi ezer. | ✅ 1a (dosyalar diske; tarayıcıya yalnız kendi verisi; eksik yükleme algılanır) |
-| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ◐ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir; diğer anahtarlar 1b |
-| V4 | 🟠 | Fiyat/iskonto/kredi limiti hesapları istemcide. Sunucu, bayinin gönderdiği tutara güveniyor. | ⏳ 1b |
+| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ◐ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir; diğer anahtarlar 1b-2 |
+| V4 | 🟠 | Fiyat/iskonto/kredi limiti hesapları istemcide. Sunucu, bayinin gönderdiği tutara güveniyor. | ◐ 1b-1: sipariş birim fiyatları sunucuda denetleniyor; kredi limiti 1b-2 |
 | V5 | 🟡 | Her açılışta ve her değişiklikte tüm veri gidip geliyor; sipariş sayısı arttıkça yavaşlar (ilk yükleme senkron XHR ile sayfayı kilitliyor). | ◐ 1a: herkes yalnız kendi verisini indirir |
 
 ### 3.3 Kod ve bakım
@@ -194,7 +200,8 @@ uretim_planlama/
 │                         ortak/ (iki uygulamada aynı 9 blok), telefon/ (PWA dosyaları)
 ├── katalog/           ✅ urunler.json, gorsel/, kumas/, maske/ + maskeler.json
 ├── sunucu/            ✅ Faz 1a güvenli sunucu (sunucu.js + lib/: kimlik, kurallar, depo, dosya)
-│                         → ⏳ Faz 1b'de veritabanı şeması, REST API, göç betikleri
+│                         + lib/fiyat (1b-1) → ⏳ Faz 1b-2'de veritabanı şeması, REST API
+├── dagitim/           ✅ Faz 1b-1: VPS kurulumu (kur.sh, systemd, Caddy, yedek, güncelleme) ve TASINMA.md
 ├── araclar/           ✅ derle, ayikla, sarmalama haritası, veri_incele
 ├── testler/           ✅ Playwright uçtan uca testleri (node:test)
 ├── eski/              ✅ Orijinal paket (başvuru için, değiştirilmez)
@@ -260,20 +267,37 @@ Neden ikiye bölündü: Mevcut uygulamalar veriyi anahtar–değer olarak eşitl
 | Belgeler | `sunucu/KURULUM.md` (ilk kurulum, geçiş, ayarlar, Caddy ile HTTPS, yedek) |
 | Testler | 41 test: uçtan uca akış (13), bilinen sorunlar (6; `todo` kaldırıldı), sunucu kuralları (20), geçiş (2) |
 
-Faz 1a'da bilinçli olarak yapılmayanlar (1b'ye kaldı): Sunucuda fiyat/iskonto/kredi limiti doğrulaması (V4; bayi tutarı hâlâ istemcide hesaplanıyor, satış onayında görülüyor), temsilci onay limitinin sunucuda zorlanması, diğer sözlük anahtarlarında eşzamanlı yazma birleştirmesi (V3), Claude API vekili (G6), şifre sıfırlama ve şifre değiştirme ekranı.
+Faz 1a'da bilinçli olarak yapılmayanlar (1b'ye kaldı; fiyat denetimi ve şifre işlemleri 1b-1'de yapıldı): Sunucuda fiyat/iskonto/kredi limiti doğrulaması (V4; bayi tutarı hâlâ istemcide hesaplanıyor, satış onayında görülüyor), temsilci onay limitinin sunucuda zorlanması, diğer sözlük anahtarlarında eşzamanlı yazma birleştirmesi (V3), Claude API vekili (G6), şifre sıfırlama ve şifre değiştirme ekranı.
 
-### Faz 1b: Veritabanı ve REST API (≈3 hafta)
+### Faz 1b-1: Canlıya geçiş (VPS) ✅ tamamlandı
+Neden öne alındı: Sistem canlı veriyle internete (VPS) çıkacak ve bayiler kendi hesaplarını açacak. Bu durumda herkesin hesap açıp sipariş verebilmesi, tarayıcıda hesaplanan fiyata güvenmeyi riskli kılıyor. Ayrıca VPS'te "şirket ağı" olmadığı için MRP erişiminin yeniden düzenlenmesi gerekti.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Sipariş fiyat denetimi (V4) | `sunucu/lib/fiyat.js`: katalog fiyatı + satışın fiyat güncellemesi + bayiye geçerli en yüksek kampanya + onaylı özel teklif (yalnız teklif no'su ve sahibiyle). Bayinin birim fiyatı bunun altındaysa yükseltilir, toplam yeniden hesaplanır, siparişe `fiyatKontrol` yazılır, satış panelinde sipariş penceresinde turuncu uyarı çıkar, işlem kaydına düşer. Eşit/yüksek fiyata dokunulmaz (sepette bekleyen eski kampanya fiyatı gibi durumlarda gereksiz müdahale olmasın). Katalogda olmayan ürün fiyatsız (teklif) kaleme çevrilir |
+| Şifre değiştirme | `/api/sifre`; bayi firma adına tıklayarak, satış sol menüden; diğer cihazlardaki oturumlar kapanır |
+| Şifre sıfırlama | Yönetici "Temsilciler ve işlem kaydı" ekranından geçici şifre üretir (`/api/sifre-sifirla`); kullanıcı yeni şifre belirleyene kadar veri göremez/yazamaz (kapatılamaz pencere) |
+| Yeni bayi kaydı bildirimi | Kendi kendine kayıt açık kaldı (karar); her kayıt satışın işlem kaydına "Yeni bayi kaydı" olarak düşer |
+| MRP erişimi | Yerel ağ, `MRP_IZINLI_IP` (şirketin sabit IP'si) veya satış paneline giriş yapmış kullanıcı. Diğerlerine "önce satış paneline giriş yapın" sayfası |
+| Sunucu adresi | `HOST=127.0.0.1`: Caddy arkasında port dışarıdan erişilemez (X-Forwarded-For taklidi engellenir) |
+| VPS paketi (`dagitim/`) | `kur.sh` (Ubuntu: Node 22, Caddy, güvenlik duvarı, `exit` kullanıcısı, `/opt/exit` + `/var/lib/exit`, systemd, günlük yedek), `exit.service` (sıkılaştırılmış), `Caddyfile.ornek` (HTTPS, HSTS, sıkıştırma), `ortam.ornek`, `yedek.sh` (14 gün, isteğe bağlı uzak kopya), `guncelle.sh` |
+| Taşınma rehberi | `dagitim/TASINMA.md`: hazırlık, deneme açılışı, veri kopyalama, `veri_incele` ile karşılaştırma, yönetici şifresi, kontrol listesi, duyuru metni, geri dönüş planı |
+| Testler | 56 test (önceki 41 + fiyat denetimi 6, şifre 4, tarayıcıda şifre sıfırlama ve fiyat uyarısı 4, VPS düzeni 1) |
+
+Test edilemeyenler: `kur.sh` gerçek bir Ubuntu VPS'te çalıştırılmadı (bu ortamda sözdizimi denetlendi, yedek betiği çalıştırıldı, systemd birimi doğrulandı). İlk kurulumda adımların çıktısı izlenmelidir.
+
+### Faz 1b-2: Veritabanı ve REST API (≈3 hafta)
 Amaç: Faz 2–3'ün üzerine kurulacağı kalıcı sunucu.
-1. Veritabanı şeması ve göç betiği: `veri.json` → SQLite (Node 22'nin yerleşik `node:sqlite` modülü değerlendirilecek; ek paket gerektirmez). Faz 1a'nın kural katmanı (`sunucu/lib/kurallar.js`) tablo düzeyine taşınır.
+1. Veritabanı şeması ve göç betiği: `veri.json` → SQLite (Node 22'nin yerleşik `node:sqlite` modülü değerlendirilecek; ek paket gerektirmez). Faz 1a'nın kural katmanı (`sunucu/lib/kurallar.js`) ve fiyat modülü tablo düzeyine taşınır.
 2. REST uç noktaları (ilk dalga): katalog, fiyat, sepet, sipariş (oluştur/listele/detay/değişiklik/iptal), onay, durum, cari, ödeme bildirimi + dekont yükleme, özel teklif, iade, numune, hatırlatma, duyuru, kampanya.
-3. Fiyat, iskonto, kredi limiti ve durum geçişleri sunucuda doğrulanır (V4); temsilci onay limiti sunucuda zorlanır.
-4. Şifre sıfırlama (e-posta), şifre değiştirme, ilk girişte şifre değiştirme zorunluluğu.
+3. Kredi limiti ve onay yetkisi (temsilci limiti) sunucuda; durum geçişleri sunucuda doğrulanır.
+4. Kendi kendine şifre sıfırlama (e-posta; SMTP sağlayıcısı seçimi gerekir).
 5. Claude API çağrıları sunucu üzerinden (anahtar sunucuda) (G6).
 6. SSE ile anlık olaylar (4 sn'lik yoklama yerine).
 7. Geçiş köprüsü: Faz 1a'nın anahtar–değer uçları, Faz 2–3 tamamlanana kadar REST ile aynı veritabanından beslenir.
 
 Teslim: Çalışan API, API belgesi, göç betiği, birim testleri (fiyat/iskonto/limit/numara/yetki).
-Kabul: Faz 1a testleri geçmeye devam ediyor; REST uçları için yetki testleri; bayinin gönderdiği tutar sunucu fiyatıyla tutmazsa sipariş reddediliyor.
+Kabul: Faz 1a ve 1b-1 testleri geçmeye devam ediyor; REST uçları için yetki testleri; kredi limitini aşan sipariş temsilci tarafından onaylanamıyor.
 
 ### Faz 2: Bayi web sitesi (≈4–5 hafta)
 1. Ekranlar modüllere bölünür, `localStorage` okuma/yazma çağrıları API istemcisiyle değiştirilir (sepet ve tercihler gibi kişisel durumlar da sunucuya).
@@ -327,18 +351,27 @@ Kabul: Faz 0 testlerinin satış kısmı geçiyor; yeni bayi siparişi 2 sn içi
 
 ---
 
-## 7. Karar verilmesi gerekenler
+## 7. Kararlar
 
-Faz 0 bu kararlar olmadan başlayabilir; Faz 1 öncesinde netleşmeleri gerekir.
+**Verilenler (12 Kasım 2026):**
 
-1. **Sunucu yeri:** Şirket içi sunucu + port yönlendirme mi, bulut VPS mi? (Öneri: VPS, ör. Türkiye'de barındırma; KVKK açısından da kolay.)
-2. **Alan adı:** `bayi.exitgarden.com` uygun mu?
-3. **Masaüstü teknolojisi:** Electron (öneri) mi, Tauri mi?
-4. **Veritabanı:** SQLite ile başlama önerisi uygun mu? Beklenen bayi sayısı ve günlük sipariş adedi nedir?
-5. **Ödeme kuruluşu:** iyzico, PayTR veya bankanın sanal POS'u?
-6. **ERP:** Şirketin kullandığı ERP hangisi (Logo, Netsis, Mikro, SAP…)? MRP ile hangi alanlar aktarılacak?
-7. **Satış ekibinin işletim sistemi:** Tamamı Windows mu? (macOS varsa ek kurulum dosyası gerekir.)
-8. **Mevcut canlı veri:** `veri.json` şu an kullanımda mı, kaç bayi ve sipariş var?
+| Konu | Karar | Sonucu |
+|---|---|---|
+| Sunucu yeri | VPS | `dagitim/` paketi ve `TASINMA.md` hazırlandı; MRP erişimi yeniden düzenlendi |
+| Mevcut canlı veri | `veri.json` kullanımda | Taşınma ve göç yolu test edildi (eski özetler, gömülü dosyalar, yönetici şifresi) |
+| Bayi hesapları | Bayiler kendisi açar | Kayıt açık; sunucuda fiyat denetimi eklendi; kayıtlar satışın işlem kaydına düşer |
+
+**Bekleyenler:**
+1. **Alan adı:** `bayi.exitgarden.com` uygun mu? (DNS A kaydı taşınma öncesinde açılmalı.)
+2. **VPS sağlayıcısı ve konumu:** Türkiye'de barındırma önerilir (KVKK).
+3. **Şirketin sabit dış IP'si** var mı? (MRP'ye girişsiz erişim için `MRP_IZINLI_IP`.)
+4. **MRP kullanıcıları:** Planlama ve depo çalışanları için satış panelinde kullanıcı açılacak mı, yoksa IP izni mi kullanılacak?
+5. **Masaüstü teknolojisi:** Electron (öneri) mi, Tauri mi?
+6. **Veritabanı:** SQLite ile başlama önerisi uygun mu? Beklenen bayi sayısı ve günlük sipariş adedi nedir?
+7. **E-posta (SMTP) sağlayıcısı:** Kendi kendine şifre sıfırlama ve bildirimler için (Faz 1b-2/4).
+8. **Ödeme kuruluşu:** iyzico, PayTR veya bankanın sanal POS'u?
+9. **ERP:** Şirketin kullandığı ERP hangisi (Logo, Netsis, Mikro, SAP…)? MRP ile hangi alanlar aktarılacak?
+10. **Satış ekibinin işletim sistemi:** Tamamı Windows mu? (macOS varsa ek kurulum dosyası gerekir.)
 
 ---
 

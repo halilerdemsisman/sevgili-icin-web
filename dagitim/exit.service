@@ -1,0 +1,28 @@
+# EXIT Garden sunucusu · systemd servisi
+# Kurulum: kur.sh bu dosyayı /etc/systemd/system/exit.service olarak yerleştirir.
+[Unit]
+Description=EXIT Garden bayi portalı ve satış paneli sunucusu
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=exit
+Group=exit
+WorkingDirectory=/opt/exit/sunucu
+EnvironmentFile=/etc/exit/ortam
+ExecStart=/usr/bin/node /opt/exit/sunucu/sunucu.js
+Restart=on-failure
+RestartSec=3
+# kapanırken bekleyen yazmalar diske aktarılır (SIGTERM)
+KillSignal=SIGTERM
+TimeoutStopSec=15
+# güvenlik: yalnız veri klasörüne yazabilir
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/exit
+
+[Install]
+WantedBy=multi-user.target

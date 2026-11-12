@@ -1,0 +1,11 @@
+# /etc/exit/ortam · EXIT Garden sunucu ayarları (ayrıntı: sunucu/KURULUM.md)
+PORT=8080
+# Caddy aynı makinede: sunucu yalnız yerelden dinlesin, IP ve https bilgisi Caddy'den okunsun
+HOST=127.0.0.1
+GUVENILIR_VEKIL=1
+VERI_KLASORU=/var/lib/exit
+OTURUM_GUN=7
+# Bayiler kendi hesabını açar
+KAYIT_ACIK=1
+# MRP: girişsiz erişebilecek şirket IP'leri (virgülle). Boşsa MRP'ye yalnız satış paneline giriş yapanlar erişir.
+MRP_IZINLI_IP=

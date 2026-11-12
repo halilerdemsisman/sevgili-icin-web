@@ -50,6 +50,36 @@
   window.EXIT_API = (yol, govde) => fetch(yol, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify(govde || {}) })
     .then(r => r.json().catch(() => ({})).then(j => ({ durum: r.status, ...j })));
 
+  // Şifre değiştirme penceresi (iki uygulamada ortak). zorunlu: geçici şifreyle girildi, kapatılamaz.
+  window.EXIT_SIFRE_DEGISTIR = zorunlu => {
+    if (document.getElementById('exSifPerde')) return;
+    const p = document.createElement('div'); p.id = 'exSifPerde';
+    p.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center;padding:16px';
+    const alan = (id, et, ac) => `<label style="display:block;margin:10px 0 4px;font-weight:600">${et}</label><input id="${id}" type="password" autocomplete="${ac}" required style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:10px;font:inherit">`;
+    p.innerHTML = `<form style="background:#fff;color:#0f172a;border-radius:14px;padding:22px;width:100%;max-width:380px;font:14px Inter,Segoe UI,sans-serif;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+      <h3 style="margin:0 0 6px;font-size:18px">${zorunlu ? 'Yeni şifrenizi belirleyin' : 'Şifre değiştir'}</h3>
+      ${zorunlu ? '<p style="margin:0;color:#475569">Hesabınıza geçici şifreyle girdiniz. Devam etmek için kendi şifrenizi belirleyin.</p>' : ''}
+      ${alan('exSifEski', zorunlu ? 'Geçici şifre' : 'Mevcut şifre', 'current-password')}${alan('exSifYeni', 'Yeni şifre (en az 8 karakter)', 'new-password')}${alan('exSifYeni2', 'Yeni şifre (tekrar)', 'new-password')}
+      <div id="exSifHata" style="color:#b91c1c;min-height:18px;margin:8px 0"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" id="exSifIkinci" style="padding:10px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:10px;font:inherit;cursor:pointer">${zorunlu ? 'Çıkış' : 'Vazgeç'}</button>
+      <button type="submit" style="padding:10px 16px;border:0;background:#0b1f3a;color:#fff;border-radius:10px;font:600 14px Inter,Segoe UI,sans-serif;cursor:pointer">Kaydet</button></div></form>`;
+    document.body.appendChild(p);
+    const $1 = id => document.getElementById(id), f = p.querySelector('form');
+    $1('exSifEski').focus();
+    $1('exSifIkinci').onclick = async () => { if (!zorunlu) return p.remove(); await window.EXIT_API('api/cikis').catch(() => {}); window.EXIT_YEREL_TEMIZLE(); location.reload(); };
+    f.onsubmit = async e => {
+      e.preventDefault(); const y = $1('exSifYeni').value;
+      if (y.length < 8) return $1('exSifHata').textContent = 'Yeni şifre en az 8 karakter olmalı.';
+      if (y !== $1('exSifYeni2').value) return $1('exSifHata').textContent = 'Yeni şifreler aynı değil.';
+      const r = await window.EXIT_API('api/sifre', { eski: $1('exSifEski').value, yeni: y }).catch(() => ({ hata: 'Sunucuya ulaşılamadı.' }));
+      if (!r.ok) return $1('exSifHata').textContent = r.hata || 'Şifre değiştirilemedi.';
+      try { sessionStorage.setItem('exit-sifre-degisti', '1'); } catch (x) {}
+      location.reload();
+    };
+  };
+  if (oturum && oturum.sifreDegistir) { const ac = () => window.EXIT_SIFRE_DEGISTIR(true); document.readyState === 'loading' ? addEventListener('DOMContentLoaded', ac) : ac(); }
+  try { if (sessionStorage.getItem('exit-sifre-degisti')) { sessionStorage.removeItem('exit-sifre-degisti'); addEventListener('load', () => setTimeout(() => { if (typeof toast === 'function') toast('Şifreniz değiştirildi.'); }, 300)); } } catch (x) {}
+
   const kuyruk = new Map(); let zam = null;
   const gonder = () => { zam = null; if (!oturum || !kuyruk.size) return; const L = [...kuyruk]; kuyruk.clear();
     fetch('api/veri', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify({ degisen: L }) })

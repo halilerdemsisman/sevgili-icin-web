@@ -9,12 +9,15 @@
 //
 // Ayarlar (ortam değişkenleri):
 //   PORT=8080                 dinlenecek port
+//   HOST=                     dinlenecek adres; önünde Caddy/Nginx varken 127.0.0.1 verin (port dışarıdan erişilemesin)
 //   EXIT_YONETICI_SIFRE=...   açılışta "satis" yönetici hesabının şifresini ayarlar (en az 8 karakter)
 //   OTURUM_GUN=7              hareketsiz oturumun kapanma süresi (gün)
 //   KAYIT_ACIK=1              bayilerin kendi kendine kayıt olabilmesi (0: kapalı)
 //   GUVENILIR_VEKIL=0         1: önünde Caddy/Nginx var; istemci IP'si ve https bilgisi X-Forwarded-* başlıklarından okunur
 //   HTTPS=0                   1: çerezler yalnız https ile gönderilir (vekil yoksa ve doğrudan https sunuluyorsa)
-//   MRP_HERKESE_ACIK=0        1: MRP yalnız yerel ağdan değil, her yerden erişilebilir
+//   MRP_IZINLI_IP=            MRP'ye girişsiz erişebilecek IP'ler, virgülle (ör. şirketin sabit IP'si "85.1.2.3"; "85.1.2." ile başlayanlar)
+//                             Bunlar dışında MRP'ye yalnız satış paneline giriş yapmış kullanıcılar ve yerel ağ erişir.
+//   MRP_HERKESE_ACIK=0        1: MRP herkese açık (önerilmez)
 //   VERI_KLASORU=<bu klasör>  veri.json, dosyalar/, yedek/, kayitlar/ klasörü
 //
 // Komut: node sunucu.js --yonetici-sifre YENI_SIFRE [--kullanici satis]   şifreyi ayarlar ve çıkar
@@ -22,6 +25,7 @@ const http = require('http'), fs = require('fs'), path = require('path'), os = r
 const { Depo, HANE } = require('./lib/depo');
 const { Kurallar, KISISEL } = require('./lib/kurallar');
 const { Dosyalar } = require('./lib/dosya');
+const { Fiyatlar } = require('./lib/fiyat');
 const K = require('./lib/kimlik');
 
 const ENV = process.env;
@@ -35,7 +39,10 @@ const SURUM = '1a';
 const depo = new Depo(VERI_KLASORU);
 const oturumlar = new K.Oturumlar(path.join(VERI_KLASORU, 'oturumlar.json'), +ENV.OTURUM_GUN || 7);
 const dosyalar = new Dosyalar(path.join(VERI_KLASORU, 'dosyalar'), depo.D.dosya);
-const kurallar = new Kurallar({ ham: k => depo.al(k), yeniNo: (on, yil, hane) => depo.yeniNo(on, yil, hane) });
+// Sipariş fiyat denetimi için katalog: pakette sunucu/katalog.json (derleme üretir), geliştirmede katalog/urunler.json
+const KATALOG = [path.join(__dirname, 'katalog.json'), path.join(KOK, 'katalog', 'urunler.json')].find(f => fs.existsSync(f));
+const fiyatlar = KATALOG ? new Fiyatlar(KATALOG, k => depo.al(k)) : null;
+const kurallar = new Kurallar({ ham: k => depo.al(k), yeniNo: (on, yil, hane) => depo.yeniNo(on, yil, hane), fiyatlar });
 const deneme = new K.DenemeSiniri();
 const SAHTE_OZET = K.sifreOzetle('kullanici-yok');
 const kayitSiniri = new K.DenemeSiniri({ kisi: 1e9, ip: 10 });
@@ -110,7 +117,18 @@ function oturum(q, tur) {
   const o = oturumlar.bul(cerezler(q)[CEREZ[tur]]); if (!o || o.tur !== tur) return null;
   return { ...o }; // istek boyunca kullanılan kopya (kapsam önbelleği bunun üzerinde)
 }
-const oturumOzeti = o => o ? { kul: o.kul, tur: o.tur, rol: o.rol, ad: o.ad || '' } : null;
+const oturumOzeti = o => o ? { kul: o.kul, tur: o.tur, rol: o.rol, ad: o.ad || '', ...(o.sifreDegistir ? { sifreDegistir: true } : {}) } : null;
+// Geçici şifreyle girmiş kullanıcı, şifresini değiştirene kadar veri göremez ve yazamaz
+const tamOturum = o => o && !o.sifreDegistir ? o : null;
+const geciciSifre = () => { const H = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from(require('crypto').randomBytes(10), b => H[b % H.length]).join(''); };
+function oturumYenile(q, tur, kul, uk, ip) {
+  oturumlar.kullaniciyiKapat(tur, kul);
+  const ot = { kul, tur, rol: tur === 'satis' ? rolu(uk) : 'bayi', ad: uk.firma || uk.ad || kul, ip };
+  if (uk.sifreDegistir) ot.sifreDegistir = true;
+  return { ot, cerez: cerezYaz(q, tur, oturumlar.ac(ot)) };
+}
+const mrpIzinli = (q, ip) => ENV.MRP_HERKESE_ACIK === '1' || ozelAg(ip) || !!oturum(q, 'satis')
+  || String(ENV.MRP_IZINLI_IP || '').split(',').map(x => x.trim()).filter(Boolean).some(e => ip === e || (e.endsWith('.') && ip.startsWith(e)));
 
 const YEREL = /^(exb-dil|exb-oturum|exs-oturum|exs-ai-anahtar|exit-tema|exb-kars)$/;
 function gorunurVeri(ot) {
@@ -126,11 +144,11 @@ async function api(q, r, u, p, ip) {
 
   if (p === '/api/oturum') return js(r, { oturum: oturumOzeti(oturum(q, tur)), surum: SURUM, kayitAcik: KAYIT_ACIK });
 
-  if (p === '/api/veri' && q.method === 'GET') { const ot = oturum(q, tur); return js(r, { zaman: depo.zaman, veri: gorunurVeri(ot), oturum: oturumOzeti(ot) }); }
+  if (p === '/api/veri' && q.method === 'GET') { const ot = oturum(q, tur); return js(r, { zaman: depo.zaman, veri: gorunurVeri(tamOturum(ot)), oturum: oturumOzeti(ot) }); }
 
   if (p === '/api/degisen') {
-    const ot = oturum(q, tur), son = +u.searchParams.get('son') || 0;
-    if (!ot) return js(r, { zaman: depo.zaman, degisen: [], oturum: null });
+    const ot0 = oturum(q, tur), ot = tamOturum(ot0), son = +u.searchParams.get('son') || 0;
+    if (!ot) return js(r, { zaman: depo.zaman, degisen: [], oturum: oturumOzeti(ot0) });
     const degisen = [];
     for (const k of depo.degisenler(son)) {
       const ham = depo.al(k);
@@ -142,6 +160,7 @@ async function api(q, r, u, p, ip) {
 
   if (p === '/api/veri' && q.method === 'POST') {
     const ot = oturum(q, tur); if (!ot) return js(r, { hata: 'Oturum yok veya süresi doldu. Yeniden giriş yapın.' }, 401);
+    if (ot.sifreDegistir) return js(r, { hata: 'Önce şifrenizi değiştirin.' }, 403);
     let b; try { b = await govde(q, 60e6); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
     if (!Array.isArray(b.degisen)) return js(r, { hata: 'geçersiz istek' }, 400);
     const z = depo.yeniZaman(), birlesen = [], reddedilen = [], yazilan = [];
@@ -176,8 +195,9 @@ async function api(q, r, u, p, ip) {
     deneme.basari(ip, kul);
     if (d.yukselt) { uk.sifre = K.sifreOzetle(sifre); kullaniciKaydet(t, L); }
     const ot = { kul, tur: t, rol: t === 'satis' ? rolu(uk) : 'bayi', ad: uk.firma || uk.ad || kul, ip };
+    if (uk.sifreDegistir) ot.sifreDegistir = true;
     const anahtar = oturumlar.ac(ot);
-    islem('giriş', ot, d.yukselt ? 'şifre özeti scrypt\'e yükseltildi' : '', ip);
+    islem('giriş', ot, [d.yukselt && 'şifre özeti scrypt\'e yükseltildi', uk.sifreDegistir && 'geçici şifre'].filter(Boolean).join(', '), ip);
     return js(r, { ok: true, oturum: oturumOzeti(ot) }, 200, { 'Set-Cookie': cerezYaz(q, t, anahtar) });
   }
 
@@ -198,6 +218,8 @@ async function api(q, r, u, p, ip) {
     const ot = { kul, tur: 'bayi', rol: 'bayi', ad: L[kul].firma, ip };
     const anahtar = oturumlar.ac(ot);
     islem('bayi kaydı', ot, L[kul].firma, ip);
+    // satış panelindeki "işlem kaydı" ekranında görünsün
+    try { const I = JSON.parse(depo.al('exs-islem') || '[]'); I.push({ t: Date.now(), kim: kul, ad: L[kul].firma, olay: 'Yeni bayi kaydı', detay: [L[kul].firma, L[kul].sehir, L[kul].tel].filter(Boolean).join(' · ') }); if (I.length > 3000) I.splice(0, I.length - 3000); const z = depo.yeniZaman(); depo.koy('exs-islem', JSON.stringify(I), z); depo.zamanla(z); depo.kaydet(); } catch (e) {}
     return js(r, { ok: true, oturum: oturumOzeti(ot) }, 201, { 'Set-Cookie': cerezYaz(q, 'bayi', anahtar) });
   }
 
@@ -208,10 +230,42 @@ async function api(q, r, u, p, ip) {
   }
 
   if (p === '/api/numara' && q.method === 'POST') {
-    const ot = oturum(q, tur); if (!ot) return js(r, { hata: 'oturum yok' }, 401);
+    const ot = tamOturum(oturum(q, tur)); if (!ot) return js(r, { hata: 'oturum yok' }, 401);
     let b; try { b = await govde(q, 1e3); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
     if (!HANE[b.on]) return js(r, { hata: 'bilinmeyen ön ek' }, 400);
     return js(r, { no: depo.yeniNo(b.on) });
+  }
+
+  // Kullanıcı kendi şifresini değiştirir (geçici şifreyle girenler için zorunlu)
+  if (p === '/api/sifre' && q.method === 'POST') {
+    const ot = oturum(q, tur); if (!ot) return js(r, { hata: 'Oturum yok veya süresi doldu.' }, 401);
+    let b; try { b = await govde(q, 1e4); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
+    const eski = String(b.eski || ''), yeni = String(b.yeni || '');
+    if (deneme.engelliMi(ip, ot.kul)) return js(r, { hata: 'Çok fazla hatalı deneme. Daha sonra tekrar deneyin.' }, 429);
+    const L = kullanicilar(ot.tur), uk = L[ot.kul]; if (!uk) return js(r, { hata: 'kullanıcı yok' }, 404);
+    if (!K.sifreDogrula(eski, uk.sifre, K.ON_EK[ot.tur]).ok) { deneme.hata(ip, ot.kul); return js(r, { hata: 'Mevcut şifre hatalı.' }, 400); }
+    if (yeni.length < 8) return js(r, { hata: 'Yeni şifre en az 8 karakter olmalı.' }, 400);
+    if (yeni === eski) return js(r, { hata: 'Yeni şifre eskisiyle aynı olamaz.' }, 400);
+    uk.sifre = K.sifreOzetle(yeni); delete uk.sifreDegistir; kullaniciKaydet(ot.tur, L);
+    const y = oturumYenile(q, ot.tur, ot.kul, uk, ip); // diğer cihazlardaki oturumlar kapanır
+    islem('şifre değiştirildi', ot, '', ip);
+    return js(r, { ok: true, oturum: oturumOzeti(y.ot) }, 200, { 'Set-Cookie': y.cerez });
+  }
+
+  // Satış yöneticisi bir bayinin veya satış kullanıcısının şifresini sıfırlar: geçici şifre üretilir,
+  // kullanıcı ilk girişte değiştirmek zorundadır.
+  if (p === '/api/sifre-sifirla' && q.method === 'POST') {
+    const ot = tamOturum(oturum(q, 'satis'));
+    if (!ot || ot.rol !== 'yonetici') return js(r, { hata: 'Yalnız satış yöneticisi şifre sıfırlayabilir.' }, 403);
+    let b; try { b = await govde(q, 1e4); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
+    const t = b.tur === 'satis' ? 'satis' : 'bayi', kul = String(b.kul || ''), L = kullanicilar(t), uk = L[kul];
+    if (!uk) return js(r, { hata: 'Kullanıcı bulunamadı.' }, 404);
+    if (t === 'satis' && kul === ot.kul) return js(r, { hata: 'Kendi şifrenizi "Şifremi değiştir" ile değiştirin.' }, 400);
+    const gecici = geciciSifre();
+    uk.sifre = K.sifreOzetle(gecici); uk.sifreDegistir = true; kullaniciKaydet(t, L);
+    oturumlar.kullaniciyiKapat(t, kul);
+    islem('şifre sıfırlandı', ot, `${t}:${kul}`, ip);
+    return js(r, { ok: true, gecici });
   }
 
   if (p.startsWith('/api/dosya/') && q.method === 'GET') {
@@ -238,7 +292,10 @@ http.createServer(async (q, r) => {
   const p = u.pathname.replace(/^\/(satis|mrp)\/api\//, '/api/');
   try {
     if (p === '/mrp' || p === '/mrp/' || p.startsWith('/api/mrp')) {
-      if (ENV.MRP_HERKESE_ACIK !== '1' && !ozelAg(ip)) return js(r, { hata: 'MRP yalnız şirket ağından kullanılabilir.' }, 403);
+      if (!mrpIzinli(q, ip)) {
+        if (!p.startsWith('/api/')) { r.writeHead(403, { ...GUVENLIK, 'Content-Type': 'text/html; charset=utf-8' }); return r.end('<!doctype html><meta charset="utf-8"><title>MRP</title><p style="font:16px sans-serif;margin:40px">MRP için önce <a href="/satis">satış paneline</a> giriş yapın, sonra bu sayfayı yenileyin.</p>'); }
+        return js(r, { hata: 'MRP için satış paneline giriş yapın.' }, 403);
+      }
       if (p === '/api/mrp/durum') return js(r, { ok: true });
       if (p === '/api/mrp' && q.method === 'GET') return js(r, M);
       if (p === '/api/mrp' && q.method === 'POST') {
@@ -262,10 +319,11 @@ http.createServer(async (q, r) => {
   } catch (e) {
     console.error(e); if (!r.headersSent) js(r, { hata: 'sunucu hatası' }, 500); else r.end();
   }
-}).listen(PORT, () => {
+}).listen(PORT, ENV.HOST || undefined, () => {
   const ag = Object.values(os.networkInterfaces()).flat().filter(x => x && x.family === 'IPv4' && !x.internal).map(x => x.address);
   const S = kullanicilar('satis'), gecerli = Object.values(S).some(x => x && x.sifre && x.sifre !== K.VARSAYILAN_SATIS_OZETI);
-  console.log('EXIT Garden sunucusu çalışıyor (sürüm ' + SURUM + ').\n  Bayi portalı : http://localhost:' + PORT + '/\n  Satış paneli : http://localhost:' + PORT + '/satis\n  MRP          : http://localhost:' + PORT + '/mrp (yalnız yerel ağ)' + ag.map(a => '\n  Ağdan       : http://' + a + ':' + PORT + '/  ,  /satis  ve  /mrp').join('') + '\n  Veri klasörü : ' + VERI_KLASORU);
+  console.log('EXIT Garden sunucusu çalışıyor (sürüm ' + SURUM + ').\n  Bayi portalı : http://localhost:' + PORT + '/\n  Satış paneli : http://localhost:' + PORT + '/satis\n  MRP          : http://localhost:' + PORT + '/mrp (yerel ağ, izinli IP veya satış girişi)' + ag.map(a => '\n  Ağdan       : http://' + a + ':' + PORT + '/  ,  /satis  ve  /mrp').join('') + '\n  Veri klasörü : ' + VERI_KLASORU);
   if (!gecerli) console.log('\n  ⚠ Satış paneline giriş yapılabilecek bir hesap yok. Yönetici şifresini belirleyin:\n      node sunucu.js --yonetici-sifre YENI_SIFRE');
+  if (VEKIL && !['127.0.0.1', '::1', 'localhost'].includes(ENV.HOST || '')) console.log('\n  ⚠ GUVENILIR_VEKIL=1 iken HOST=127.0.0.1 verin; aksi hâlde port doğrudan erişilirse X-Forwarded-For başlığı taklit edilebilir.');
   if (!VEKIL && ENV.HTTPS !== '1') console.log('\n  Not: Sunucu HTTP. İnternete açmadan önce önüne HTTPS (Caddy/Nginx) koyun ve GUVENILIR_VEKIL=1 verin.');
 });

@@ -8,6 +8,7 @@ Bu repoda iki uygulama var:
 
 - Yol haritası ve durum: [docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md](docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md)
 - Sunucu kurulumu: [sunucu/KURULUM.md](sunucu/KURULUM.md)
+- VPS'e kurulum ve şirket sunucusundan taşınma: [dagitim/TASINMA.md](dagitim/TASINMA.md)
 
 ## Klasörler
 
@@ -15,7 +16,8 @@ Bu repoda iki uygulama var:
 |---|---|---|
 | `kaynak/` | Uygulamaların kaynağı: `bayi/` ve `satis/` (her biri `sablon.html` + `parcalar/`), iki uygulamada ortak bloklar `ortak/`, telefon (PWA) dosyaları `telefon/` | **Evet**, değişiklikler burada yapılır |
 | `katalog/` | `urunler.json` (73 ürün, fiyatlar USD), ürün fotoğrafları `gorsel/`, kumaşlar `kumas/`, renk önizleme maskeleri `maske/` + `maskeler.json` | **Evet** |
-| `sunucu/` | Ortak sunucu: `sunucu.js` (yönlendirme, giriş, API), `lib/kimlik.js` (şifre, oturum, deneme sınırı), `lib/kurallar.js` (okuma/yazma kuralları), `lib/depo.js` (veri, numaralandırma, yedek), `lib/dosya.js` (dekont ve fotoğraflar); kurulum notu, Windows başlatıcı | **Evet** |
+| `sunucu/` | Ortak sunucu: `sunucu.js` (yönlendirme, giriş, API), `lib/kimlik.js` (şifre, oturum, deneme sınırı), `lib/kurallar.js` (okuma/yazma kuralları), `lib/depo.js` (veri, numaralandırma, yedek), `lib/dosya.js` (dekont ve fotoğraflar), `lib/fiyat.js` (sipariş fiyat denetimi); kurulum notu, Windows başlatıcı | **Evet** |
+| `dagitim/` | VPS kurulumu: `kur.sh`, `exit.service`, `Caddyfile.ornek`, `ortam.ornek`, `yedek.sh`, `guncelle.sh`, `TASINMA.md` | **Evet** |
 | `araclar/` | Derleme, ayıklama, sarmalama haritası, veri inceleme araçları | Evet |
 | `testler/` | Playwright uçtan uca testleri (`node:test` ile, ek paket gerekmez) | Evet |
 | `docs/` | Rapor, faz planı, sarmalama haritası | Evet |
@@ -29,7 +31,7 @@ Gerekli: Node.js 20 veya üstü. Testler için Playwright ve Chromium (bu ortamd
 ```bash
 npm run derle
 ```
-`kaynak/` + `katalog/` + `sunucu/` klasörlerinden `dist/` paketini üretir: `exit_bayi_siparis.html`, `exit_satis_paneli.html`, `telefon/` (index.html = bayi portalı), `sunucu/`.
+`kaynak/` + `katalog/` + `sunucu/` klasörlerinden `dist/` paketini üretir: `exit_bayi_siparis.html`, `exit_satis_paneli.html`, `telefon/` (index.html = bayi portalı), `sunucu/` (+ fiyat denetimi için görselsiz `katalog.json`), `araclar/veri_incele.mjs`, `dagitim/`. VPS'e yüklenecek paket budur.
 
 ```bash
 npm run dogrula
@@ -71,9 +73,10 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 
 ## Testler
 
-`npm test` dört dosyayı çalıştırır (toplam 41 test; her biri kendi geçici sunucusunu boş veriyle açar):
+`npm test` beş dosyayı çalıştırır (toplam 56 test; her biri kendi geçici sunucusunu boş veriyle açar):
 
 - `testler/uctan-uca.test.js`: Bayi ve satış aynı sunucuya bağlanır. Akış: kayıt, sepet, sipariş, onay (%15 iskonto), değişiklik talebi, ödeme linki, ödeme, tahsilat, özel teklif. Her adımda sunucudaki veri de kontrol edilir.
 - `testler/bilinen-sorunlar.test.js`: Rapordaki kritik sorunlar (kimliksiz API erişimi, başka bayinin verisi, varsayılan şifre, sipariş kaybı, kota). Faz 0'da orijinal pakette hepsinin başarısız olduğu görüldü; Faz 1a'da kapatıldı.
-- `testler/sunucu-kurallar.test.js`: Tarayıcısız, doğrudan API: bayi yalıtımı, alan koruması, talep kuralları, numara çakışması, dosya yetkisi, temsilci kapsamı, eski şifre yükseltme, deneme sınırı, CSRF, MRP erişimi, işlem kaydı.
-- `testler/gecis.test.js`: Eski veriden geçiş (gömülü dosyaların taşınması, tarayıcıdaki verinin ilk yönetici girişinde aktarılması, çıkışta temizlik).
+- `testler/sunucu-kurallar.test.js`: Tarayıcısız, doğrudan API: bayi yalıtımı, alan koruması, talep kuralları, numara çakışması, dosya yetkisi, temsilci kapsamı, eski şifre yükseltme, deneme sınırı, CSRF, MRP erişimi, işlem kaydı, sipariş fiyat denetimi, şifre değiştirme/sıfırlama.
+- `testler/gecis.test.js`: Eski veriden geçiş (gömülü dosyaların taşınması, tarayıcıdaki verinin ilk yönetici girişinde aktarılması, çıkışta temizlik) ve VPS düzeni (ayrı veri klasörü, yalnız 127.0.0.1, Secure çerez).
+- `testler/sifre.test.js`: Tarayıcıda: yöneticinin geçici şifre üretmesi, bayinin zorunlu şifre değişikliği, firma adından şifre değiştirme; bayi sepetteki fiyatı düşürse de siparişin katalog fiyatıyla kaydedilmesi ve satışın uyarıyı görmesi.

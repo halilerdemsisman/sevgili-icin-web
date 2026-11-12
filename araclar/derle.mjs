@@ -71,6 +71,15 @@ const SUNUCU_VERISI = /^(veri|mrp_veri|oturumlar)\.json$|^(yedek|dosyalar|kayitl
   }
 })(path.join(KOK, 'sunucu'), path.join(DIST, 'sunucu'));
 
+// Canlı veriyi yedekleyip özetleyen araç pakete de girer (sunucuda: node araclar/veri_incele.mjs /var/lib/exit/veri.json)
+yaz(path.join(DIST, 'araclar', 'veri_incele.mjs'), fs.readFileSync(path.join(KOK, 'araclar', 'veri_incele.mjs')));
+// VPS kurulum dosyaları
+if (fs.existsSync(path.join(KOK, 'dagitim'))) kopyala(path.join(KOK, 'dagitim'), path.join(DIST, 'dagitim'));
+// Sunucunun fiyat denetimi için görselsiz katalog
+{
+  const V = JSON.parse(fs.readFileSync(path.join(KATALOG, 'urunler.json'), 'utf8'));
+  yaz(path.join(DIST, 'sunucu', 'katalog.json'), JSON.stringify({ urunler: V.urunler.map(u => ({ id: u.id, ad: u.ad, kategori: u.kategori, secenek: u.secenek })) }));
+}
 const kb = s => (Buffer.byteLength(s) / 1024 / 1024).toFixed(2) + ' MB';
 console.log(`dist/ hazır · bayi ${kb(bayi)} · satış ${kb(satis)}`);
 

@@ -1,4 +1,6 @@
-# EXIT Garden ortak sunucu kurulumu (sürüm 1a)
+# EXIT Garden ortak sunucu kurulumu (sürüm 1a + 1b-1)
+
+> **VPS'e kurulum ve şirket sunucusundan taşınma:** `dagitim/TASINMA.md` (adım adım, hazır betiklerle). Bu belge sunucunun genel ayarlarını anlatır.
 
 Bu sunucu bayi portalını (`/`), satış panelini (`/satis`) ve MRP'yi (`/mrp`) tek yerden yayınlar ve tüm veriyi ortak tutar. Bayi kendi bilgisayarından veya telefonundan sipariş verdiğinde satış ekibi anında görür.
 
@@ -12,7 +14,9 @@ Sürüm 1a ile gelen güvenlik düzeni:
 - Sipariş, ödeme ve teklif numaralarını sunucu verir; aynı anda verilen siparişler artık birbirini silmez.
 - Dekont ve fotoğraflar `dosyalar/` klasöründe tutulur ve yalnız yetkili kullanıcıya gösterilir.
 - Girişler ve tüm değişiklikler `kayitlar/` klasöründeki işlem kaydına yazılır.
-- MRP yalnız şirket ağından açılır.
+- Sipariş fiyatları sunucuda katalogla denetlenir: bayinin yazdığı birim fiyat güncel bayi fiyatının (kampanya ve onaylı özel teklif dahil) altındaysa düzeltilir, satış panelinde uyarı görünür.
+- Şifre değiştirme (herkes) ve geçici şifreyle sıfırlama (satış yöneticisi) var.
+- MRP'ye yerel ağdan, izinli IP'lerden veya satış paneline giriş yapmış kullanıcılar erişir.
 
 ## 1. Gereken
 
@@ -33,7 +37,13 @@ Sürüm 1a ile gelen güvenlik düzeni:
    - macOS/Linux: `cd sunucu && node sunucu.js`
 4. Satış paneline (`http://SUNUCU-IP:8080/satis`) `satis` ve belirlediğiniz şifreyle girin. Temsilcileri "Temsilciler ve işlem kaydı" ekranından ekleyin.
 
-Bayiler portalda "Kayıt ol" ile hesap açar (şifre en az 8 karakter). Kendi kendine kaydı kapatmak için: `KAYIT_ACIK=0`.
+Bayiler portalda "Kayıt ol" ile hesap açar (şifre en az 8 karakter). Her yeni kayıt satış panelindeki işlem kaydına düşer. Kendi kendine kaydı kapatmak için: `KAYIT_ACIK=0`.
+
+**Şifreler:** Herkes kendi şifresini değiştirebilir:
+- Bayi: üst çubukta firma adına tıklar.
+- Satış: sol menüden "Şifremi değiştir".
+
+Şifresini unutan bayi veya temsilci için satış yöneticisi "Temsilciler ve işlem kaydı › Şifre sıfırlama" ekranından geçici şifre üretir. Kullanıcı bu şifreyle girince kendi şifresini belirlemeden devam edemez.
 
 ## 3. Eski sürümden geçiş
 
@@ -48,11 +58,13 @@ Bayiler portalda "Kayıt ol" ile hesap açar (şifre en az 8 karakter). Kendi ke
 | Değişken | Varsayılan | Anlamı |
 |---|---|---|
 | `PORT` | 8080 | Dinlenecek port |
+| `HOST` | (tümü) | Dinlenecek adres. Önünde Caddy varken `127.0.0.1` verin; port dışarıdan erişilemesin |
 | `KAYIT_ACIK` | 1 | `0`: bayiler kendi kendine kayıt olamaz |
 | `OTURUM_GUN` | 7 | Hareketsiz oturumun kapanma süresi (gün) |
 | `GUVENILIR_VEKIL` | 0 | `1`: önünde Caddy/Nginx var. İstemci IP'si ve https bilgisi `X-Forwarded-*` başlıklarından okunur. **Vekil yoksa açmayın.** |
 | `HTTPS` | 0 | `1`: çerezler yalnız https ile gönderilir (vekilsiz doğrudan https sunuluyorsa) |
-| `MRP_HERKESE_ACIK` | 0 | `1`: MRP internetten de erişilebilir (önerilmez; MRP'de giriş yok) |
+| `MRP_IZINLI_IP` | — | MRP'ye girişsiz erişebilecek IP'ler, virgülle (ör. şirketin sabit IP'si `85.1.2.3`; `85.1.2.` ile başlayanlar). Bunların dışında MRP'ye yerel ağ ve satış paneline giriş yapmış kullanıcılar erişir |
+| `MRP_HERKESE_ACIK` | 0 | `1`: MRP herkese açık (önerilmez; MRP'nin kendi girişi yok) |
 | `VERI_KLASORU` | `sunucu/` | Veri, dosya, yedek ve kayıt klasörü |
 | `EXIT_YONETICI_SIFRE` | — | Her açılışta `satis` şifresini ayarlar (otomasyon için; normalde komut satırını kullanın) |
 
@@ -70,7 +82,7 @@ bayi.exitgarden.com {
 }
 ```
 
-Sunucuyu bu durumda şöyle başlatın: `GUVENILIR_VEKIL=1 node sunucu.js`. Sunucu portunu (8080) dışarıya açmayın, yalnız Caddy (443) açık olsun.
+Sunucuyu bu durumda şöyle başlatın: `HOST=127.0.0.1 GUVENILIR_VEKIL=1 node sunucu.js`. Sunucu portunu (8080) dışarıya açmayın, yalnız Caddy (443) açık olsun. `dagitim/kur.sh` bunların hepsini (Caddy, systemd servisi, güvenlik duvarı, yedek) kurar.
 
 HTTPS ile açıldığında bayiler portalı telefonlarına uygulama gibi kurabilir (`telefon/KURULUM.txt`).
 

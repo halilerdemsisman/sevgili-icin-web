@@ -29,5 +29,8 @@
     if (window.EXIT_YEREL_TEMIZLE) EXIT_YEREL_TEMIZLE();
     location.reload();
   };
+  // Firma adına tıklayınca şifre değiştirme
+  const hf = document.querySelector('.h-firma');
+  if (hf) { hf.style.cursor = 'pointer'; hf.title = 'Şifre değiştir'; hf.onclick = () => window.EXIT_SIFRE_DEGISTIR(false); }
   try { if (sessionStorage.getItem('exb-yeni-kayit')) { sessionStorage.removeItem('exb-yeni-kayit'); if (ben) toast('Kaydınız oluşturuldu, hoş geldiniz.'); } } catch (x) {}
 })();
