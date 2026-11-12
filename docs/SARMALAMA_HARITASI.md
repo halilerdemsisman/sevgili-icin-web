@@ -33,19 +33,19 @@ Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-i
 
 | Fonksiyon | Tanım | Sarma sayısı | Sarmalayıcılar (yükleme sırasıyla; sonuncusu en dışta) |
 |---|---|---|---|
-| `git` | 03-ana.js:91 | 8 | 03-ana.js:542 (`_git`) → 03-ana.js:620 (`_git2`) → 03-ana.js:687 (`_git3`) → 03-ana.js:851 (`_git4`) → 16-v2.8-odeme-bildirimleri-numune-talepleri.js:92 (`_gitE`) → 18-v2.9-bayi-karnesi-excel-ile.js:283 (`_gitH`) → 20-v3.0-bayi-hedef-ve-prim.js:37 (`_gitBH`) → 22-ek6.js:195 (`_git6`) |
-| `durumYaz` | 03-ana.js:33 | 5 | 03-ana.js:415 (`_durumYaz`) → 03-ana.js:702 (`_durumYaz2`) → 20-v3.0-bayi-hedef-ve-prim.js:41 (`_durumBH`) → 22-ek6.js:33 (`_dy`) → 26-ek9.js:8 (`_dy9`) |
-| `siparisAc` | 03-ana.js:153 | 4 | 03-ana.js:422 (`_siparisAc`) → 03-ana.js:725 (`_siparisAc2`) → 03-ana.js:787 (`_siparisAc3`) → 27-ek10-sunucu-oturum.js:42 (`_sa`) |
-| `ac` | 03-ana.js:81 | 3 | 03-ana.js:854 (`_ac2`) → 18-v2.9-bayi-karnesi-excel-ile.js:287 (`_acH`) → 22-ek6.js:24 (`_ac`) |
-| `ayarlar` | 03-ana.js:337 | 2 | 03-ana.js:836 (`_ayarlar2`) → 14-v2.7-sadelestirme-onay-akisi-ve.js:8 (`_ayarlarK`) |
-| `urunler` | 03-ana.js:636 | 2 | 03-ana.js:765 (`_urunler2`) → 18-v2.9-bayi-karnesi-excel-ile.js:213 (`_urunlerX`) |
-| `ai` | 03-ana.js:321 | 1 | 03-ana.js:508 (`_ai`) |
-| `faturaKes` | 03-ana.js:404 | 1 | 22-ek6.js:46 (`_fk`) |
-| `kampanyalar` | 03-ana.js:574 | 1 | 03-ana.js:685 (`_kampanyalar`) |
-| `kmpForm` | 03-ana.js:589 | 1 | 03-ana.js:678 (`_kmpForm`) |
-| `musteriKarti` | 03-ana.js:452 | 1 | 03-ana.js:826 (`_musteriKarti`) |
-| `musteriler` | 03-ana.js:196 | 1 | 03-ana.js:483 (`_musteriler`) |
-| `ornekVeri` | 03-ana.js:363 | 1 | 03-ana.js:548 (`_ornekVeri`) |
-| `urunYaz` | — | 1 | 03-ana.js:743 (`_urunYaz`) |
+| `git` | 03-ana.js:91 | 8 | 03-ana.js:545 (`_git`) → 03-ana.js:623 (`_git2`) → 03-ana.js:690 (`_git3`) → 03-ana.js:854 (`_git4`) → 16-v2.8-odeme-bildirimleri-numune-talepleri.js:92 (`_gitE`) → 18-v2.9-bayi-karnesi-excel-ile.js:283 (`_gitH`) → 20-v3.0-bayi-hedef-ve-prim.js:37 (`_gitBH`) → 22-ek6.js:195 (`_git6`) |
+| `durumYaz` | 03-ana.js:33 | 5 | 03-ana.js:418 (`_durumYaz`) → 03-ana.js:705 (`_durumYaz2`) → 20-v3.0-bayi-hedef-ve-prim.js:41 (`_durumBH`) → 22-ek6.js:33 (`_dy`) → 26-ek9.js:8 (`_dy9`) |
+| `siparisAc` | 03-ana.js:153 | 4 | 03-ana.js:425 (`_siparisAc`) → 03-ana.js:728 (`_siparisAc2`) → 03-ana.js:790 (`_siparisAc3`) → 27-ek10-sunucu-oturum.js:42 (`_sa`) |
+| `ac` | 03-ana.js:81 | 3 | 03-ana.js:857 (`_ac2`) → 18-v2.9-bayi-karnesi-excel-ile.js:287 (`_acH`) → 22-ek6.js:24 (`_ac`) |
+| `ayarlar` | 03-ana.js:340 | 3 | 03-ana.js:839 (`_ayarlar2`) → 14-v2.7-sadelestirme-onay-akisi-ve.js:8 (`_ayarlarK`) → 27-ek10-sunucu-oturum.js:54 (`_ay`) |
+| `urunler` | 03-ana.js:639 | 2 | 03-ana.js:768 (`_urunler2`) → 18-v2.9-bayi-karnesi-excel-ile.js:213 (`_urunlerX`) |
+| `ai` | 03-ana.js:324 | 1 | 03-ana.js:511 (`_ai`) |
+| `faturaKes` | 03-ana.js:407 | 1 | 22-ek6.js:46 (`_fk`) |
+| `kampanyalar` | 03-ana.js:577 | 1 | 03-ana.js:688 (`_kampanyalar`) |
+| `kmpForm` | 03-ana.js:592 | 1 | 03-ana.js:681 (`_kmpForm`) |
+| `musteriKarti` | 03-ana.js:455 | 1 | 03-ana.js:829 (`_musteriKarti`) |
+| `musteriler` | 03-ana.js:196 | 1 | 03-ana.js:486 (`_musteriler`) |
+| `ornekVeri` | 03-ana.js:366 | 1 | 03-ana.js:551 (`_ornekVeri`) |
+| `urunYaz` | — | 1 | 03-ana.js:746 (`_urunYaz`) |
 
-Toplam: 14 fonksiyon, 32 sarmalama.
+Toplam: 14 fonksiyon, 33 sarmalama.

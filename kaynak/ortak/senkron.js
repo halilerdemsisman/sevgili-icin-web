@@ -98,7 +98,17 @@
     son = j.zaman; if (oturum && !j.oturum) return oturumKapandi(); durum(true);
     j.degisen.forEach(([k, v]) => { if (kuyruk.has(k)) return;
       try { v == null ? remI.call(localStorage, k) : getI.call(localStorage, k) !== v && setI.call(localStorage, k, v); eksik.delete(k); } catch (e) { eksik.add(k); try { remI.call(localStorage, k); } catch (e2) {} } }); }).catch(() => durum(false));
-  setInterval(cek, 4000);
+  // Anlık bildirim (SSE): sunucu her değişiklikte sinyal gönderir, istemci hemen çeker. Bağlantı açıkken
+  // yoklama 30 sn'ye iner; bağlantı yoksa 4 sn'lik yoklama sürer.
+  let sseAcik = false, sonCek = 0, sz = null;
+  const cekSimdi = () => { sonCek = Date.now(); cek(); };
+  setInterval(() => { if (!sseAcik || Date.now() - sonCek > 30000) cekSimdi(); }, 4000);
+  if (oturum && !oturum.sifreDegistir && window.EventSource) {
+    const es = new EventSource('api/olaylar?uyg=' + UYG);
+    es.onopen = () => { sseAcik = true; };
+    es.onerror = () => { sseAcik = false; };
+    es.onmessage = () => { clearTimeout(sz); sz = setTimeout(cekSimdi, 150); };
+  }
   addEventListener('beforeunload', () => { if (kuyruk.size && oturum) navigator.sendBeacon('api/veri?uyg=' + UYG, new Blob([JSON.stringify({ degisen: [...kuyruk] })], { type: 'application/json' })); });
   function oturumKapandi() { if (kapandi) return; kapandi = true; oturum = null; kuyruk.clear(); try { sessionStorage.removeItem(OTURUM_ANAHTARI); } catch (e) {} durum(true); }
 

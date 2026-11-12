@@ -7,7 +7,7 @@
 //     çakışan numaraları yeniden numaralandırır.
 //
 // Roller: bayi (kendi kayıtları), satış temsilcisi (atandığı bayiler), satış yöneticisi (hepsi).
-const { MASKE, tarayiciOzetiMi } = require('./kimlik');
+const { MASKE } = require('./kimlik');
 
 // Kayıt listeleri ve kimlik alanları (kayıtların "kul" alanı bayiyi gösterir)
 const LISTE = { 'exb-siparisler': 'no', 'exb-odeme': 'no', 'exb-numune': 'no', 'exb-teklif': 'no', 'exb-hatirlat': 'id', 'exb-iade': 'id' };
@@ -46,7 +46,7 @@ const maskeliSozluk = o => Object.fromEntries(Object.entries(nesne(o) ? o : {}).
 const ayniKayit = (s, r) => { const a = s.tarih ?? s.zaman, b = r.tarih ?? r.zaman; return a == null || b == null || a === b; };
 
 class Kurallar {
-  /** @param ctx {{ham(k):string|undefined, yeniNo(on,yil,hane):string, fiyatlar?: import('./fiyat').Fiyatlar}} */
+  /** @param ctx {{ham(k):string|undefined, yeniNo(on,yil,hane):string, fiyatlar?: import('./fiyat').Fiyatlar, limitler?: import('./limit').Limitler}} */
   constructor(ctx) { this.ctx = ctx; }
 
   // ---------- temsilci kapsamı ----------
@@ -116,7 +116,7 @@ class Kurallar {
       const y = { ...s };
       for (const [a, v] of Object.entries(g)) {
         if (['kul', 'rol', 'durum', 'tarih', 'sifreDegistir', 'kvkk'].includes(a)) continue;
-        if (a === 'sifre') { if (v !== MASKE && tarayiciOzetiMi(v)) y.sifre = v; continue; }
+        if (a === 'sifre') continue; // şifre yalnız sunucu uçlarından değişir (/api/sifre, /api/sifre-sifirla)
         y[a] = v;
       }
       S[ot.kul] = y; return { deger: JSON.stringify(S) };
@@ -173,11 +173,38 @@ class Kurallar {
     d.forEach(x => not.push(`fiyat düzeltildi ${o.no} ${x.ad} ${x.secenek}: ${x.gelen} → ${x.beklenen ?? 'teklif'}`));
   }
 
+  // Temsilci: kredi limitini aşan siparişi ileri duruma geçiremez; "limitOnay" alanını kendisi yazamaz.
+  // Engellenen kayıt sunucudaki hâliyle kalır. (Yönetici limit aşımını satış panelinde gerekçeyle onaylar.)
+  _limitSuz(k, G, ot) {
+    const uyari = [];
+    if (!this.ctx.limitler || ot.rol === 'yonetici' || !['exb-siparisler', 'exs-siparisler'].includes(k)) return uyari;
+    const S = coz(this.ctx.ham(k), k === 'exb-siparisler' ? [] : {});
+    const bul = no => k === 'exb-siparisler' ? (Array.isArray(S) ? S.find(x => x && x.no === no) : null) : (nesne(S) ? S[no] : null);
+    const denetle = r => {
+      if (!nesne(r)) return r;
+      const s = bul(r.no);
+      if (r.limitOnay && !(s && s.limitOnay)) { r = { ...r }; delete r.limitOnay; }
+      const e = this.ctx.limitler.engel(s, r);
+      if (!e) return r;
+      uyari.push(e);
+      return s || null;
+    };
+    if (k === 'exb-siparisler' && Array.isArray(G)) { for (let i = G.length - 1; i >= 0; i--) { const y = denetle(G[i]); if (y) G[i] = y; else G.splice(i, 1); } }
+    if (k === 'exs-siparisler' && nesne(G)) for (const [no, v] of Object.entries(G)) { const y = denetle(v); if (y) G[no] = y; else delete G[no]; }
+    return uyari;
+  }
+
   _satisYaz(k, gelen, ot) {
     const K = this.kapsam(ot);
     if (KULLANICI[k]) return this._kullaniciYaz(k, gelen, ot, K);
     if (gelen === null) return K ? { red: 'temsilci silemez' } : { deger: null };
     const G = coz(gelen, undefined); if (G === undefined) return { red: 'geçersiz JSON' };
+    const uyari = this._limitSuz(k, G, ot);
+    if (uyari.length) { const s = this._satisYaz2(k, G, ot, K); return { ...s, uyari, not: [...(s.not || []), ...uyari] }; }
+    return this._satisYaz2(k, G, ot, K, gelen);
+  }
+
+  _satisYaz2(k, G, ot, K, gelen = JSON.stringify(G)) {
     if (LISTE[k]) {
       // kimliğe göre birleştir: gelen kazanır, gelmeyen kayıtlar korunur; temsilci yalnız kapsamındakileri değiştirir
       if (!Array.isArray(G)) return { red: 'liste bekleniyor' };
@@ -219,7 +246,8 @@ class Kurallar {
       // şifre değiştirme zorunluluğunu yalnız sunucu yönetir (eski kopya yazan istemci geri getiremesin)
       if (s && s.sifreDegistir) yeni.sifreDegistir = true; else delete yeni.sifreDegistir;
       if (k === 'exs-kullanicilar' && K && s) yeni.rol = s.rol; // temsilci kendi rolünü değiştiremez
-      if (g.sifre === MASKE || !tarayiciOzetiMi(g.sifre)) { if (s && s.sifre) yeni.sifre = s.sifre; else delete yeni.sifre; }
+      // şifre yalnız sunucu uçlarından belirlenir; istemcinin gönderdiği şifre alanı yok sayılır
+      if (s && s.sifre) yeni.sifre = s.sifre; else delete yeni.sifre;
       y[kul] = yeni;
     }
     return { deger: JSON.stringify(y) };

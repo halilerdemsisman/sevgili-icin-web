@@ -13,7 +13,7 @@ const ESKI_PAKET = process.env.TEST_PAKET === 'eski';
 const YONETICI_SIFRE = 'Test-Yonetici-2026';
 
 const bosPort = () => new Promise((ok, red) => { const s = net.createServer(); s.listen(0, () => { const p = s.address().port; s.close(() => ok(p)); }); s.on('error', red); });
-const kopyala = (k, h) => { fs.mkdirSync(h, { recursive: true }); for (const f of fs.readdirSync(k)) { if (/^(veri|mrp_veri|oturumlar)\.json$|^(yedek|dosyalar|kayitlar)$/.test(f)) continue; const a = path.join(k, f), b = path.join(h, f); fs.statSync(a).isDirectory() ? kopyala(a, b) : fs.copyFileSync(a, b); } };
+const kopyala = (k, h) => { fs.mkdirSync(h, { recursive: true }); for (const f of fs.readdirSync(k)) { if (/^(veri|mrp_veri|oturumlar|gizli)\.json$|^veri\.sqlite|^(yedek|dosyalar|kayitlar)$/.test(f)) continue; const a = path.join(k, f), b = path.join(h, f); fs.statSync(a).isDirectory() ? kopyala(a, b) : fs.copyFileSync(a, b); } };
 
 /**
  * @param {object} [s]
@@ -27,7 +27,7 @@ async function sunucuBaslat({ veri, ortam } = {}) {
   for (const d of ['telefon', 'sunucu']) kopyala(path.join(PAKET, d), path.join(klasor, d));
   if (veri) fs.writeFileSync(path.join(klasor, 'sunucu', 'veri.json'), JSON.stringify({ zaman: 1, degisim: {}, ...veri }));
   const port = await bosPort();
-  const surec = spawn(process.execPath, [path.join(klasor, 'sunucu', 'sunucu.js')], { env: { ...process.env, PORT: String(port), EXIT_YONETICI_SIFRE: YONETICI_SIFRE, VERI_HEMEN_KAYDET: '1', ...ortam }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const surec = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(klasor, 'sunucu', 'sunucu.js')], { env: { ...process.env, PORT: String(port), EXIT_YONETICI_SIFRE: YONETICI_SIFRE, VERI_HEMEN_KAYDET: '1', ...ortam }, stdio: ['ignore', 'pipe', 'pipe'] });
   let cikti = '';
   await new Promise((ok, red) => {
     const z = setTimeout(() => red(new Error('sunucu açılmadı:\n' + cikti)), 10000);
@@ -38,7 +38,12 @@ async function sunucuBaslat({ veri, ortam } = {}) {
   const url = `http://127.0.0.1:${port}`;
   const s = {
     url, klasor, port,
-    veri: () => JSON.parse(fs.readFileSync(path.join(klasor, 'sunucu', 'veri.json'), 'utf8')),
+    // sunucunun verisi (veri.sqlite; DEPO=json ile veri.json). veriKlasoru: VERI_KLASORU verildiyse o klasör
+    veri(veriKlasoru = path.join(klasor, 'sunucu')) {
+      const { veriOku } = require(path.join(klasor, 'sunucu', 'lib', 'depo.js'));
+      const sq = path.join(veriKlasoru, 'veri.sqlite');
+      return veriOku(fs.existsSync(sq) ? sq : path.join(veriKlasoru, 'veri.json'));
+    },
     /** API çağrısı. secenek: { cerez, uyg: 'bayi'|'satis', basliklar } */
     async api(yol, govde, secenek = {}) {
       const h = { 'X-Exit-Uyg': secenek.uyg || 'satis', ...(secenek.basliklar || {}) };

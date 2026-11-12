@@ -51,9 +51,9 @@ describe('Eski sürümden geçiş', () => {
     const s = await sunucuBaslat({ ortam: { VERI_KLASORU: vk, HOST: '127.0.0.1', GUVENILIR_VEKIL: '1' } });
     try {
       await s.kayit('vpsbayi');
-      assert.ok(JSON.parse(fs.readFileSync(path.join(vk, 'veri.json'), 'utf8')).veri['exb-kullanicilar'].includes('vpsbayi'));
+      assert.ok(s.veri(vk).veri['exb-kullanicilar'].includes('vpsbayi'));
       for (const d of ['dosyalar', 'kayitlar', 'yedek']) assert.ok(fs.existsSync(path.join(vk, d)), d);
-      assert.ok(!fs.existsSync(path.join(s.klasor, 'sunucu', 'veri.json')), 'program klasörüne veri yazılmaz');
+      assert.ok(!fs.readdirSync(path.join(s.klasor, 'sunucu')).some(f => /^veri\.(json|sqlite)/.test(f)), 'program klasörüne veri yazılmaz');
       const disAdres = Object.values(os.networkInterfaces()).flat().find(x => x && x.family === 'IPv4' && !x.internal);
       if (disAdres) await assert.rejects(fetch(`http://${disAdres.address}:${s.port}/api/oturum`), 'dış adresten bağlanılamaz');
       // Caddy arkasında: https bilgisi vekilden gelir, çerez Secure olur

@@ -17,7 +17,7 @@ class Fiyatlar {
   constructor(katalogYolu, ham) {
     this.ham = ham;
     const V = JSON.parse(fs.readFileSync(katalogYolu, 'utf8'));
-    this.urunler = (V.urunler || V).map(u => ({ id: u.id, ad: u.ad, kategori: u.kategori, secenek: (u.secenek || []).map(s => ({ ad: s.ad, fiyat: s.fiyat })) }));
+    this.urunler = (V.urunler || V).map(u => ({ id: u.id, ad: u.ad, kategori: u.kategori, secenek: (u.secenek || []).map(s => ({ ad: s.ad, sinif: s.sinif, fiyat: s.fiyat })) }));
     this.id = new Map(this.urunler.map(u => [u.id, u]));
   }
 
@@ -31,15 +31,21 @@ class Fiyatlar {
     return en;
   }
 
-  /** @returns {number|null} bayinin bu seçenek için ödemesi gereken birim fiyat; null: fiyat yok (teklif) */
-  beklenen(u, secenekAd, kul) {
+  /** Bayinin bu seçenekteki fiyat bilgisi: liste fiyatı, bayi fiyatı (kampanyalı), kampanya; seçenek yoksa null */
+  bilgi(u, secenekAd, kul) {
     const s = u.secenek.find(x => x.ad === secenekAd); if (!s) return null;
     const FY = coz(this.ham('exb-fiyat'), {}) || {}, f = (FY[u.ad] || {})[s.ad];
     const liste = f != null && f !== '' ? +f : s.fiyat;
-    if (liste == null || !isFinite(liste)) return null;
+    if (liste == null || !isFinite(liste)) return { secenek: s, liste: null, fiyat: null, kampanya: null };
     const k = this.kampanya(u, kul);
-    return k ? Math.round(liste * (1 - k.oran / 100)) : liste;
+    return { secenek: s, liste, fiyat: k ? Math.round(liste * (1 - k.oran / 100)) : liste, kampanya: k ? { ad: k.ad, oran: k.oran, bit: k.bit || null } : null };
   }
+
+  /** @returns {number|null} bayinin bu seçenek için ödemesi gereken birim fiyat; null: fiyat yok (teklif) */
+  beklenen(u, secenekAd, kul) { const b = this.bilgi(u, secenekAd, kul); return b ? b.fiyat : null; }
+
+  /** Gizlenen ürünler (satışın katalogdan kaldırdıkları) */
+  gizli() { return new Set(coz(this.ham('exb-gizli'), []) || []); }
 
   teklifFiyati(no, urunId, kul) {
     if (!no) return null;

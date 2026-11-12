@@ -11,7 +11,7 @@ User=exit
 Group=exit
 WorkingDirectory=/opt/exit/sunucu
 EnvironmentFile=/etc/exit/ortam
-ExecStart=/usr/bin/node /opt/exit/sunucu/sunucu.js
+ExecStart=/usr/bin/node --disable-warning=ExperimentalWarning /opt/exit/sunucu/sunucu.js
 Restart=on-failure
 RestartSec=3
 # kapanırken bekleyen yazmalar diske aktarılır (SIGTERM)

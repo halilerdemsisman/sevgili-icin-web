@@ -1,7 +1,7 @@
 # EXIT Garden: Bayi Web Sitesi ve Satış Masaüstü Uygulaması
 ## Analiz ve Faz Planı
 
-Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0, Faz 1a ve Faz 1b-1 tamamlandı)
+Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0, 1a, 1b-1 ve 1b-2 tamamlandı)
 Girdi: `Bayi_Satis_Kod.zip` (iki HTML uygulama, sunucu, PWA, modüller, ekran görüntüleri) ve `BAYI_SATIS_RAPOR.md`.
 
 Hedef:
@@ -29,15 +29,15 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 0 | Hazırlık ve kaynak düzeni | Kod repoda, görseller dosya, katalog JSON, mevcut davranışın test kaydı |
 | 1a | Güvenli geçiş sunucusu (giriş, yetki, numara, dosyalar) — mevcut ekranlarla | Veriler korunuyor; sipariş no sunucuda; dosyalar diskte; internete açılabilir |
 | 1b-1 | Canlıya geçiş (VPS) | Sunucuda fiyat denetimi, şifre değiştirme/sıfırlama, VPS kurulum ve taşınma paketi |
-| 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda; Faz 2–3'ün temeli |
+| 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda, anlık bildirim, yapay zekâ anahtarı sunucuda, REST v1; Faz 2–3'ün temeli |
 | 2 | Bayi web sitesi | `bayi.exitgarden.com`, responsive, PWA, API'ye bağlı |
 | 3 | Satış masaüstü uygulaması | Windows kurulumu, otomatik güncelleme, masaüstü özellikleri |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 2 ve Faz 3, Faz 1b-2 tamamlandıktan sonra paralel yürüyebilir.
+Faz 1 tamamlandı; Faz 2 ve Faz 3 paralel yürüyebilir.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ (bkz. bölüm 5) · **sıradaki adım: canlı verinin VPS'e taşınması** (`dagitim/TASINMA.md`) · ardından Faz 1b-2.
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 2 (bayi web sitesi) ve Faz 3 (satış masaüstü).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -98,7 +98,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | G3 | 🔴 | Şifre özeti tuzsuz SHA-256 (`'exitbayi:' + şifre`). Sızarsa sözlük saldırısıyla kolayca çözülür | `ozet()`, bkz. bölüm 8 | ✅ 1a (scrypt; eski özetler ilk girişte yükseltilir) |
 | G4 | 🔴 | Yetki (temsilci/bayi ayrımı, onay yetkisi) yalnız arayüzde. Tarayıcı konsolundan her şey değiştirilebilir | `ben` nesnesi istemcide | ✅ 1a (sunucu süzer ve denetler) |
 | G5 | 🟠 | Varsayılan yönetici `satis / 1234`; giriş ekranında yazıyor | `satis/sablon.html:83`; testle doğrulandı (G5) | ✅ 1a |
-| G6 | 🟠 | Claude API anahtarı tarayıcıda saklanıp doğrudan tarayıcıdan çağrılıyor | `satis/parcalar/03-ana.js:299` | ⏳ 1b-2 |
+| G6 | 🟠 | Claude API anahtarı tarayıcıda saklanıp doğrudan tarayıcıdan çağrılıyor | `satis/parcalar/03-ana.js:299` | ✅ 1b-2 (anahtar sunucuda; istek sunucu üzerinden, model/alan/çıkış/saatlik sınırlı) |
 | G7 | 🟠 | Sunucu HTTP; oturum yönetimi, hız sınırı, kilitleme, işlem kaydının sunucuda tutulması yok | | ✅ 1a + 1b-1 (oturum, deneme sınırı, işlem kaydı, güvenlik başlıkları; VPS paketinde Caddy ile HTTPS, HSTS, güvenlik duvarı) |
 | G8 | 🟡 | HTML'in büyük kısmı `innerHTML` ile kuruluyor (bayi 48, satış 67 yer). `esc()` yardımcı fonksiyonu var; bayilerin girdiği metinlerin (firma adı, not, açıklama) her yerde kaçışlandığı denetlenmeli (XSS riski) | | ⏳ 2–3 |
 
@@ -107,9 +107,9 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 |---|---|---|---|
 | V1 | 🔴 | **Sipariş numarası çakışması.** Numara tarayıcıda `o yılki sipariş sayısı + 1` ile üretiliyor (`kaynak/bayi/parcalar/03-ana.js:294`). İki bayi 4 saniyelik senkron aralığında sipariş verirse ikisi de aynı numarayı alır. Sunucu `exb-siparisler`'i `no`'ya göre birleştirirken aynı no'lu kayıtta yeni geleni tutar; **ilk sipariş sessizce silinir**. Faz 0 testinde iki bayi aynı anda sipariş verdi, sunucuda tek sipariş kaldı. Aynı numaralandırma deseni iade (`IAD-`), online ödeme (`OL-`) ve teklif (`OT-`) numaralarında da var. | ✅ 1a (numara sunucudan; çakışan yeniden numaralanır) |
 | V2 | 🔴 | **Dosyalar localStorage'da.** Dekont (PDF ≤1,5 MB veya küçültülmüş fotoğraf), iade fotoğrafları, logo base64 olarak ortak anahtarlara yazılıyor. Her istemci tüm ortak veriyi `localStorage`'a yazar; Chromium'da ölçülen sınır ~8 milyon karakter. Sınır aşılınca senkron katmanındaki yükleme döngüsü ilk hatada durur: rozet "Sunucuya bağlı" der, ama o anahtar ve **sonrasındaki anahtarlar tarayıcıda yoktur** (Faz 0 testinde `exb-odeme` ve `exs-cari` yüklenmedi). Eksik veriyle çalışan kullanıcı birleştirme dışındaki bir anahtarı (ör. cari) güncellerse sunucudaki tam veriyi ezer. | ✅ 1a (dosyalar diske; tarayıcıya yalnız kendi verisi; eksik yükleme algılanır) |
-| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ◐ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir; diğer anahtarlar 1b-2 |
-| V4 | 🟠 | Fiyat/iskonto/kredi limiti hesapları istemcide. Sunucu, bayinin gönderdiği tutara güveniyor. | ◐ 1b-1: sipariş birim fiyatları sunucuda denetleniyor; kredi limiti 1b-2 |
-| V5 | 🟡 | Her açılışta ve her değişiklikte tüm veri gidip geliyor; sipariş sayısı arttıkça yavaşlar (ilk yükleme senkron XHR ile sayfayı kilitliyor). | ◐ 1a: herkes yalnız kendi verisini indirir |
+| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ◐ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir; diğer sözlük anahtarları Faz 2–3'te REST'e geçişle kalkar |
+| V4 | 🟠 | Fiyat/iskonto/kredi limiti hesapları istemcide. Sunucu, bayinin gönderdiği tutara güveniyor. | ✅ 1b-1 + 1b-2 (birim fiyat denetimi; kredi limiti sunucuda; REST siparişinde fiyatı sunucu belirler) |
+| V5 | 🟡 | Her açılışta ve her değişiklikte tüm veri gidip geliyor; sipariş sayısı arttıkça yavaşlar (ilk yükleme senkron XHR ile sayfayı kilitliyor). | ✅ 1a + 1b-2 (herkes yalnız kendi verisini indirir; 4 sn'lik yoklama yerine anlık bildirim) |
 
 ### 3.3 Kod ve bakım
 | # | Önem | Sorun | Durum |
@@ -200,7 +200,7 @@ uretim_planlama/
 │                         ortak/ (iki uygulamada aynı 9 blok), telefon/ (PWA dosyaları)
 ├── katalog/           ✅ urunler.json, gorsel/, kumas/, maske/ + maskeler.json
 ├── sunucu/            ✅ Faz 1a güvenli sunucu (sunucu.js + lib/: kimlik, kurallar, depo, dosya)
-│                         + lib/fiyat (1b-1) → ⏳ Faz 1b-2'de veritabanı şeması, REST API
+│                         + lib/fiyat (1b-1) + lib/limit, lib/rest, SQLite depo (1b-2)
 ├── dagitim/           ✅ Faz 1b-1: VPS kurulumu (kur.sh, systemd, Caddy, yedek, güncelleme) ve TASINMA.md
 ├── araclar/           ✅ derle, ayikla, sarmalama haritası, veri_incele
 ├── testler/           ✅ Playwright uçtan uca testleri (node:test)
@@ -286,18 +286,22 @@ Neden öne alındı: Sistem canlı veriyle internete (VPS) çıkacak ve bayiler 
 
 Test edilemeyenler: `kur.sh` gerçek bir Ubuntu VPS'te çalıştırılmadı (bu ortamda sözdizimi denetlendi, yedek betiği çalıştırıldı, systemd birimi doğrulandı). İlk kurulumda adımların çıktısı izlenmelidir.
 
-### Faz 1b-2: Veritabanı ve REST API (≈3 hafta)
-Amaç: Faz 2–3'ün üzerine kurulacağı kalıcı sunucu.
-1. Veritabanı şeması ve göç betiği: `veri.json` → SQLite (Node 22'nin yerleşik `node:sqlite` modülü değerlendirilecek; ek paket gerektirmez). Faz 1a'nın kural katmanı (`sunucu/lib/kurallar.js`) ve fiyat modülü tablo düzeyine taşınır.
-2. REST uç noktaları (ilk dalga): katalog, fiyat, sepet, sipariş (oluştur/listele/detay/değişiklik/iptal), onay, durum, cari, ödeme bildirimi + dekont yükleme, özel teklif, iade, numune, hatırlatma, duyuru, kampanya.
-3. Kredi limiti ve onay yetkisi (temsilci limiti) sunucuda; durum geçişleri sunucuda doğrulanır.
-4. Kendi kendine şifre sıfırlama (e-posta; SMTP sağlayıcısı seçimi gerekir).
-5. Claude API çağrıları sunucu üzerinden (anahtar sunucuda) (G6).
-6. SSE ile anlık olaylar (4 sn'lik yoklama yerine).
-7. Geçiş köprüsü: Faz 1a'nın anahtar–değer uçları, Faz 2–3 tamamlanana kadar REST ile aynı veritabanından beslenir.
+### Faz 1b-2: Veritabanı ve REST API ✅ tamamlandı
 
-Teslim: Çalışan API, API belgesi, göç betiği, birim testleri (fiyat/iskonto/limit/numara/yetki).
-Kabul: Faz 1a ve 1b-1 testleri geçmeye devam ediyor; REST uçları için yetki testleri; kredi limitini aşan sipariş temsilci tarafından onaylanamıyor.
+| Yapılan | Ayrıntı |
+|---|---|
+| SQLite veri deposu | `sunucu/lib/depo.js`: Node'un yerleşik `node:sqlite` modülü (ek paket yok). Her değişiklik anında ve atomik yazılır (WAL); önceki 300 ms'lik kayıp penceresi kalmadı. Kayıt listeleri (sipariş, ödeme, teklif, iade, numune, mesaj) `kayit` tablosunda satır satır, bayiye göre indeksli. Eski `veri.json` ilk açılışta içe alınır (mükerrer numaralı eski siparişler de korunur). Günlük yedek: `.sqlite` + `.json`. `--yedek` (çalışırken tutarlı yedek) ve `--disa-aktar` (eski biçim) komutları. Node 22.5 altı: otomatik JSON |
+| Kredi limiti sunucuda | `sunucu/lib/limit.js`: satış panelindeki risk hesabının aynısı. Temsilci limiti aşan siparişi ileri duruma geçiremez (iki sipariş anahtarında da) ve `limitOnay` yazamaz; yönetici onaylayabilir |
+| Anlık bildirim | `/api/olaylar` (SSE): her yazmada sinyal; istemci hemen çeker. Bağlantı açıkken yoklama 30 sn'ye iner (sunucu yükü azalır); bayi siparişi satışa 1 sn'nin altında düşer |
+| Yapay zekâ | Claude API anahtarı sunucuda (`gizli.json` veya `ANTHROPIC_API_KEY`); yönetici Ayarlar'dan girer. İstek sunucu üzerinden: yalnız `claude-opus-5-5`, izinli alanlar, en fazla 16000 çıkış, kullanıcı başına saatlik sınır, işlem kaydında token kullanımı. Tarayıcılarda kalmış eski anahtarlar silinir |
+| Satış kullanıcıları | Ayarlar'dan ekleme (geçici şifre) ve silme sunucu üzerinden. Faz 1a'dan kalan iki açık kapandı: silinen kullanıcı geri gelmiyor; şifre artık senkronla (tarayıcıda üretilen özetle) değiştirilemiyor |
+| REST API v1 | `sunucu/lib/rest.js`, belge `docs/API.md`: `ben`, `katalog` (bayiye özel fiyat), `siparisler` (listeleme/sayfalama/tek), `POST siparisler` (fiyat ve numara sunucuda), `cari`. Eşitleme ucuyla aynı veri ve kurallar |
+| Testler | 75 test; hem SQLite hem JSON depoyla geçiyor |
+
+Faz 2–3'e kalanlar:
+- Kendi kendine şifre sıfırlama (e-posta; SMTP sağlayıcısı kararı).
+- REST'in yazma uçlarının geri kalanı (ödeme bildirimi, iade, teklif, satış onayları). Bunlar yeni ekranlarla birlikte tasarlanacak.
+- Diğer sözlük anahtarlarında eşzamanlı yazma (V3): yeni ekranlar REST'e geçtikçe ortadan kalkar.
 
 ### Faz 2: Bayi web sitesi (≈4–5 hafta)
 1. Ekranlar modüllere bölünür, `localStorage` okuma/yazma çağrıları API istemcisiyle değiştirilir (sepet ve tercihler gibi kişisel durumlar da sunucuya).

@@ -18,11 +18,18 @@
 //   MRP_IZINLI_IP=            MRP'ye girişsiz erişebilecek IP'ler, virgülle (ör. şirketin sabit IP'si "85.1.2.3"; "85.1.2." ile başlayanlar)
 //                             Bunlar dışında MRP'ye yalnız satış paneline giriş yapmış kullanıcılar ve yerel ağ erişir.
 //   MRP_HERKESE_ACIK=0        1: MRP herkese açık (önerilmez)
-//   VERI_KLASORU=<bu klasör>  veri.json, dosyalar/, yedek/, kayitlar/ klasörü
+//   VERI_KLASORU=<bu klasör>  veri.sqlite (eski: veri.json), dosyalar/, yedek/, kayitlar/ klasörü
+//   DEPO=sqlite               json: veriyi veri.json'da tut (SQLite'ı olmayan eski Node sürümleri için)
+//   ANTHROPIC_API_KEY=        "Claude ile derin analiz" için API anahtarı (ya da yönetici Ayarlar ekranından girer)
+//   AI_SAATLIK=30             kullanıcı başına saatlik yapay zekâ isteği sınırı
 //
-// Komut: node sunucu.js --yonetici-sifre YENI_SIFRE [--kullanici satis]   şifreyi ayarlar ve çıkar
+// Komutlar: node sunucu.js --yonetici-sifre YENI_SIFRE [--kullanici satis]   şifreyi ayarlar ve çıkar
+//           node sunucu.js --disa-aktar cikti.json                          veriyi eski biçimde (veri.json) dışa aktarır
+//           node sunucu.js --yedek KLASOR                                   çalışırken tutarlı yedek: veri.sqlite + veri.json
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os');
-const { Depo, HANE } = require('./lib/depo');
+const { depoAc, HANE } = require('./lib/depo');
+const { Limitler } = require('./lib/limit');
+const { restKur } = require('./lib/rest');
 const { Kurallar, KISISEL } = require('./lib/kurallar');
 const { Dosyalar } = require('./lib/dosya');
 const { Fiyatlar } = require('./lib/fiyat');
@@ -34,15 +41,16 @@ const KOK = path.join(__dirname, '..');
 const VERI_KLASORU = ENV.VERI_KLASORU ? path.resolve(ENV.VERI_KLASORU) : __dirname;
 const VEKIL = ENV.GUVENILIR_VEKIL === '1';
 const KAYIT_ACIK = ENV.KAYIT_ACIK !== '0';
-const SURUM = '1a';
+const SURUM = '1b';
 
-const depo = new Depo(VERI_KLASORU);
+const depo = depoAc(VERI_KLASORU);
 const oturumlar = new K.Oturumlar(path.join(VERI_KLASORU, 'oturumlar.json'), +ENV.OTURUM_GUN || 7);
 const dosyalar = new Dosyalar(path.join(VERI_KLASORU, 'dosyalar'), depo.D.dosya);
 // Sipariş fiyat denetimi için katalog: pakette sunucu/katalog.json (derleme üretir), geliştirmede katalog/urunler.json
 const KATALOG = [path.join(__dirname, 'katalog.json'), path.join(KOK, 'katalog', 'urunler.json')].find(f => fs.existsSync(f));
 const fiyatlar = KATALOG ? new Fiyatlar(KATALOG, k => depo.al(k)) : null;
-const kurallar = new Kurallar({ ham: k => depo.al(k), yeniNo: (on, yil, hane) => depo.yeniNo(on, yil, hane), fiyatlar });
+const limitler = new Limitler(k => depo.al(k));
+const kurallar = new Kurallar({ ham: k => depo.al(k), yeniNo: (on, yil, hane) => depo.yeniNo(on, yil, hane), fiyatlar, limitler });
 const deneme = new K.DenemeSiniri();
 const SAHTE_OZET = K.sifreOzetle('kullanici-yok');
 const kayitSiniri = new K.DenemeSiniri({ kisi: 1e9, ip: 10 });
@@ -73,7 +81,33 @@ if (ai > 0) {
   try { yoneticiSifresi(process.argv[ai + 1] || '', kul); depo.hemenKaydet(); console.log(`"${kul}" kullanıcısının şifresi ayarlandı.`); process.exit(0); }
   catch (e) { console.error(e.message); process.exit(1); }
 }
+const di = process.argv.indexOf('--disa-aktar');
+if (di > 0) { const h = path.resolve(process.argv[di + 1] || 'veri-disa.json'); depo.disaAktar(h); console.log('Dışa aktarıldı:', h); process.exit(0); }
+// tutarlı yedek (sunucu çalışırken de): <klasör>/veri.sqlite (VACUUM INTO) + <klasör>/veri.json (eski biçim)
+const yi = process.argv.indexOf('--yedek');
+if (yi > 0) {
+  const h = path.resolve(process.argv[yi + 1] || '.'); fs.mkdirSync(h, { recursive: true });
+  if (depo.tur === 'sqlite') depo.db.exec(`VACUUM INTO '${path.join(h, 'veri.sqlite').replace(/'/g, "''")}'`);
+  depo.disaAktar(path.join(h, 'veri.json')); console.log('Yedek:', h); process.exit(0);
+}
 if (ENV.EXIT_YONETICI_SIFRE) yoneticiSifresi(ENV.EXIT_YONETICI_SIFRE);
+
+// ---------- sunucuda saklanan gizli ayarlar (yapay zekâ anahtarı) ----------
+const GIZLI = path.join(VERI_KLASORU, 'gizli.json');
+const gizliOku = () => { try { return JSON.parse(fs.readFileSync(GIZLI, 'utf8')); } catch (e) { return {}; } };
+const gizliYaz = o => { fs.writeFileSync(GIZLI + '.tmp', JSON.stringify(o), { mode: 0o600 }); fs.renameSync(GIZLI + '.tmp', GIZLI); };
+const aiAnahtari = () => ENV.ANTHROPIC_API_KEY || gizliOku().aiAnahtar || '';
+const AI_TABAN = ENV.ANTHROPIC_TABAN_URL || 'https://api.anthropic.com';
+const AI_MODELLER = ['claude-opus-5-5'];
+const AI_ALANLAR = ['model', 'max_tokens', 'system', 'messages', 'output_config', 'fallbacks', 'thinking'];
+const aiSayac = new Map(); // kullanıcı → [zamanlar]
+
+// ---------- anlık bildirim (Server-Sent Events) ----------
+// Her yazma turunda bağlı istemcilere yalnız "değişti" sinyali gider (veri içermez); istemci kendi
+// görebileceği değişiklikleri /api/degisen ile çeker.
+const olayIstemcileri = new Set();
+depo.dinleyiciler.push(z => { for (const c of olayIstemcileri) c.write(`data: ${z}\n\n`); });
+setInterval(() => { for (const c of olayIstemcileri) c.write(': nabiz\n\n'); }, 25000).unref();
 
 // ---------- dosyalar: gömülü data URI'leri diske çıkar ----------
 function dosyaCikar(k, obj) {
@@ -137,12 +171,111 @@ function gorunurVeri(ot) {
   return veri;
 }
 
+// ---------- yazma: eşitleme ucu ve REST aynı yolu kullanır ----------
+// Kurallar → gömülü dosyaları çıkar → kaydet → (değiştiyse) zaman ilerlet + anlık bildirim → işlem kaydı.
+// birlesen: istemcinin yerel kopyasını düzeltmesi için sunucudaki (süzülmüş) son hâl.
+function uygula(ot, degisen, ip) {
+  const z = depo.yeniZaman(), birlesen = [], reddedilen = [], yazilan = [];
+  for (const [k, v] of degisen) {
+    if (typeof k !== 'string' || YEREL.test(k) || !/^ex[bs]-/.test(k)) continue;
+    const s = kurallar.yaz(k, v == null ? null : String(v), ot);
+    if (s.red) { reddedilen.push([k, s.red]); continue; }
+    (s.uyari || []).forEach(u => reddedilen.push([k, u]));
+    let deger = s.deger;
+    if (deger != null && deger.includes('data:')) { try { const o = JSON.parse(deger); if (dosyaCikar(k, o)) deger = JSON.stringify(o); } catch (e) { /* JSON olmayan düz değer: olduğu gibi */ } }
+    if (depo.koy(k, deger, z)) yazilan.push(k + (s.not && s.not.length ? ` (${s.not.join(', ')})` : ''));
+    if (k === 'exb-kullanicilar') Object.values(kullanicilar('bayi')).forEach(x => x && x.durum === 'pasif' && oturumlar.kullaniciyiKapat('bayi', x.kul));
+    const g = kurallar.oku(k, depo.al(k) ?? null, ot);
+    if (g !== undefined && g !== (v == null ? null : String(v))) birlesen.push([k, g]);
+  }
+  if (yazilan.length) { depo.zamanla(z); depo.kaydet(); islem('yazma', ot, yazilan.join('; '), ip); }
+  if (reddedilen.length) islem('red', ot, reddedilen.map(x => x.join(': ')).join('; '), ip);
+  return { birlesen, reddedilen, yazilan };
+}
+
+const rest = restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem, kullanicilar, oturum: (q, t) => tamOturum(oturum(q, t)) });
+
 // ---------- API ----------
 async function api(q, r, u, p, ip) {
   const tur = uygulama(q, u);
   if (q.method === 'POST' && !kaynakUygun(q)) return js(r, { hata: 'kaynak reddedildi' }, 403);
 
   if (p === '/api/oturum') return js(r, { oturum: oturumOzeti(oturum(q, tur)), surum: SURUM, kayitAcik: KAYIT_ACIK });
+
+  if (p.startsWith('/api/v1/')) return rest(q, r, u, p, ip, tur);
+
+  if (p === '/api/olaylar' && q.method === 'GET') {
+    const ot = tamOturum(oturum(q, tur)); if (!ot) return js(r, { hata: 'oturum yok' }, 401);
+    if (olayIstemcileri.size >= 1000) return js(r, { hata: 'meşgul' }, 503);
+    r.writeHead(200, { ...GUVENLIK, 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no', Connection: 'keep-alive' });
+    r.write('retry: 5000\n\n'); olayIstemcileri.add(r);
+    q.on('close', () => olayIstemcileri.delete(r));
+    return;
+  }
+
+  // ---- yapay zekâ: Claude isteği sunucu üzerinden (anahtar tarayıcıya gitmez) ----
+  if (p === '/api/ai/durum' && q.method === 'GET') {
+    const ot = tamOturum(oturum(q, 'satis')); if (!ot) return js(r, { hata: 'oturum yok' }, 401);
+    return js(r, { anahtarVar: !!aiAnahtari(), kaynak: ENV.ANTHROPIC_API_KEY ? 'ortam' : gizliOku().aiAnahtar ? 'ayarlar' : null });
+  }
+  if (p === '/api/ai/anahtar' && q.method === 'POST') {
+    const ot = tamOturum(oturum(q, 'satis'));
+    if (!ot || ot.rol !== 'yonetici') return js(r, { hata: 'Yalnız satış yöneticisi değiştirebilir.' }, 403);
+    let b; try { b = await govde(q, 1e4); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
+    const a = String(b.anahtar || '').trim(), G = gizliOku();
+    if (a && !/^sk-ant-[\w-]{20,}$/.test(a)) return js(r, { hata: 'Anahtar "sk-ant-" ile başlamalı.' }, 400);
+    if (a) G.aiAnahtar = a; else delete G.aiAnahtar;
+    gizliYaz(G); islem(a ? 'yapay zekâ anahtarı kaydedildi' : 'yapay zekâ anahtarı silindi', ot, '', ip);
+    return js(r, { ok: true, anahtarVar: !!aiAnahtari() });
+  }
+  if (p === '/api/ai/mesaj' && q.method === 'POST') {
+    const ot = tamOturum(oturum(q, 'satis')); if (!ot) return js(r, { hata: 'oturum yok' }, 401);
+    const anahtar = aiAnahtari(); if (!anahtar) return js(r, { error: { message: 'Sunucuda Claude API anahtarı tanımlı değil (Ayarlar).' } }, 400);
+    const L = (aiSayac.get(ot.kul) || []).filter(t => Date.now() - t < 3600e3);
+    if (L.length >= (+ENV.AI_SAATLIK || 30)) return js(r, { error: { message: 'Saatlik yapay zekâ istek sınırı doldu.' } }, 429);
+    let b; try { b = await govde(q, 2e6); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
+    if (!AI_MODELLER.includes(b.model)) return js(r, { error: { message: 'Bu model kullanılamaz.' } }, 400);
+    const istek = Object.fromEntries(AI_ALANLAR.filter(a => a in b).map(a => [a, b[a]]));
+    istek.max_tokens = Math.min(16000, Math.max(1, +istek.max_tokens || 4096));
+    L.push(Date.now()); aiSayac.set(ot.kul, L);
+    try {
+      const y = await fetch(AI_TABAN + '/v1/messages', {
+        method: 'POST', signal: AbortSignal.timeout(10 * 60e3),
+        headers: { 'content-type': 'application/json', 'x-api-key': anahtar, 'anthropic-version': '2023-06-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+        body: JSON.stringify(istek),
+      });
+      const metin = await y.text();
+      let u = ''; try { const j = JSON.parse(metin); if (j.usage) u = `girdi ${j.usage.input_tokens}, çıktı ${j.usage.output_tokens} token`; } catch (e) {}
+      islem('yapay zekâ', ot, `${istek.model} · HTTP ${y.status}${u ? ' · ' + u : ''}`, ip);
+      r.writeHead(y.status, { ...GUVENLIK, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      return r.end(metin);
+    } catch (e) {
+      islem('yapay zekâ hatası', ot, String(e.message || e), ip);
+      return js(r, { error: { message: 'Claude API\'ye ulaşılamadı: ' + (e.name === 'TimeoutError' ? 'zaman aşımı' : e.message) } }, 502);
+    }
+  }
+
+  // ---- satış kullanıcıları (yönetici): ekle / sil ----
+  if ((p === '/api/kullanici-ekle' || p === '/api/kullanici-sil') && q.method === 'POST') {
+    const ot = tamOturum(oturum(q, 'satis'));
+    if (!ot || ot.rol !== 'yonetici') return js(r, { hata: 'Yalnız satış yöneticisi kullanıcı ekleyip silebilir.' }, 403);
+    let b; try { b = await govde(q, 1e4); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
+    const kul = String(b.kul || '').trim().toLowerCase(), L = kullanicilar('satis');
+    if (p === '/api/kullanici-sil') {
+      if (kul === ot.kul) return js(r, { hata: 'Kendinizi silemezsiniz.' }, 400);
+      if (!L[kul]) return js(r, { hata: 'Kullanıcı bulunamadı.' }, 404);
+      delete L[kul]; kullaniciKaydet('satis', L); oturumlar.kullaniciyiKapat('satis', kul);
+      islem('satış kullanıcısı silindi', ot, kul, ip);
+      return js(r, { ok: true });
+    }
+    if (!/^[a-z0-9._-]{3,40}$/.test(kul)) return js(r, { hata: 'Kullanıcı adı en az 3 karakter olmalı (harf, rakam, . _ -).' }, 400);
+    if (L[kul]) return js(r, { hata: 'Bu kullanıcı adı var.' }, 409);
+    const gecici = geciciSifre();
+    L[kul] = { kul, ad: String(b.ad || '').trim().slice(0, 100) || kul, rol: b.rol === 'yonetici' ? 'yonetici' : 'temsilci', sifre: K.sifreOzetle(gecici), sifreDegistir: true };
+    kullaniciKaydet('satis', L);
+    islem('satış kullanıcısı eklendi', ot, `${kul} (${L[kul].rol})`, ip);
+    return js(r, { ok: true, gecici });
+  }
 
   if (p === '/api/veri' && q.method === 'GET') { const ot = oturum(q, tur); return js(r, { zaman: depo.zaman, veri: gorunurVeri(tamOturum(ot)), oturum: oturumOzeti(ot) }); }
 
@@ -163,20 +296,7 @@ async function api(q, r, u, p, ip) {
     if (ot.sifreDegistir) return js(r, { hata: 'Önce şifrenizi değiştirin.' }, 403);
     let b; try { b = await govde(q, 60e6); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
     if (!Array.isArray(b.degisen)) return js(r, { hata: 'geçersiz istek' }, 400);
-    const z = depo.yeniZaman(), birlesen = [], reddedilen = [], yazilan = [];
-    for (const [k, v] of b.degisen) {
-      if (typeof k !== 'string' || YEREL.test(k) || !/^ex[bs]-/.test(k)) continue;
-      const s = kurallar.yaz(k, v == null ? null : String(v), ot);
-      if (s.red) { reddedilen.push([k, s.red]); continue; }
-      let deger = s.deger;
-      if (deger != null && deger.includes('data:')) { try { const o = JSON.parse(deger); if (dosyaCikar(k, o)) deger = JSON.stringify(o); } catch (e) { /* JSON olmayan düz değer: olduğu gibi */ } }
-      if (depo.koy(k, deger, z)) yazilan.push(k + (s.not && s.not.length ? ` (${s.not.join(', ')})` : ''));
-      if (k === 'exb-kullanicilar') Object.values(kullanicilar('bayi')).forEach(x => x && x.durum === 'pasif' && oturumlar.kullaniciyiKapat('bayi', x.kul));
-      const g = kurallar.oku(k, depo.al(k) ?? null, ot);
-      if (g !== undefined && g !== (v == null ? null : String(v))) birlesen.push([k, g]);
-    }
-    if (yazilan.length) { depo.zamanla(z); depo.kaydet(); islem('yazma', ot, yazilan.join('; '), ip); }
-    if (reddedilen.length) islem('red', ot, reddedilen.map(x => x.join(': ')).join('; '), ip);
+    const { birlesen, reddedilen } = uygula(ot, b.degisen, ip);
     return js(r, { ok: true, zaman: depo.zaman, birlesen, reddedilen });
   }
 
@@ -284,7 +404,7 @@ const TIP = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.j
 const YASAK = [path.join(KOK, 'sunucu'), VERI_KLASORU];
 
 // kapanırken bekleyen yazmaları diske aktar
-for (const sinyal of ['SIGINT', 'SIGTERM']) process.on(sinyal, () => { try { depo.hemenKaydet(); } catch (e) { console.error(e); } process.exit(0); });
+for (const sinyal of ['SIGINT', 'SIGTERM']) process.on(sinyal, () => { try { depo.hemenKaydet(); if (depo.kapat) depo.kapat(); } catch (e) { console.error(e); } process.exit(0); });
 
 http.createServer(async (q, r) => {
   const u = new URL(q.url, 'http://x'), ip = istemciIp(q);
@@ -322,7 +442,8 @@ http.createServer(async (q, r) => {
 }).listen(PORT, ENV.HOST || undefined, () => {
   const ag = Object.values(os.networkInterfaces()).flat().filter(x => x && x.family === 'IPv4' && !x.internal).map(x => x.address);
   const S = kullanicilar('satis'), gecerli = Object.values(S).some(x => x && x.sifre && x.sifre !== K.VARSAYILAN_SATIS_OZETI);
-  console.log('EXIT Garden sunucusu çalışıyor (sürüm ' + SURUM + ').\n  Bayi portalı : http://localhost:' + PORT + '/\n  Satış paneli : http://localhost:' + PORT + '/satis\n  MRP          : http://localhost:' + PORT + '/mrp (yerel ağ, izinli IP veya satış girişi)' + ag.map(a => '\n  Ağdan       : http://' + a + ':' + PORT + '/  ,  /satis  ve  /mrp').join('') + '\n  Veri klasörü : ' + VERI_KLASORU);
+  console.log('EXIT Garden sunucusu çalışıyor (sürüm ' + SURUM + ').\n  Bayi portalı : http://localhost:' + PORT + '/\n  Satış paneli : http://localhost:' + PORT + '/satis\n  MRP          : http://localhost:' + PORT + '/mrp (yerel ağ, izinli IP veya satış girişi)' + ag.map(a => '\n  Ağdan       : http://' + a + ':' + PORT + '/  ,  /satis  ve  /mrp').join('') + '\n  Veri klasörü : ' + VERI_KLASORU + ' (' + (depo.tur === 'sqlite' ? 'veri.sqlite' : 'veri.json') + ')');
+  if (depo.ice) console.log(`\n  Eski veri.json içe alındı: ${depo.ice.anahtar} anahtar. Dosya "${depo.ice.dosya}" adıyla saklandı.`);
   if (!gecerli) console.log('\n  ⚠ Satış paneline giriş yapılabilecek bir hesap yok. Yönetici şifresini belirleyin:\n      node sunucu.js --yonetici-sifre YENI_SIFRE');
   if (VEKIL && !['127.0.0.1', '::1', 'localhost'].includes(ENV.HOST || '')) console.log('\n  ⚠ GUVENILIR_VEKIL=1 iken HOST=127.0.0.1 verin; aksi hâlde port doğrudan erişilirse X-Forwarded-For başlığı taklit edilebilir.');
   if (!VEKIL && ENV.HTTPS !== '1') console.log('\n  Not: Sunucu HTTP. İnternete açmadan önce önüne HTTPS (Caddy/Nginx) koyun ve GUVENILIR_VEKIL=1 verin.');

@@ -47,6 +47,54 @@
     return sonuc;
   };
 
+  // Tarayıcıda kalmış eski Claude API anahtarını sil (anahtar artık sunucuda tutulur)
+  try { localStorage.removeItem('exs-ai-anahtar'); } catch (x) {}
+
+  // Ayarlar: Claude API anahtarı ve satış kullanıcıları kartları sunucu üzerinden çalışır
+  const _ay = ayarlar;
+  ayarlar = function () {
+    const sonuc = _ay.apply(this, arguments);
+    const yon = window.EXIT_OTURUM && EXIT_OTURUM.rol === 'yonetici';
+    const aiKart = $('#aKey') && $('#aKey').closest('.kart');
+    if (aiKart) {
+      aiKart.innerHTML = `<h3>Claude API anahtarı</h3><div class="alt">“Claude ile derin analiz” için gerekir. Anahtar sunucuda saklanır, tarayıcılara gönderilmez; analizde yalnız toplu satış özeti (müşteri iletişim bilgisi olmadan) gönderilir.</div>
+        <div id="aiDurum" class="kucuk">Durum okunuyor…</div>
+        ${yon ? `<div class="alan" style="margin-top:8px"><label>Yeni anahtar</label><input id="aiYeni" type="password" placeholder="sk-ant-…" autocomplete="off"></div><button class="btn" id="aiKaydet">Kaydet</button> <button class="btn cizgi" id="aiSil">Sil</button>` : '<p class="kucuk">Anahtarı satış yöneticisi tanımlar.</p>'}`;
+      const durum = () => fetch('api/ai/durum', { headers: { 'X-Exit-Uyg': 'satis' } }).then(r => r.json()).then(j => { const d = $('#aiDurum'); if (d) d.innerHTML = j.anahtarVar ? `✓ Anahtar tanımlı${j.kaynak === 'ortam' ? ' (sunucu ayarlarından)' : ''}` : '<span style="color:#b91c1c">Anahtar tanımlı değil</span>'; }).catch(() => {});
+      durum();
+      if (yon) {
+        const gonder = async a => { const r = await EXIT_API('api/ai/anahtar', { anahtar: a }); if (!r.ok) return toast(r.hata || 'Kaydedilemedi.'); $('#aiYeni').value = ''; toast(a ? 'Anahtar sunucuya kaydedildi.' : 'Anahtar silindi.'); durum(); };
+        $('#aiKaydet').onclick = () => { const a = $('#aiYeni').value.trim(); if (!a) return toast('Anahtarı yazın.'); gonder(a); };
+        $('#aiSil').onclick = () => gonder('');
+      }
+    }
+    const kKart = $('#yEkle') && $('#yEkle').closest('.kart');
+    if (kKart) {
+      const ciz = () => {
+        const K = oku('exs-kullanicilar', {}) || {}, ben = window.EXIT_OTURUM ? EXIT_OTURUM.kul : '';
+        const ROL = { yonetici: 'Yönetici', temsilci: 'Temsilci' }, rol = u => u.rol || (u.kul === 'satis' ? 'yonetici' : 'temsilci');
+        kKart.innerHTML = `<h3>Satış ekibi kullanıcıları</h3><div class="alt">Panele giriş yapabilecek kişiler. Yeni kullanıcıya geçici şifre verilir; ilk girişte kendi şifresini belirler. Rol ve bayi ataması "Temsilciler ve işlem kaydı" ekranındadır.</div>
+          <table class="tablo">${Object.values(K).filter(u => u && u.kul).map(u => `<tr><td><b>${esc(u.kul)}</b><div class="kucuk">${esc(u.ad || '')} · ${ROL[rol(u)]}${u.sifreDegistir ? ' · ilk giriş bekleniyor' : ''}</div></td><td class="sag-hiza">${u.kul === ben ? '<span class="kucuk">siz</span>' : yon ? `<button class="btn kucuk cizgi" data-ksil="${esc(u.kul)}">Sil</button>` : ''}</td></tr>`).join('')}</table>
+          ${yon ? `<div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end;margin-top:12px"><div class="alan"><label>Kullanıcı adı</label><input id="kyKul"></div><div class="alan"><label>Ad soyad</label><input id="kyAd"></div><div class="alan"><label>Rol</label><select id="kyRol"><option value="temsilci">Temsilci</option><option value="yonetici">Yönetici</option></select></div><div class="alan"><button class="btn" id="kyEkle">Ekle</button></div></div><div id="kySonuc" style="margin-top:8px"></div>` : ''}`;
+        kKart.querySelectorAll('[data-ksil]').forEach(b => b.onclick = async () => {
+          if (b.dataset.onay !== '1') { b.dataset.onay = '1'; b.textContent = 'Emin misiniz?'; return; }
+          const r = await EXIT_API('api/kullanici-sil', { kul: b.dataset.ksil }); if (!r.ok) return toast(r.hata || 'Silinemedi.');
+          const K2 = oku('exs-kullanicilar', {}) || {}; delete K2[b.dataset.ksil]; try { localStorage.setItem('exs-kullanicilar', JSON.stringify(K2)); } catch (x) {}
+          toast('Kullanıcı silindi.'); ciz();
+        });
+        const e = kKart.querySelector('#kyEkle'); if (e) e.onclick = async () => {
+          const kul = $('#kyKul').value.trim().toLowerCase(), r = await EXIT_API('api/kullanici-ekle', { kul, ad: $('#kyAd').value.trim(), rol: $('#kyRol').value });
+          if (!r.ok) return $('#kySonuc').innerHTML = `<span style="color:#b91c1c">${esc(r.hata || 'Eklenemedi.')}</span>`;
+          const K2 = oku('exs-kullanicilar', {}) || {}; K2[kul] = { kul, ad: $('#kyAd').value.trim() || kul, rol: $('#kyRol').value, sifreDegistir: true }; try { localStorage.setItem('exs-kullanicilar', JSON.stringify(K2)); } catch (x) {}
+          ciz();
+          $('#kySonuc').innerHTML = `<div>${esc(kul)} için geçici şifre: <b id="kyGecici" style="font-family:ui-monospace,monospace;font-size:16px">${esc(r.gecici)}</b></div><div class="kucuk">Şifreyi kişiye güvenli bir kanaldan iletin; bir daha gösterilmez.</div>`;
+        };
+      };
+      ciz();
+    }
+    return sonuc;
+  };
+
   $('#cikis').onclick = async () => {
     await EXIT_API('api/cikis').catch(() => {});
     try { sessionStorage.removeItem('exs-oturum'); } catch (x) {}

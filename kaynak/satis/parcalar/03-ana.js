@@ -296,9 +296,12 @@ async function claudeSwot(s) {
     son3ay_vs_onceki3ay_yuzde: s.buyume == null ? null : +s.buyume.toFixed(1), aylik_net: s.aylar.map(a => [a.ad + ' ' + a.yil, Math.round(a.net)]),
     kategori: s.kat.map(([k, v]) => [k, Math.round(v)]), en_iyi_musteriler_payi_ilk3_yuzde: +s.ilk3Pay.toFixed(1), urun_adet: s.urun.slice(0, 15), urun_tipi_adet: s.sinif,
     iskelet_rengi: s.isk, kumas: s.kum, file: s.fil, bekleyen_talep: s.bekleyen, iptal: s.iptal, kayitli_musteri: s.musteri, aktif_musteri: s.aktifMus, hic_satilmayan_urun_sayisi: s.satilmayan.length, usd_try: KUR.TRY };
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  // Sunucuya bağlıyken istek sunucu üzerinden gider (API anahtarı sunucuda, tarayıcıda değil)
+  const sunucu = window.EXIT_SUNUCU;
+  const r = await fetch(sunucu ? 'api/ai/mesaj' : 'https://api.anthropic.com/v1/messages', {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-api-key': anahtar, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
+    headers: sunucu ? { 'content-type': 'application/json', 'X-Exit-Uyg': 'satis' }
+      : { 'content-type': 'application/json', 'x-api-key': anahtar, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'anthropic-beta': 'server-side-fallback-2026-07-01' },
     body: JSON.stringify({ model: 'claude-opus-5-5', max_tokens: 16000, fallbacks: 'default', output_config: { effort: 'medium' },
       system: 'Bir dış mekân mobilya üreticisinin (EXIT Garden, Türkiye) satış müdürüne danışmanlık yapıyorsun. Bayilere USD fiyatla satış yapılıyor. Verilen satış özetine dayanarak Türkçe, somut ve verilere atıf yapan bir SWOT analizi ve uygulanabilir öneriler üret. Veride olmayan şeyi kesin bilgi gibi yazma. Yanıtı yalnızca şu JSON biçiminde ver: {"guclu":[...],"zayif":[...],"firsat":[...],"tehdit":[...],"oneriler":[{"baslik":"...","aciklama":"..."}]}',
       messages: [{ role: 'user', content: 'Satış verisi özeti:\n' + JSON.stringify(ozetVeri) }] })
@@ -320,7 +323,7 @@ function swotCiz(r, kaynak) {
 }
 function ai() {
   $('#baslik').textContent = 'Yapay zekâ: SWOT ve öneriler';
-  const s = istatistik(), anahtar = oku('exs-ai-anahtar', '');
+  const s = istatistik(), anahtar = window.EXIT_SUNUCU ? 'sunucuda' : oku('exs-ai-anahtar', '');
   $('#ustSag').innerHTML = `<button class="btn marka" id="aiBtn" ${anahtar ? '' : 'title="Ayarlar\'dan Claude API anahtarı girin"'}>Claude ile derin analiz</button>`;
   $('#icerik').innerHTML = (s.siparis ? '' : '<div class="kart kucuk">Henüz sipariş verisi yok; analiz verisiz yapılırsa genel kalır. Ayarlar\'dan örnek veri oluşturabilirsiniz.</div>') + `<div id="swot">${swotCiz(yerelSwot(s), 'Yerel analiz motoru (satış verilerinden otomatik)')}</div>`;
   const kayitli = oku('exs-ai-son', null); if (kayitli) $('#swot').insertAdjacentHTML('afterbegin', '<div class="kucuk" style="margin-bottom:8px">Son Claude analizi aşağıda; yenilemek için düğmeye basın.</div>' + swotCiz(kayitli.r, 'Claude analizi (' + kayitli.zaman + ')') + '<hr style="margin:24px 0;border:0;border-top:1px solid var(--cizgi)">');

@@ -3,30 +3,36 @@
 // Kişisel veri yazdırmaz; yalnızca sayılar, boyutlar ve uyarılar.
 //
 // Kullanım:
-//   node araclar/veri_incele.mjs [veri.json yolu] [--yedek-klasoru yedekler] [--md rapor.md]
-// Varsayılan yol: sunucu/veri.json   Varsayılan yedek klasörü: yedekler/ (git'e girmez)
+//   node araclar/veri_incele.mjs [veri.sqlite veya veri.json yolu] [--yedek-klasoru yedekler] [--md rapor.md]
+// Varsayılan yol: sunucu/veri.sqlite (yoksa veri.json)   Varsayılan yedek klasörü: yedekler/ (git'e girmez)
+// SQLite okumak için Node 22.5+ gerekir.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const KOK = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const arg = process.argv.slice(2);
 const secenek = ad => { const i = arg.indexOf(ad); if (i < 0) return null; const v = arg[i + 1]; arg.splice(i, 2); return v; };
 const yedekKlasoru = secenek('--yedek-klasoru') || path.join(KOK, 'yedekler');
 const mdYolu = secenek('--md');
-const dosya = arg[0] || path.join(KOK, 'sunucu', 'veri.json');
+const vars = ['veri.sqlite', 'veri.json'].map(f => path.join(KOK, 'sunucu', f)).find(f => fs.existsSync(f)) || path.join(KOK, 'sunucu', 'veri.sqlite');
+const dosya = arg[0] || vars;
 
 if (!fs.existsSync(dosya)) { console.error('Dosya yok:', dosya); process.exit(1); }
 
 // 1) Yedek
 fs.mkdirSync(yedekKlasoru, { recursive: true });
 const damga = new Date().toISOString().replace(/[:.]/g, '-');
+const sqliteMi = /\.sqlite$/.test(dosya);
+// SQLite: tutarlı kopya için sunucunun depo modülüyle okunup JSON (eski biçim) olarak yedeklenir
+const { veriOku } = sqliteMi ? createRequire(import.meta.url)(path.join(KOK, 'sunucu', 'lib', 'depo.js')) : {};
 const yedek = path.join(yedekKlasoru, `veri-${damga}.json`);
-fs.copyFileSync(dosya, yedek);
+if (sqliteMi) fs.writeFileSync(yedek, JSON.stringify(veriOku(dosya))); else fs.copyFileSync(dosya, yedek);
 
 // 2) Oku
-const D = JSON.parse(fs.readFileSync(dosya, 'utf8'));
+const D = sqliteMi ? veriOku(dosya) : JSON.parse(fs.readFileSync(dosya, 'utf8'));
 const V = D.veri || {};
 const oku = (k, v) => { try { return V[k] == null ? v : JSON.parse(V[k]); } catch { return v; } };
 const kb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : (n / 1024).toFixed(1) + ' KB';

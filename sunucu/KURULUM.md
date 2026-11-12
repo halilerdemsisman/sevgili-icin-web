@@ -1,4 +1,4 @@
-# EXIT Garden ortak sunucu kurulumu (sürüm 1a + 1b-1)
+# EXIT Garden ortak sunucu kurulumu (sürüm 1b)
 
 > **VPS'e kurulum ve şirket sunucusundan taşınma:** `dagitim/TASINMA.md` (adım adım, hazır betiklerle). Bu belge sunucunun genel ayarlarını anlatır.
 
@@ -17,11 +17,15 @@ Sürüm 1a ile gelen güvenlik düzeni:
 - Sipariş fiyatları sunucuda katalogla denetlenir: bayinin yazdığı birim fiyat güncel bayi fiyatının (kampanya ve onaylı özel teklif dahil) altındaysa düzeltilir, satış panelinde uyarı görünür.
 - Şifre değiştirme (herkes) ve geçici şifreyle sıfırlama (satış yöneticisi) var.
 - MRP'ye yerel ağdan, izinli IP'lerden veya satış paneline giriş yapmış kullanıcılar erişir.
+- Kredi limiti sunucuda denetlenir: temsilci limiti aşan siparişi onaylayamaz; yönetici gerekçeyle onaylayabilir.
+- Değişiklikler diğer ekranlara anlık bildirimle (SSE) 1 saniyenin altında yansır.
+- "Claude ile derin analiz" sunucu üzerinden çalışır. API anahtarı sunucuda tutulur, tarayıcılara gitmez.
+- REST API v1 (bayi web sitesi ve masaüstü uygulaması için): `docs/API.md`.
 
 ## 1. Gereken
 
 - Sürekli açık bir bilgisayar veya sunucu (Windows, macOS ya da Linux).
-- Node.js 18 veya üstü, LTS önerilir (https://nodejs.org). Başka paket gerekmez.
+- Node.js **22.5 veya üstü** (https://nodejs.org, LTS). Veri, Node'un yerleşik SQLite modülüyle `veri.sqlite` dosyasında tutulur; başka paket gerekmez. Daha eski Node sürümünde sunucu otomatik olarak `veri.json`'a döner (`DEPO=json` ile de seçilebilir).
 
 ## 2. İlk kurulum
 
@@ -35,7 +39,10 @@ Sürüm 1a ile gelen güvenlik düzeni:
 3. Sunucuyu başlatın:
    - Windows: `sunucu/baslat_windows.bat` dosyasına çift tıklayın.
    - macOS/Linux: `cd sunucu && node sunucu.js`
-4. Satış paneline (`http://SUNUCU-IP:8080/satis`) `satis` ve belirlediğiniz şifreyle girin. Temsilcileri "Temsilciler ve işlem kaydı" ekranından ekleyin.
+4. Satış paneline (`http://SUNUCU-IP:8080/satis`) `satis` ve belirlediğiniz şifreyle girin.
+5. **Ayarlar** ekranında:
+   - **Satış ekibi kullanıcıları:** Temsilci ve yönetici ekleyin. Her yeni kullanıcıya geçici şifre verilir; kişi ilk girişte kendi şifresini belirler. Bayi ataması "Temsilciler ve işlem kaydı" ekranındadır.
+   - **Claude API anahtarı:** İsteğe bağlı. Anahtar sunucuda saklanır. Alternatif olarak `ANTHROPIC_API_KEY` ortam değişkeni verilebilir.
 
 Bayiler portalda "Kayıt ol" ile hesap açar (şifre en az 8 karakter). Her yeni kayıt satış panelindeki işlem kaydına düşer. Kendi kendine kaydı kapatmak için: `KAYIT_ACIK=0`.
 
@@ -66,6 +73,9 @@ Bayiler portalda "Kayıt ol" ile hesap açar (şifre en az 8 karakter). Her yeni
 | `MRP_IZINLI_IP` | — | MRP'ye girişsiz erişebilecek IP'ler, virgülle (ör. şirketin sabit IP'si `85.1.2.3`; `85.1.2.` ile başlayanlar). Bunların dışında MRP'ye yerel ağ ve satış paneline giriş yapmış kullanıcılar erişir |
 | `MRP_HERKESE_ACIK` | 0 | `1`: MRP herkese açık (önerilmez; MRP'nin kendi girişi yok) |
 | `VERI_KLASORU` | `sunucu/` | Veri, dosya, yedek ve kayıt klasörü |
+| `DEPO` | sqlite | `json`: veriyi `veri.json`'da tut (eski Node sürümleri) |
+| `ANTHROPIC_API_KEY` | — | Claude API anahtarı (Ayarlar'dan girilen anahtarın yerine geçer) |
+| `AI_SAATLIK` | 30 | Kullanıcı başına saatlik yapay zekâ isteği sınırı |
 | `EXIT_YONETICI_SIFRE` | — | Her açılışta `satis` şifresini ayarlar (otomasyon için; normalde komut satırını kullanın) |
 
 Windows'ta: `set KAYIT_ACIK=0` sonra `node sunucu.js`.
@@ -90,15 +100,18 @@ HTTPS ile açıldığında bayiler portalı telefonlarına uygulama gibi kurabil
 
 | Yol | İçerik |
 |---|---|
-| `sunucu/veri.json` | Tüm iş verisi (siparişler, cari, kullanıcılar…) |
+| `sunucu/veri.sqlite` | Tüm iş verisi (siparişler, cari, kullanıcılar…). Eski `veri.json` ilk açılışta buraya alınır ve `veri.json.tasindi-…` adıyla saklanır |
+| `sunucu/gizli.json` | Claude API anahtarı (yalnız sunucu okur) |
 | `sunucu/dosyalar/` | Dekontlar, iade fotoğrafları, logolar |
 | `sunucu/oturumlar.json` | Açık oturumlar (silinirse herkes yeniden giriş yapar) |
 | `sunucu/kayitlar/islem-YYYY-AA.jsonl` | İşlem kaydı: giriş, hatalı giriş, kayıt, yazma, reddedilen yazma |
-| `sunucu/yedek/` | Günlük `veri-YYYY-AA-GG.json` (son 30 gün) ve `dosyalar/` kopyası |
+| `sunucu/yedek/` | Günlük `veri-YYYY-AA-GG.sqlite` ve `.json` (son 30 gün) ve `dosyalar/` kopyası |
 | `sunucu/mrp_veri.json` | MRP verisi |
 
 - Yedek her gün otomatik alınır. Yine de `yedek/` klasörünü düzenli olarak sunucu dışına (başka disk veya bulut) kopyalayın.
-- Geri dönmek için sunucuyu kapatın, istenen yedeği `veri.json` adıyla kopyalayın, sunucuyu başlatın.
+- Geri dönmek için sunucuyu kapatın, istenen `veri-….sqlite` yedeğini `veri.sqlite` adıyla kopyalayın (yanındaki `veri.sqlite-wal` ve `-shm` dosyalarını silin), sunucuyu başlatın.
+- Çalışırken tutarlı yedek: `node sunucu.js --yedek KLASOR` (veri.sqlite + veri.json).
+- Eski sürümün okuyabileceği biçimde dışa aktarma: `node sunucu.js --disa-aktar veri.json`.
 
 ## 7. Notlar
 

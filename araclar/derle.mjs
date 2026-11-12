@@ -62,7 +62,7 @@ yaz(path.join(DIST, 'exit_satis_paneli.html'), satis);
 kopyala(path.join(KAYNAK, 'telefon'), path.join(DIST, 'telefon'));
 yaz(path.join(DIST, 'telefon', 'index.html'), bayi);
 // sunucu: kod ve belgeler; çalışma verisi (veri.json, oturumlar, dosyalar, yedek, işlem kayıtları) pakete girmez
-const SUNUCU_VERISI = /^(veri|mrp_veri|oturumlar)\.json$|^(yedek|dosyalar|kayitlar|node_modules)$|\.tmp$/;
+const SUNUCU_VERISI = /^(veri|mrp_veri|oturumlar|gizli)\.json|^veri\.sqlite|^(yedek|dosyalar|kayitlar|node_modules)$|\.tmp$/;
 (function sunucuKopyala(kaynak, hedef) {
   for (const f of fs.readdirSync(kaynak)) {
     if (SUNUCU_VERISI.test(f)) continue;

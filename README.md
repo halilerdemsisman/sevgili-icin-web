@@ -4,11 +4,17 @@ Bu repoda iki uygulama var:
 - **Bayi portalı:** Bayilerin katalog, sipariş, cari, ödeme ve özel teklif işlemleri. Hedef: web sitesi.
 - **Satış paneli:** Satış yöneticisi ve temsilcilerin onay, tahsilat, müşteri ve analiz ekranları. Hedef: masaüstü uygulaması.
 
-İki uygulama da ortak bir Node.js sunucusuna bağlanır. Sunucu (sürüm 1a) giriş ister, her kullanıcıya yalnız görmesi gereken veriyi gönderir ve yalnız izinli değişiklikleri kabul eder.
+İki uygulama da ortak bir Node.js sunucusuna bağlanır. Sunucu (sürüm 1b):
+- giriş ister,
+- her kullanıcıya yalnız görmesi gereken veriyi gönderir ve yalnız izinli değişiklikleri kabul eder,
+- veriyi SQLite'ta tutar (Node 22.5+, ek paket yok),
+- değişiklikleri anlık bildirimle iletir,
+- yeni uygulamalar için REST API sunar.
 
 - Yol haritası ve durum: [docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md](docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md)
 - Sunucu kurulumu: [sunucu/KURULUM.md](sunucu/KURULUM.md)
 - VPS'e kurulum ve şirket sunucusundan taşınma: [dagitim/TASINMA.md](dagitim/TASINMA.md)
+- API (REST v1, eşitleme, yapay zekâ): [docs/API.md](docs/API.md)
 
 ## Klasörler
 
@@ -16,7 +22,7 @@ Bu repoda iki uygulama var:
 |---|---|---|
 | `kaynak/` | Uygulamaların kaynağı: `bayi/` ve `satis/` (her biri `sablon.html` + `parcalar/`), iki uygulamada ortak bloklar `ortak/`, telefon (PWA) dosyaları `telefon/` | **Evet**, değişiklikler burada yapılır |
 | `katalog/` | `urunler.json` (73 ürün, fiyatlar USD), ürün fotoğrafları `gorsel/`, kumaşlar `kumas/`, renk önizleme maskeleri `maske/` + `maskeler.json` | **Evet** |
-| `sunucu/` | Ortak sunucu: `sunucu.js` (yönlendirme, giriş, API), `lib/kimlik.js` (şifre, oturum, deneme sınırı), `lib/kurallar.js` (okuma/yazma kuralları), `lib/depo.js` (veri, numaralandırma, yedek), `lib/dosya.js` (dekont ve fotoğraflar), `lib/fiyat.js` (sipariş fiyat denetimi); kurulum notu, Windows başlatıcı | **Evet** |
+| `sunucu/` | Ortak sunucu: `sunucu.js` (yönlendirme, giriş, API), `lib/kimlik.js` (şifre, oturum, deneme sınırı), `lib/kurallar.js` (okuma/yazma kuralları), `lib/depo.js` (SQLite/JSON veri, numaralandırma, yedek), `lib/dosya.js` (dekont ve fotoğraflar), `lib/fiyat.js` (sipariş fiyat denetimi), `lib/limit.js` (kredi limiti), `lib/rest.js` (REST v1); kurulum notu, Windows başlatıcı | **Evet** |
 | `dagitim/` | VPS kurulumu: `kur.sh`, `exit.service`, `Caddyfile.ornek`, `ortam.ornek`, `yedek.sh`, `guncelle.sh`, `TASINMA.md` | **Evet** |
 | `araclar/` | Derleme, ayıklama, sarmalama haritası, veri inceleme araçları | Evet |
 | `testler/` | Playwright uçtan uca testleri (`node:test` ile, ek paket gerekmez) | Evet |
@@ -73,10 +79,11 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 
 ## Testler
 
-`npm test` beş dosyayı çalıştırır (toplam 56 test; her biri kendi geçici sunucusunu boş veriyle açar):
+`npm test` altı dosyayı çalıştırır (toplam 75 test; her biri kendi geçici sunucusunu boş veriyle açar). `DEPO=json npm test` aynı testleri JSON depoyla çalıştırır.
 
 - `testler/uctan-uca.test.js`: Bayi ve satış aynı sunucuya bağlanır. Akış: kayıt, sepet, sipariş, onay (%15 iskonto), değişiklik talebi, ödeme linki, ödeme, tahsilat, özel teklif. Her adımda sunucudaki veri de kontrol edilir.
 - `testler/bilinen-sorunlar.test.js`: Rapordaki kritik sorunlar (kimliksiz API erişimi, başka bayinin verisi, varsayılan şifre, sipariş kaybı, kota). Faz 0'da orijinal pakette hepsinin başarısız olduğu görüldü; Faz 1a'da kapatıldı.
-- `testler/sunucu-kurallar.test.js`: Tarayıcısız, doğrudan API: bayi yalıtımı, alan koruması, talep kuralları, numara çakışması, dosya yetkisi, temsilci kapsamı, eski şifre yükseltme, deneme sınırı, CSRF, MRP erişimi, işlem kaydı, sipariş fiyat denetimi, şifre değiştirme/sıfırlama.
+- `testler/sunucu-kurallar.test.js`: Tarayıcısız, doğrudan API: bayi yalıtımı, alan koruması, talep kuralları, numara çakışması, dosya yetkisi, temsilci kapsamı, eski şifre yükseltme, deneme sınırı, CSRF, MRP erişimi, işlem kaydı, sipariş fiyat denetimi, şifre değiştirme/sıfırlama, satış kullanıcısı ekleme/silme, kredi limiti, yapay zekâ aktarımı (sahte API ile), anlık bildirim, REST v1.
 - `testler/gecis.test.js`: Eski veriden geçiş (gömülü dosyaların taşınması, tarayıcıdaki verinin ilk yönetici girişinde aktarılması, çıkışta temizlik) ve VPS düzeni (ayrı veri klasörü, yalnız 127.0.0.1, Secure çerez).
 - `testler/sifre.test.js`: Tarayıcıda: yöneticinin geçici şifre üretmesi, bayinin zorunlu şifre değişikliği, firma adından şifre değiştirme; bayi sepetteki fiyatı düşürse de siparişin katalog fiyatıyla kaydedilmesi ve satışın uyarıyı görmesi.
+- `testler/ayarlar.test.js`: Tarayıcıda: Ayarlar'dan sunucuya Claude anahtarı ve yeni temsilci, "Claude ile derin analiz"in sunucu üzerinden çalışması, bayi siparişinin anlık bildirimle satışa 2 sn içinde düşmesi.

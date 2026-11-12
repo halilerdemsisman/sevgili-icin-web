@@ -80,7 +80,11 @@ sudo rm -rf /var/lib/exit/*
    sudo systemctl start exit
    sudo journalctl -u exit -n 30 --no-pager
    ```
-   İlk açılışta "Göç: N gömülü dosya dosyalar/ klasörüne taşındı" satırı görülür (eski dekontlar).
+   İlk açılışta iki satır görülür:
+   - "Eski veri.json içe alındı": veri artık `veri.sqlite` dosyasında.
+   - "Göç: N gömülü dosya dosyalar/ klasörüne taşındı": eski dekontlar.
+
+   Eski dosya `veri.json.tasindi-…` adıyla yerinde kalır.
 
 ## 5. Kontrol listesi (kesinti biter)
 
@@ -92,6 +96,7 @@ sudo rm -rf /var/lib/exit/*
 - [ ] Bayi siparişi satış panelinde birkaç saniye içinde görünüyor.
 - [ ] `https://ALAN/mrp`: satış girişiyle (veya izinli IP'den) açılıyor; dışarıdan girişsiz açılmıyor.
 - [ ] Telefonda portal "Ana ekrana ekle" ile kurulabiliyor.
+- [ ] Satış › Ayarlar: temsilciler için kullanıcılar açıldı (geçici şifreler iletildi). Claude kullanılacaksa API anahtarı girildi.
 
 ## 6. Bayilere ve ekibe duyuru
 
@@ -117,4 +122,8 @@ sudo rm -rf /var/lib/exit/*
 VPS'te çözülemeyen bir sorun çıkarsa:
 1. `sudo systemctl stop exit` ile VPS'i durdurun.
 2. Şirket sunucusunda eski sürümü yeniden başlatın.
-3. Bu sürede VPS'e girilen kayıtları satış ekibi elle aktarır. VPS'teki `veri.json` eski sürümle aynı biçimdedir; ancak taşınan dekontlar `dosyalar/` klasöründedir ve eski sürüm bunları göstermez.
+3. VPS'teki güncel veriyi eski biçimde alın:
+   ```bash
+   sudo -u exit env VERI_KLASORU=/var/lib/exit node /opt/exit/sunucu/sunucu.js --disa-aktar /tmp/veri.json
+   ```
+   Bu dosya eski sürümün `veri.json`'u olarak kullanılabilir. Ancak taşınan dekontlar `dosyalar/` klasöründedir ve eski sürüm bunları göstermez.
