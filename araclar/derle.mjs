@@ -61,8 +61,15 @@ yaz(path.join(DIST, 'exit_bayi_siparis.html'), bayi);
 yaz(path.join(DIST, 'exit_satis_paneli.html'), satis);
 kopyala(path.join(KAYNAK, 'telefon'), path.join(DIST, 'telefon'));
 yaz(path.join(DIST, 'telefon', 'index.html'), bayi);
-// sunucu çalışma verisi (veri.json, yedek/) pakete girmez
-kopyala(path.join(KOK, 'sunucu'), path.join(DIST, 'sunucu'), f => /^(veri|mrp_veri)\.json|^yedek$|\.tmp$/.test(f) || fs.statSync(path.join(KOK, 'sunucu', f)).isDirectory());
+// sunucu: kod ve belgeler; çalışma verisi (veri.json, oturumlar, dosyalar, yedek, işlem kayıtları) pakete girmez
+const SUNUCU_VERISI = /^(veri|mrp_veri|oturumlar)\.json$|^(yedek|dosyalar|kayitlar|node_modules)$|\.tmp$/;
+(function sunucuKopyala(kaynak, hedef) {
+  for (const f of fs.readdirSync(kaynak)) {
+    if (SUNUCU_VERISI.test(f)) continue;
+    const k = path.join(kaynak, f);
+    if (fs.statSync(k).isDirectory()) sunucuKopyala(k, path.join(hedef, f)); else yaz(path.join(hedef, f), fs.readFileSync(k));
+  }
+})(path.join(KOK, 'sunucu'), path.join(DIST, 'sunucu'));
 
 const kb = s => (Buffer.byteLength(s) / 1024 / 1024).toFixed(2) + ' MB';
 console.log(`dist/ hazır · bayi ${kb(bayi)} · satış ${kb(satis)}`);

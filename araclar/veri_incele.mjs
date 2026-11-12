@@ -58,7 +58,9 @@ Object.entries(V).sort((a, b) => String(b[1]).length - String(a[1]).length).forE
 const BK = oku('exb-kullanicilar', {}), SK = oku('exs-kullanicilar', {}), MUS = oku('exs-musteriler', {});
 yaz(`\n## Kullanıcılar\n\n- Bayi hesabı: ${say(BK)} · satış müşteri kartı: ${say(MUS)} (örnek veri: ${Object.keys(MUS).filter(k => k.startsWith('ornek-')).length})`);
 yaz(`- Satış kullanıcısı (yönetici + temsilci): ${say(SK)}`);
-if (SK.satis && SK.satis.sifre === sha('exitsatis:1234')) uyarilar.push('Varsayılan satış yöneticisi şifresi (satis / 1234) hâlâ geçerli.');
+if (Object.values(SK).some(u => u && u.sifre === sha('exitsatis:1234'))) uyarilar.push('Varsayılan satış şifresi (1234) özetli hesap var. Sunucu bu hesapla girişe izin vermez; yönetici şifresini belirleyin: node sunucu/sunucu.js --yonetici-sifre YENI_SIFRE');
+const eskiOzet = L => Object.values(L).filter(u => u && u.sifre && !String(u.sifre).startsWith('scrypt$')).length;
+yaz(`- Şifresi eski biçimde (tarayıcıda üretilmiş sha256) olan hesap: bayi ${eskiOzet(BK)}, satış ${eskiOzet(SK)} · ilk girişte otomatik olarak scrypt'e yükseltilir`);
 const bayiYok = Object.keys(MUS).filter(k => !k.startsWith('ornek-') && !BK[k]);
 if (bayiYok.length) uyarilar.push(`${bayiYok.length} müşteri kartının bayi hesabı yok (satışın elle açtığı kart olabilir).`);
 

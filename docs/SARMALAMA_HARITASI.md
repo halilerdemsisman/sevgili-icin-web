@@ -9,7 +9,7 @@ Faz 2 ve Faz 3'te bu zincirler tek fonksiyonda birleştirilecek.
 
 ## Bayi portalı
 
-Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `13-ortak-excel-xlsx-csv-okuma.js` → `15-v2.6-dil-secimi-tr-en.js` → `16-v2.6-telefona-kurulum-pwa-yalniz.js` → `18-v2.8-proje-sepetleri-renk-onizleme.js` → `20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js` → `22-v3.0-hedef-prim-musteri-katalogu.js` → `23-v3.1-sunucuya-bagliyken-siparis-dosyasi.js` → `25-ek6.js` → `27-ek7.js` → `29-ek8.js` → `31-ek9.js` → `33-ek10.js` → `35-ek11.js`
+Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `13-ortak-excel-xlsx-csv-okuma.js` → `15-v2.6-dil-secimi-tr-en.js` → `16-v2.6-telefona-kurulum-pwa-yalniz.js` → `18-v2.8-proje-sepetleri-renk-onizleme.js` → `20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js` → `22-v3.0-hedef-prim-musteri-katalogu.js` → `23-v3.1-sunucuya-bagliyken-siparis-dosyasi.js` → `25-ek6.js` → `27-ek7.js` → `29-ek8.js` → `31-ek9.js` → `33-ek10.js` → `35-ek11.js` → `36-ek12-sunucu-oturum.js`
 
 | Fonksiyon | Tanım | Sarma sayısı | Sarmalayıcılar (yükleme sırasıyla; sonuncusu en dışta) |
 |---|---|---|---|
@@ -29,7 +29,7 @@ Toplam: 11 fonksiyon, 34 sarmalama.
 
 ## Satış paneli
 
-Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `14-v2.7-sadelestirme-onay-akisi-ve.js` → `16-v2.8-odeme-bildirimleri-numune-talepleri.js` → `18-v2.9-bayi-karnesi-excel-ile.js` → `20-v3.0-bayi-hedef-ve-prim.js` → `22-ek6.js` → `23-ek7.js` → `25-ek8.js` → `26-ek9.js`
+Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `14-v2.7-sadelestirme-onay-akisi-ve.js` → `16-v2.8-odeme-bildirimleri-numune-talepleri.js` → `18-v2.9-bayi-karnesi-excel-ile.js` → `20-v3.0-bayi-hedef-ve-prim.js` → `22-ek6.js` → `23-ek7.js` → `25-ek8.js` → `26-ek9.js` → `27-ek10-sunucu-oturum.js`
 
 | Fonksiyon | Tanım | Sarma sayısı | Sarmalayıcılar (yükleme sırasıyla; sonuncusu en dışta) |
 |---|---|---|---|

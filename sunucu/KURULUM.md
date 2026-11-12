@@ -1,37 +1,99 @@
-# EXIT Garden ortak sunucu kurulumu
+# EXIT Garden ortak sunucu kurulumu (sürüm 1a)
 
-Bu sunucu, bayi portalını ve satış panelini tek bir yerden yayınlar ve tüm veriyi (siparişler, cari, ödemeler, hedefler, duyurular, kullanıcılar) ortak tutar. Böylece bayi kendi bilgisayarından veya telefonundan sipariş verdiğinde, satış ekibi kendi bilgisayarında anında görür.
+Bu sunucu bayi portalını (`/`), satış panelini (`/satis`) ve MRP'yi (`/mrp`) tek yerden yayınlar ve tüm veriyi ortak tutar. Bayi kendi bilgisayarından veya telefonundan sipariş verdiğinde satış ekibi anında görür.
+
+Sürüm 1a ile gelen güvenlik düzeni:
+- Giriş sunucuda yapılır, oturum tarayıcıda HttpOnly çerezle tutulur. Şifreler scrypt ile saklanır.
+- Her kullanıcıya yalnız görmesi gereken veri gider:
+  - Bayi yalnız kendi kayıtlarını görür.
+  - Satış temsilcisi yalnız kendisine atanmış bayileri görür.
+  - Satış yöneticisi tüm kayıtları görür.
+- Sunucu yalnız izinli değişiklikleri kabul eder. Örneğin bayi kendi siparişini onaylayamaz, cari hesabını değiştiremez.
+- Sipariş, ödeme ve teklif numaralarını sunucu verir; aynı anda verilen siparişler artık birbirini silmez.
+- Dekont ve fotoğraflar `dosyalar/` klasöründe tutulur ve yalnız yetkili kullanıcıya gösterilir.
+- Girişler ve tüm değişiklikler `kayitlar/` klasöründeki işlem kaydına yazılır.
+- MRP yalnız şirket ağından açılır.
 
 ## 1. Gereken
-- Şirkette sürekli açık duran bir bilgisayar veya sunucu (Windows, Mac ya da Linux)
-- Node.js LTS (https://nodejs.org). Başka bir paket gerekmez.
 
-## 2. Başlatma
-- Windows: `bayi` klasörünü bu bilgisayara kopyalayın, `sunucu/baslat_windows.bat` dosyasına çift tıklayın.
-- Mac/Linux: `cd bayi/sunucu && node sunucu.js`
+- Sürekli açık bir bilgisayar veya sunucu (Windows, macOS ya da Linux).
+- Node.js 18 veya üstü, LTS önerilir (https://nodejs.org). Başka paket gerekmez.
 
-Ekranda adresler yazar:
-- Bayi portalı: `http://SUNUCU-IP:8080/`
-- Satış paneli: `http://SUNUCU-IP:8080/satis`
-- MRP (planlama, satın alma, depo): `http://SUNUCU-IP:8080/mrp`. MRP verisi `sunucu/mrp_veri.json` dosyasında tutulur, her gün `yedek/` klasörüne yedeklenir. İlk açan bilgisayardaki mevcut MRP verisi sunucuya aktarılır; bu yüzden ilk olarak güncel verinin bulunduğu bilgisayardan açın.
+## 2. İlk kurulum
 
-Portu değiştirmek için: `PORT=9000 node sunucu.js` (Windows: `set PORT=9000` sonra `node sunucu.js`).
+1. Paketi (`dist/` klasörünün içeriği) sunucuya kopyalayın.
+2. **Satış yöneticisi şifresini belirleyin.** Bu adım zorunludur; eski "satis / 1234" girişi güvenlik nedeniyle kapatıldı.
+   ```
+   cd sunucu
+   node sunucu.js --yonetici-sifre "EnAz8KarakterGucluSifre"
+   ```
+   Kullanıcı adı `satis` olarak kalır. Başka bir yönetici hesabının şifresi için komuta `--kullanici AD` ekleyin.
+3. Sunucuyu başlatın:
+   - Windows: `sunucu/baslat_windows.bat` dosyasına çift tıklayın.
+   - macOS/Linux: `cd sunucu && node sunucu.js`
+4. Satış paneline (`http://SUNUCU-IP:8080/satis`) `satis` ve belirlediğiniz şifreyle girin. Temsilcileri "Temsilciler ve işlem kaydı" ekranından ekleyin.
 
-## 3. Bayilerin dışarıdan erişmesi
-Şirket ağı içinde adresler doğrudan çalışır. Bayilerin internetten bağlanması için iki yol var:
-1. Önerilen: Sunucuyu bir bulut makinesine (ör. küçük bir VPS) kurup önüne bir alan adı ve HTTPS (ör. Caddy veya Nginx) koymak: `https://bayi.exitgarden.com`
-2. Şirket modeminde 8080 portunu bu bilgisayara yönlendirmek (yalnızca geçici çözüm; HTTPS olmadan şifreler ağda açık gider).
+Bayiler portalda "Kayıt ol" ile hesap açar (şifre en az 8 karakter). Kendi kendine kaydı kapatmak için: `KAYIT_ACIK=0`.
 
-HTTPS ile açıldığında bayiler portalı telefonlarına uygulama gibi kurabilir.
+## 3. Eski sürümden geçiş
 
-## 4. Veri ve yedek
-- Tüm veri `sunucu/veri.json` dosyasındadır.
-- Her gün `sunucu/yedek/` klasörüne otomatik yedek alınır, son 30 gün tutulur.
-- Geri dönmek için sunucuyu kapatıp istenen yedeği `veri.json` adıyla kopyalayın.
+- **Sunucu zaten kullanılıyorsa** (`sunucu/veri.json` varsa): Yeni sürümü aynı klasöre koyup başlatın.
+  - Mevcut bayi ve temsilci şifreleri çalışmaya devam eder; her kullanıcının ilk girişinde şifresi otomatik olarak güçlü biçime (scrypt) çevrilir.
+  - Kayıtlara gömülü eski dekontlar ilk açılışta `dosyalar/` klasörüne taşınır.
+  - Önce yedek alın: `node araclar/veri_incele.mjs sunucu/veri.json` hem yedekler hem durumu özetler.
+- **Uygulamalar şimdiye kadar dosyadan (çift tıklanarak) kullanıldıysa:** Sunucu boşken satış paneline yönetici olarak, verilerin bulunduğu bilgisayardaki tarayıcıdan girin; o tarayıcıdaki veriler sunucuya aktarılır.
 
-## 5. İlk açılış
-Sunucu boşken ilk açan tarayıcıdaki mevcut veriler (daha önce dosyadan kullanılan uygulamadaki siparişler, kullanıcılar vb.) sunucuya aktarılır. Bu yüzden ilk olarak, mevcut verilerin bulunduğu bilgisayardan satış panelini açın.
+## 4. Ayarlar (ortam değişkenleri)
 
-## 6. Notlar
-- Sayfanın sol altında "Sunucuya bağlı" yazısı görünür. Bağlantı koparsa yapılan değişiklikler bekletilir ve bağlantı gelince gönderilir.
-- HTML dosyaları sunucu olmadan çift tıklanarak da çalışmaya devam eder; o zaman veri yalnızca o tarayıcıda kalır.
+| Değişken | Varsayılan | Anlamı |
+|---|---|---|
+| `PORT` | 8080 | Dinlenecek port |
+| `KAYIT_ACIK` | 1 | `0`: bayiler kendi kendine kayıt olamaz |
+| `OTURUM_GUN` | 7 | Hareketsiz oturumun kapanma süresi (gün) |
+| `GUVENILIR_VEKIL` | 0 | `1`: önünde Caddy/Nginx var. İstemci IP'si ve https bilgisi `X-Forwarded-*` başlıklarından okunur. **Vekil yoksa açmayın.** |
+| `HTTPS` | 0 | `1`: çerezler yalnız https ile gönderilir (vekilsiz doğrudan https sunuluyorsa) |
+| `MRP_HERKESE_ACIK` | 0 | `1`: MRP internetten de erişilebilir (önerilmez; MRP'de giriş yok) |
+| `VERI_KLASORU` | `sunucu/` | Veri, dosya, yedek ve kayıt klasörü |
+| `EXIT_YONETICI_SIFRE` | — | Her açılışta `satis` şifresini ayarlar (otomasyon için; normalde komut satırını kullanın) |
+
+Windows'ta: `set KAYIT_ACIK=0` sonra `node sunucu.js`.
+
+## 5. İnternetten erişim (bayiler için)
+
+Sunucu kendisi HTTP konuşur. İnternete **mutlaka HTTPS ile** açın; aksi hâlde şifreler ağda açık gider.
+
+Önerilen düzen: küçük bir bulut sunucusu (VPS) + alan adı + Caddy. Caddy sertifikayı kendisi alır ve yeniler. Örnek `Caddyfile`:
+
+```
+bayi.exitgarden.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+Sunucuyu bu durumda şöyle başlatın: `GUVENILIR_VEKIL=1 node sunucu.js`. Sunucu portunu (8080) dışarıya açmayın, yalnız Caddy (443) açık olsun.
+
+HTTPS ile açıldığında bayiler portalı telefonlarına uygulama gibi kurabilir (`telefon/KURULUM.txt`).
+
+## 6. Veri, yedek ve kayıtlar
+
+| Yol | İçerik |
+|---|---|
+| `sunucu/veri.json` | Tüm iş verisi (siparişler, cari, kullanıcılar…) |
+| `sunucu/dosyalar/` | Dekontlar, iade fotoğrafları, logolar |
+| `sunucu/oturumlar.json` | Açık oturumlar (silinirse herkes yeniden giriş yapar) |
+| `sunucu/kayitlar/islem-YYYY-AA.jsonl` | İşlem kaydı: giriş, hatalı giriş, kayıt, yazma, reddedilen yazma |
+| `sunucu/yedek/` | Günlük `veri-YYYY-AA-GG.json` (son 30 gün) ve `dosyalar/` kopyası |
+| `sunucu/mrp_veri.json` | MRP verisi |
+
+- Yedek her gün otomatik alınır. Yine de `yedek/` klasörünü düzenli olarak sunucu dışına (başka disk veya bulut) kopyalayın.
+- Geri dönmek için sunucuyu kapatın, istenen yedeği `veri.json` adıyla kopyalayın, sunucuyu başlatın.
+
+## 7. Notlar
+
+- Sayfanın sol altında bağlantı durumu görünür:
+  - "Sunucuya bağlı": her şey yolunda.
+  - "Sunucu bağlantısı yok": değişiklikler bekletilir, bağlantı gelince gönderilir.
+  - "Oturum kapandı": sayfayı yenileyip yeniden giriş yapın.
+- Hatalı giriş sınırı: aynı kullanıcı adıyla 15 dakikada 5 hatalı denemeden sonra 15 dakika beklenir.
+- Bir bayi satış panelinde "pasif" yapılırsa açık oturumu hemen kapanır.
+- HTML dosyaları sunucu olmadan çift tıklanarak da açılır; o zaman veri yalnız o tarayıcıda kalır ve yukarıdaki korumalar devrede değildir.

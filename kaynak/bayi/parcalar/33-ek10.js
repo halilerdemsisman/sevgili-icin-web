@@ -2,7 +2,7 @@
 (function () {
   const sv = d => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   const usd = n => (Math.round((n || 0) * 100) / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $';
-  const no = (on, L) => { const y = new Date().getFullYear(), m = L.map(x => +(String(x.no).match(new RegExp('^' + on + '-' + y + '-(\\d+)$')) || [])[1] || 0); return `${on}-${y}-${String(Math.max(0, ...m) + 1).padStart(4, '0')}`; };
+  const no = (on, L) => (window.sunucuNo && sunucuNo(on)) || (() => { const y = new Date().getFullYear(), m = L.map(x => +(String(x.no).match(new RegExp('^' + on + '-' + y + '-(\\d+)$')) || [])[1] || 0); return `${on}-${y}-${String(Math.max(0, ...m) + 1).padStart(4, '0')}`; })();
   const sayi10 = v => parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
   const ODZ = { bekliyor: 'Onay bekliyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
   // sayfa iskeletleri

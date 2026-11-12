@@ -291,7 +291,7 @@ $('#hSepet').onclick = () => {
     c.querySelectorAll('.c-liste input').forEach(i => i.onchange = () => { const s = sepet(); s[i.dataset.i].adet = Math.max(1, parseInt(i.value) || 1); sepetKaydet(s); ciz(); });
     c.querySelectorAll('[data-sil]').forEach(b => b.onclick = () => { const s = sepet(); s.splice(+b.dataset.sil, 1); sepetKaydet(s); ciz(); });
     const g = c.querySelector('#sGonder'); if (g) g.onclick = () => {
-      const S = oku('exb-siparisler', []), yil = new Date().getFullYear(), no = 'EXG-' + yil + '-' + String(S.filter(x => x.no.includes('-' + yil + '-')).length + 1).padStart(4, '0');
+      const S = oku('exb-siparisler', []), yil = new Date().getFullYear(), no = (window.sunucuNo && sunucuNo('EXG')) || 'EXG-' + yil + '-' + String(S.filter(x => x.no.includes('-' + yil + '-')).length + 1).padStart(4, '0');
       S.push({ no, kul: ben.kul, firma: ben.firma, ad: ben.ad, tarih: Date.now(), kalemler: sepet(), toplam: top, teklif, adres: c.querySelector('#sAdres').value.trim(), durum: 'yeni' });
       yaz('exb-siparisler', S); sepetKaydet([]); c.remove(); toast('Sipariş talebiniz alındı: ' + no);
       siparisDosyasi(S[S.length - 1]); git('siparisler');

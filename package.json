@@ -10,7 +10,6 @@
     "sarmalama": "node araclar/sarmalama.mjs",
     "veri-incele": "node araclar/veri_incele.mjs",
     "sunucu": "node dist/sunucu/sunucu.js",
-    "test": "node araclar/derle.mjs && node --test --test-reporter=spec 'testler/*.test.js'",
-    "test:eski": "TEST_PAKET=eski node --test --test-reporter=spec 'testler/*.test.js'"
+    "test": "node araclar/derle.mjs && node --test --test-reporter=spec 'testler/*.test.js'"
   }
 }

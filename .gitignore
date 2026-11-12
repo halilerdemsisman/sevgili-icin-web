@@ -5,6 +5,9 @@ node_modules/
 sunucu/veri.json
 sunucu/mrp_veri.json
 sunucu/yedek/
+sunucu/oturumlar.json
+sunucu/dosyalar/
+sunucu/kayitlar/
 sunucu/*.tmp
 yedekler/
 *.tmp

@@ -7,7 +7,7 @@
 const { describe, test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
-const { sunucuBaslat, hataTopla } = require('./yardimci');
+const { sunucuBaslat, hataTopla, YONETICI_SIFRE } = require('./yardimci');
 
 const BAYI = { kFirma: 'Deniz Bahçe Ltd.', kAd: 'Deniz Yılmaz', kTel: '05551112233', kMail: 'deniz@ornek.com', kSehir: 'İzmir', kKul: 'denizbahce', kSif: 'Sifre123' };
 const YIL = new Date().getFullYear();
@@ -58,11 +58,15 @@ describe('Bayi portalı + satış paneli: uçtan uca akış', () => {
     for (const [k, v] of Object.entries(BAYI)) await bayi.fill('#' + k, v);
     await bayi.check('#kKvkk');
     await bayi.click('#fKayit button[type=submit]');
+    // kayıt sunucuda yapılır, sayfa yenilenir ve oturum çerezle açılır
+    await bayi.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'denizbahce');
     await bayi.locator('#uyg').waitFor({ state: 'visible' });
     await bayi.locator('#izgara .kart').first().waitFor();
     const K = await sunucudaBekle('exb-kullanicilar', K => !!K.denizbahce);
     assert.equal(K.denizbahce.firma, BAYI.kFirma);
-    assert.notEqual(K.denizbahce.sifre, BAYI.kSif, 'şifre düz metin saklanmamalı');
+    assert.equal(K.denizbahce.sifre, '••••', 'şifre özeti tarayıcıya gönderilmemeli');
+    const kayitli = JSON.parse(s.veri().veri['exb-kullanicilar']).denizbahce.sifre;
+    assert.match(kayitli, /^scrypt\$/, 'şifre sunucuda scrypt ile saklanmalı');
   });
 
   test('katalogda 73 ürün var, ürün penceresi seçimler tamamlanınca sepete ekler', async () => {
@@ -86,12 +90,12 @@ describe('Bayi portalı + satış paneli: uçtan uca akış', () => {
     assert.deepEqual(await sunucudaBekle('exb-sepet-denizbahce', S => S.length === 0), [], 'sipariş sonrası sepet boşalmalı');
   });
 
-  test('satış girişi (satis / 1234) ve sipariş listede', async () => {
-    await satis.fill('#gKul', 'satis'); await satis.fill('#gSif', '1234');
+  test('satış yöneticisi girişi ve sipariş listede', async () => {
+    await satis.fill('#gKul', 'satis'); await satis.fill('#gSif', YONETICI_SIFRE);
     await satis.click('#fGiris button.btn.marka');
-    await satis.locator('#gHata').waitFor({ state: 'hidden' }).catch(() => {});
-    // satış sayfası sipariş verilmeden açıldı; yenileyince sunucudaki son veriyi alır
-    await yenile(satis, 'siparisler');
+    // giriş sunucuda yapılır, sayfa yenilenir; yeni sayfa sunucudaki son veriyle açılır
+    await satis.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis');
+    await satis.evaluate(() => window.git('siparisler'));
     await satis.locator(`tr[data-no="${NO}"]`).waitFor({ timeout: 8000 });
   });
 

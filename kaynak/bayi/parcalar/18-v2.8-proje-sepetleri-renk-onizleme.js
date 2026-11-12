@@ -2,7 +2,7 @@
 (function () {
   const sayi = v => parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')) || 0;
   const zaman = t => new Date(t).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
-  const yeniNo = (on, L) => { const y = new Date().getFullYear(); return on + '-' + y + '-' + String(L.filter(x => String(x.no).includes('-' + y + '-')).length + 1).padStart(3, '0'); };
+  const yeniNo = (on, L) => { const y = new Date().getFullYear(); return (window.sunucuNo && sunucuNo(on)) || on + '-' + y + '-' + String(L.filter(x => String(x.no).includes('-' + y + '-')).length + 1).padStart(3, '0'); };
   function pencere(html, sinif) {
     const p = document.createElement('div'); p.className = 'perde ' + (sinif || 'form-p'); p.onclick = e => { if (e.target === p) p.remove(); };
     p.innerHTML = `<div class="pencere" style="position:relative"><button class="kapat" aria-label="Kapat">×</button>${html}</div>`; document.body.appendChild(p);

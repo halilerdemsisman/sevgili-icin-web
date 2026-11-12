@@ -4,7 +4,10 @@ Bu repoda iki uygulama var:
 - **Bayi portalı:** Bayilerin katalog, sipariş, cari, ödeme ve özel teklif işlemleri. Hedef: web sitesi.
 - **Satış paneli:** Satış yöneticisi ve temsilcilerin onay, tahsilat, müşteri ve analiz ekranları. Hedef: masaüstü uygulaması.
 
-İki uygulama da ortak bir Node.js sunucusuna bağlanır. Yol haritası için: [docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md](docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md).
+İki uygulama da ortak bir Node.js sunucusuna bağlanır. Sunucu (sürüm 1a) giriş ister, her kullanıcıya yalnız görmesi gereken veriyi gönderir ve yalnız izinli değişiklikleri kabul eder.
+
+- Yol haritası ve durum: [docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md](docs/BAYI_WEB_SATIS_MASAUSTU_RAPOR.md)
+- Sunucu kurulumu: [sunucu/KURULUM.md](sunucu/KURULUM.md)
 
 ## Klasörler
 
@@ -12,7 +15,7 @@ Bu repoda iki uygulama var:
 |---|---|---|
 | `kaynak/` | Uygulamaların kaynağı: `bayi/` ve `satis/` (her biri `sablon.html` + `parcalar/`), iki uygulamada ortak bloklar `ortak/`, telefon (PWA) dosyaları `telefon/` | **Evet**, değişiklikler burada yapılır |
 | `katalog/` | `urunler.json` (73 ürün, fiyatlar USD), ürün fotoğrafları `gorsel/`, kumaşlar `kumas/`, renk önizleme maskeleri `maske/` + `maskeler.json` | **Evet** |
-| `sunucu/` | Ortak sunucu (`sunucu.js`), kurulum notu, Windows başlatıcı | **Evet** |
+| `sunucu/` | Ortak sunucu: `sunucu.js` (yönlendirme, giriş, API), `lib/kimlik.js` (şifre, oturum, deneme sınırı), `lib/kurallar.js` (okuma/yazma kuralları), `lib/depo.js` (veri, numaralandırma, yedek), `lib/dosya.js` (dekont ve fotoğraflar); kurulum notu, Windows başlatıcı | **Evet** |
 | `araclar/` | Derleme, ayıklama, sarmalama haritası, veri inceleme araçları | Evet |
 | `testler/` | Playwright uçtan uca testleri (`node:test` ile, ek paket gerekmez) | Evet |
 | `docs/` | Rapor, faz planı, sarmalama haritası | Evet |
@@ -31,7 +34,7 @@ npm run derle
 ```bash
 npm run dogrula
 ```
-Derler ve çıktıyı `eski/` ile byte byte karşılaştırır. Kaynakta ilk bilinçli değişiklik yapılana kadar anlamlıdır; sonrasında farklı çıkması beklenir.
+Derler ve çıktıyı `eski/` ile byte byte karşılaştırır. Faz 0 sonunda üç HTML de aynıydı. Faz 1a'da kaynak bilinçli olarak değiştiği için artık farklı çıkar; komut yalnız farkın nerede başladığını görmek için kalmıştır.
 
 ```bash
 npm test
@@ -39,9 +42,9 @@ npm test
 Derler ve tüm testleri çalıştırır.
 
 ```bash
-npm run test:eski
+node dist/sunucu/sunucu.js --yonetici-sifre "EnAz8KarakterSifre"
 ```
-Aynı testleri orijinal pakete karşı çalıştırır (Windows'ta: `set TEST_PAKET=eski` sonra `node --test "testler/*.test.js"`).
+İlk çalıştırmada satış yöneticisi (`satis`) şifresini belirler. Varsayılan `1234` artık kullanılamaz.
 
 ```bash
 npm run sunucu
@@ -68,5 +71,9 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 
 ## Testler
 
+`npm test` dört dosyayı çalıştırır (toplam 41 test; her biri kendi geçici sunucusunu boş veriyle açar):
+
 - `testler/uctan-uca.test.js`: Bayi ve satış aynı sunucuya bağlanır. Akış: kayıt, sepet, sipariş, onay (%15 iskonto), değişiklik talebi, ödeme linki, ödeme, tahsilat, özel teklif. Her adımda sunucudaki veri de kontrol edilir.
-- `testler/bilinen-sorunlar.test.js`: Rapordaki kritik sorunlar (kimliksiz API erişimi, sipariş kaybı, kota). Bu testler doğru davranışı bekler ve bugün **bilerek başarısız** olur. `todo` işaretli oldukları için paketi kırmazlar. Faz 1'de her sorun düzeldikçe ilgili testin `todo` işareti kaldırılır.
+- `testler/bilinen-sorunlar.test.js`: Rapordaki kritik sorunlar (kimliksiz API erişimi, başka bayinin verisi, varsayılan şifre, sipariş kaybı, kota). Faz 0'da orijinal pakette hepsinin başarısız olduğu görüldü; Faz 1a'da kapatıldı.
+- `testler/sunucu-kurallar.test.js`: Tarayıcısız, doğrudan API: bayi yalıtımı, alan koruması, talep kuralları, numara çakışması, dosya yetkisi, temsilci kapsamı, eski şifre yükseltme, deneme sınırı, CSRF, MRP erişimi, işlem kaydı.
+- `testler/gecis.test.js`: Eski veriden geçiş (gömülü dosyaların taşınması, tarayıcıdaki verinin ilk yönetici girişinde aktarılması, çıkışta temizlik).
