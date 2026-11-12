@@ -1,0 +1,2513 @@
+{
+  "urunler": [
+    {
+      "id": 1,
+      "ad": "Athena Family (paket)",
+      "kategori": "Aile Paketleri",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "Athena 3+1+1+sehpa + 6 Hera + Lara masa 90*160",
+          "sinif": "Aile paketi",
+          "fiyat": 2722
+        }
+      ],
+      "site": 0,
+      "aciklama": "Athena Family (paket), oturma grubu, sandalye ve yemek masasını bir arada sunan avantajlı settir. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 2,
+      "ad": "Enzo Family (paket)",
+      "kategori": "Aile Paketleri",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "Enzo 3+1+1+sehpa + 6 Enzo sandalye + Concept masa 107*215",
+          "sinif": "Aile paketi",
+          "fiyat": 4700
+        }
+      ],
+      "site": 0,
+      "aciklama": "Enzo Family (paket), oturma grubu, sandalye ve yemek masasını bir arada sunan avantajlı settir. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 3,
+      "ad": "Nirvana Family (paket)",
+      "kategori": "Aile Paketleri",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "Nirvana 3+1+1+sehpa + 6 Next Iroko + Verona masa 90*180",
+          "sinif": "Aile paketi",
+          "fiyat": 4133
+        }
+      ],
+      "site": 0,
+      "aciklama": "Nirvana Family (paket), oturma grubu, sandalye ve yemek masasını bir arada sunan avantajlı settir. Tabla seçenekleri: Iroko. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 4,
+      "ad": "Athena",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/4.jpg",
+      "secenek": [
+        {
+          "ad": "3+1+1+sehpa",
+          "sinif": "Takım 3+1+1+sehpa",
+          "fiyat": 1507
+        },
+        {
+          "ad": "2+1+1+sehpa",
+          "sinif": "Takım 2+1+1+sehpa",
+          "fiyat": 1408
+        },
+        {
+          "ad": "Üçlü",
+          "sinif": "Üçlü koltuk",
+          "fiyat": 517
+        },
+        {
+          "ad": "İkili",
+          "sinif": "İkili koltuk",
+          "fiyat": 418
+        },
+        {
+          "ad": "Tekli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 286
+        },
+        {
+          "ad": "Sehpa 80*140",
+          "sinif": "Orta sehpa",
+          "fiyat": 418
+        }
+      ],
+      "site": 62,
+      "aciklama": "Athena, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 6 farklı seçenekte sunulur: takım 3+1+1+sehpa, takım 2+1+1+sehpa, üçlü koltuk, ikili koltuk, tekli koltuk, orta sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan oturum minderleri",
+          "Ağırlık 62,72 KG",
+          "İstifleme Yok",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme Tekli paket 70*70*85, Sehpa 81*141*66, Brüt ağırlık 68 kg",
+          "2+1+1+ Sehpa3+1+1+ Sehpa"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "",
+              "OTURMA YÜKSEKLİĞİ",
+              "OTURMA DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURMA GENİŞLİĞİ",
+              "TOPLAM TÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "ATHENA TEKLİ",
+                "42",
+                "49",
+                "50",
+                "82",
+                "75",
+                "10,86"
+              ],
+              [
+                "ATHENA İKİLİ",
+                "42",
+                "49",
+                "50",
+                "142",
+                "75",
+                "15,64"
+              ],
+              [
+                "ATHENA ÜÇLÜ",
+                "42",
+                "62",
+                "43",
+                "200",
+                "75",
+                "20,58"
+              ]
+            ]
+          },
+          {
+            "basliklar": [
+              "",
+              "W/EN",
+              "L/BOY",
+              "H/YÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "ATHENA SEHPA",
+                "80",
+                "140",
+                "65",
+                "20,45"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "ad": "Bianca",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/5.jpg",
+      "secenek": [],
+      "site": 64,
+      "aciklama": "Bianca, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan oturum minderleri",
+          "Ağırlık 55,05 KG",
+          "İstifleme Yok",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme Tekli paket 70*70*85, Sehpa 81*141*66, Brüt ağırlık 60 kg",
+          "2+1+1+ Sehpa"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "",
+              "OTURMA YÜKSEKLİĞİ",
+              "OTURMA DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURMA GENİŞLİĞİ",
+              "TOPLAM TÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "BİANCA TEKLİ",
+                "45",
+                "45",
+                "50",
+                "68",
+                "88",
+                "11,52"
+              ],
+              [
+                "BİANCA İKİLİ",
+                "45",
+                "45",
+                "50",
+                "128",
+                "88",
+                "19,45"
+              ]
+            ]
+          },
+          {
+            "basliklar": [
+              "",
+              "W/EN",
+              "L/BOY",
+              "H/YÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "BİANCA SEHPA",
+                "60",
+                "100",
+                "65",
+                "12,56"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "ad": "Burçe",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/6.jpg",
+      "secenek": [
+        {
+          "ad": "3+1+1+sehpa",
+          "sinif": "Takım 3+1+1+sehpa",
+          "fiyat": 1635
+        },
+        {
+          "ad": "Üçlü",
+          "sinif": "Üçlü koltuk",
+          "fiyat": 580
+        },
+        {
+          "ad": "Tekli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 335
+        },
+        {
+          "ad": "Sehpa 80*140",
+          "sinif": "Orta sehpa",
+          "fiyat": 385
+        }
+      ],
+      "site": 86,
+      "aciklama": "Burçe, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 4 farklı seçenekte sunulur: takım 3+1+1+sehpa, üçlü koltuk, tekli koltuk, orta sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 7,
+      "ad": "Comfi",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/7.jpg",
+      "secenek": [
+        {
+          "ad": "3+1+1+sehpa pedli",
+          "sinif": "Takım 3+1+1+sehpa",
+          "fiyat": 1377
+        },
+        {
+          "ad": "3+1+1+sehpa fileli",
+          "sinif": "Takım 3+1+1+sehpa",
+          "fiyat": 1257
+        },
+        {
+          "ad": "2+1+1+sehpa pedli",
+          "sinif": "Takım 2+1+1+sehpa",
+          "fiyat": 1206
+        },
+        {
+          "ad": "2+1+1+sehpa fileli",
+          "sinif": "Takım 2+1+1+sehpa",
+          "fiyat": 1109
+        },
+        {
+          "ad": "Üçlü pedli",
+          "sinif": "Üçlü koltuk",
+          "fiyat": 589
+        },
+        {
+          "ad": "Üçlü fileli",
+          "sinif": "Üçlü koltuk",
+          "fiyat": 517
+        },
+        {
+          "ad": "İkili pedli",
+          "sinif": "İkili koltuk",
+          "fiyat": 418
+        },
+        {
+          "ad": "İkili fileli",
+          "sinif": "İkili koltuk",
+          "fiyat": 369
+        },
+        {
+          "ad": "Tekli pedli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 246
+        },
+        {
+          "ad": "Tekli fileli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 222
+        },
+        {
+          "ad": "Sehpa",
+          "sinif": "Orta sehpa",
+          "fiyat": 296
+        }
+      ],
+      "site": 53,
+      "aciklama": "Comfi, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 11 farklı seçenekte sunulur: takım 3+1+1+sehpa, takım 2+1+1+sehpa, üçlü koltuk, ikili koltuk, tekli koltuk, orta sehpa. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan oturum minderleri",
+          "2+1+1+ Sehpa"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "",
+              "OTURMA YÜKSEKLİĞİ",
+              "OTURMA DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURMA GENİŞLİĞİ",
+              "TOPLAM TÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "COMFİ TEKLİ",
+                "40",
+                "60",
+                "60",
+                "80",
+                "95",
+                "8,42"
+              ],
+              [
+                "COMFİ İKİLİ",
+                "40",
+                "60",
+                "60",
+                "140",
+                "95",
+                "12,96"
+              ],
+              [
+                "COMFİ ÜÇLÜ",
+                "40",
+                "60",
+                "60",
+                "200",
+                "95",
+                "16,5"
+              ]
+            ]
+          },
+          {
+            "basliklar": [
+              "",
+              "W/EN",
+              "L/BOY",
+              "H/YÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "COMFİ SEHPA",
+                "60",
+                "100",
+                "60",
+                "11,78"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "ad": "Enzo Oturma Grupları",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/8.jpg",
+      "secenek": [
+        {
+          "ad": "3+1+1+sehpa",
+          "sinif": "Takım 3+1+1+sehpa",
+          "fiyat": 2330
+        },
+        {
+          "ad": "2+1+1+sehpa",
+          "sinif": "Takım 2+1+1+sehpa",
+          "fiyat": 2130
+        },
+        {
+          "ad": "Üçlü",
+          "sinif": "Üçlü koltuk",
+          "fiyat": 887
+        },
+        {
+          "ad": "İkili",
+          "sinif": "İkili koltuk",
+          "fiyat": 687
+        },
+        {
+          "ad": "Tekli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 488
+        },
+        {
+          "ad": "Sehpa 80*140",
+          "sinif": "Orta sehpa",
+          "fiyat": 467
+        }
+      ],
+      "site": 23,
+      "aciklama": "Enzo Oturma Grupları, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 6 farklı seçenekte sunulur: takım 3+1+1+sehpa, takım 2+1+1+sehpa, üçlü koltuk, ikili koltuk, tekli koltuk, orta sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan oturum minderleri",
+          "Ağırlık 95 KG",
+          "İstifleme Yok",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme Tekli paket 75*70*85, Üçlü Paket 75*70*206, Sehpa 81*141*66"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "",
+              "OTURMA YÜKSEKLİĞİ",
+              "OTURMA DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURMA GENİŞLİĞİ",
+              "TOPLAM TÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "ENZO TEKLİ",
+                "40",
+                "50",
+                "60",
+                "80",
+                "84",
+                "20,35"
+              ],
+              [
+                "ENZO İKİLİ",
+                "40",
+                "50",
+                "60",
+                "140",
+                "84",
+                "24,98"
+              ],
+              [
+                "ENZO ÜÇLÜ",
+                "40",
+                "50",
+                "60",
+                "200",
+                "84",
+                "32,56"
+              ]
+            ]
+          },
+          {
+            "basliklar": [
+              "",
+              "W/EN",
+              "L/BOY",
+              "H/YÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "ENZO SEHPA",
+                "80",
+                "148",
+                "65",
+                "22,36"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "ad": "Hector Oturma Grupları",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/9.jpg",
+      "secenek": [
+        {
+          "ad": "2+1+1+sehpa",
+          "sinif": "Takım 2+1+1+sehpa",
+          "fiyat": 1060
+        },
+        {
+          "ad": "İkili",
+          "sinif": "İkili koltuk",
+          "fiyat": 370
+        },
+        {
+          "ad": "Tekli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 210
+        },
+        {
+          "ad": "Sehpa",
+          "sinif": "Orta sehpa",
+          "fiyat": 270
+        }
+      ],
+      "site": 65,
+      "aciklama": "Hector Oturma Grupları, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 4 farklı seçenekte sunulur: takım 2+1+1+sehpa, ikili koltuk, tekli koltuk, orta sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet: %100 alüminyum, 2 mm",
+          "Boya: Epoksi polyester statik toz boya, ince dokulu",
+          "Tekstil: Dış mekan için %100 polyester minderler",
+          "Ağırlık: 34,2 kg",
+          "İstifleme: Yok",
+          "Kol üstü: Iroco",
+          "Ayaklar: Plastik, kaymaz, tapalı"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "",
+              "OTURMA YÜKSEKLİĞİ",
+              "OTURMA DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURMA GENİŞLİĞİ",
+              "TOPLAM TÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "HECTOR TEKLİ",
+                "45",
+                "45",
+                "50",
+                "68",
+                "80",
+                "5,9"
+              ],
+              [
+                "HECTOR İKİLİ",
+                "45",
+                "45",
+                "50",
+                "140",
+                "80",
+                "11,4"
+              ]
+            ]
+          },
+          {
+            "basliklar": [
+              "",
+              "W/EN",
+              "L/BOY",
+              "H/YÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "HECTOR SEHPA",
+                "60",
+                "100",
+                "60",
+                "11"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "ad": "Nero Oturma Grubu",
+      "kategori": "Oturma Grupları",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "2+1+1+sehpa",
+          "sinif": "Takım 2+1+1+sehpa",
+          "fiyat": 1130
+        },
+        {
+          "ad": "İkili",
+          "sinif": "İkili koltuk",
+          "fiyat": 370
+        },
+        {
+          "ad": "Tekli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 225
+        },
+        {
+          "ad": "Sehpa",
+          "sinif": "Orta sehpa",
+          "fiyat": 310
+        }
+      ],
+      "site": 0,
+      "aciklama": "Nero Oturma Grubu, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 4 farklı seçenekte sunulur: takım 2+1+1+sehpa, ikili koltuk, tekli koltuk, orta sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 11,
+      "ad": "Nirvana",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/11.jpg",
+      "secenek": [
+        {
+          "ad": "3+1+1+sehpa",
+          "sinif": "Takım 3+1+1+sehpa",
+          "fiyat": 2395
+        },
+        {
+          "ad": "2+1+1+sehpa",
+          "sinif": "Takım 2+1+1+sehpa",
+          "fiyat": 2196
+        },
+        {
+          "ad": "Üçlü",
+          "sinif": "Üçlü koltuk",
+          "fiyat": 909
+        },
+        {
+          "ad": "İkili",
+          "sinif": "İkili koltuk",
+          "fiyat": 710
+        },
+        {
+          "ad": "Tekli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 510
+        },
+        {
+          "ad": "Sehpa 80*148",
+          "sinif": "Orta sehpa",
+          "fiyat": 466
+        }
+      ],
+      "site": 41,
+      "aciklama": "Nirvana, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 6 farklı seçenekte sunulur: takım 3+1+1+sehpa, takım 2+1+1+sehpa, üçlü koltuk, ikili koltuk, tekli koltuk, orta sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan oturum minderleri",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "",
+              "OTURMA YÜKSEKLİĞİ",
+              "OTURMA DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURMA GENİŞLİĞİ",
+              "TOPLAM TÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "NİRVANA TEKLİ",
+                "42",
+                "62",
+                "43",
+                "76",
+                "88",
+                "24,83"
+              ],
+              [
+                "NİRVANA İKİLİ",
+                "42",
+                "62",
+                "43",
+                "136",
+                "88",
+                "29,46"
+              ],
+              [
+                "NİRVANA ÜÇLÜ",
+                "42",
+                "62",
+                "43",
+                "196",
+                "88",
+                "37,04"
+              ]
+            ]
+          },
+          {
+            "basliklar": [
+              "",
+              "W/EN",
+              "L/BOY",
+              "H/YÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "NİRVANA SEHPA",
+                "80",
+                "140",
+                "65",
+                "20,6"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "ad": "Pandora",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/12.jpg",
+      "secenek": [
+        {
+          "ad": "İkili kolsuz",
+          "sinif": "İkili koltuk",
+          "fiyat": 305
+        },
+        {
+          "ad": "Köşe modülü",
+          "sinif": "Köşe modülü",
+          "fiyat": 242
+        },
+        {
+          "ad": "Tekli kolsuz",
+          "sinif": "Tekli koltuk",
+          "fiyat": 200
+        },
+        {
+          "ad": "Örgülü kol",
+          "sinif": "Aksesuar (kol)",
+          "fiyat": 42
+        },
+        {
+          "ad": "Sehpa 60*120*H65",
+          "sinif": "Orta sehpa",
+          "fiyat": 380
+        },
+        {
+          "ad": "Sehpa 60*60*H42",
+          "sinif": "Orta sehpa",
+          "fiyat": 275
+        },
+        {
+          "ad": "Yan sehpa",
+          "sinif": "Yan sehpa",
+          "fiyat": 62
+        }
+      ],
+      "site": 85,
+      "aciklama": "Pandora, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 7 farklı seçenekte sunulur: ikili koltuk, köşe modülü, tekli koltuk, aksesuar (kol), orta sehpa, yan sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 13,
+      "ad": "Tenedos",
+      "kategori": "Oturma Grupları",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "3+1+1+sehpa",
+          "sinif": "Takım 3+1+1+sehpa",
+          "fiyat": 2200
+        },
+        {
+          "ad": "Üçlü",
+          "sinif": "Üçlü koltuk",
+          "fiyat": 745
+        },
+        {
+          "ad": "Tekli",
+          "sinif": "Tekli koltuk",
+          "fiyat": 400
+        },
+        {
+          "ad": "Sehpa 85*150*55",
+          "sinif": "Orta sehpa",
+          "fiyat": 655
+        }
+      ],
+      "site": 0,
+      "aciklama": "Tenedos, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. 4 farklı seçenekte sunulur: takım 3+1+1+sehpa, üçlü koltuk, tekli koltuk, orta sehpa. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 14,
+      "ad": "Tim Oturma Grupları",
+      "kategori": "Oturma Grupları",
+      "gorsel": "gorsel/14.jpg",
+      "secenek": [],
+      "site": 13,
+      "aciklama": "Tim Oturma Grupları, bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan oturum minderleri",
+          "Ağırlık 34,72 KG",
+          "İstifleme Yok",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme Tekli paket 70*70*85, Sehpa 81*141*66, Brüt ağırlık 39,00 kg",
+          "2+1+1+ Sehpa"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "",
+              "SEAT HEIGHT",
+              "SEAT DEPTH",
+              "BACK HEIGHT",
+              "SEAT WIDTH",
+              "TOTAL HEIGHT",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "TİM TEKLİ",
+                "47",
+                "45",
+                "43",
+                "42",
+                "85",
+                "5,5"
+              ],
+              [
+                "TİM İKİLİ",
+                "47",
+                "45",
+                "43",
+                "42",
+                "140",
+                "11,16"
+              ]
+            ]
+          },
+          {
+            "basliklar": [
+              "",
+              "W",
+              "L",
+              "H",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "TİM SEHPA",
+                "60",
+                "100",
+                "60",
+                "12,56"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 15,
+      "ad": "Ares",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/15.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Sandalye",
+          "fiyat": 119
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Sandalye",
+          "fiyat": 107
+        }
+      ],
+      "site": 59,
+      "aciklama": "Ares, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. 2 farklı seçenekte sunulur: sandalye. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen çift kat PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 3,80 KG",
+          "İstifleme Üst üste maksimum 6 adet",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 5'li paket, paket ebatları 64*56*185 Brüt ağırlık 20,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "45",
+                "44",
+                "50",
+                "44,5",
+                "3,8"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 16,
+      "ad": "Artemis",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/16.jpg",
+      "secenek": [],
+      "site": 67,
+      "aciklama": "Artemis, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 17,
+      "ad": "Concept",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/17.jpg",
+      "secenek": [],
+      "site": 79,
+      "aciklama": "Concept, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 18,
+      "ad": "Enzo Sandalye",
+      "kategori": "Sandalyeler",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 230
+        }
+      ],
+      "site": 0,
+      "aciklama": "Enzo Sandalye, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 19,
+      "ad": "Hector",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/19.jpg",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 210
+        }
+      ],
+      "site": 11,
+      "aciklama": "Hector, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan örgü ipi ve oturma minderleri",
+          "Ağırlık 4,80 KG",
+          "İstifleme Yok",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme Tekli paket, paket ebatları 75*70*60 Brüt ağırlık 5,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "45",
+                "43",
+                "50",
+                "65",
+                "4,8"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 20,
+      "ad": "Hera",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/20.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Sandalye",
+          "fiyat": 122
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Sandalye",
+          "fiyat": 110
+        }
+      ],
+      "site": 49,
+      "aciklama": "Hera, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. 2 farklı seçenekte sunulur: sandalye. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 3,86 KG",
+          "İstifleme Üst üste maksimum 6 adet",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 6'lı paket, paket ebatları 68*118*95 Brüt ağırlık 24,66 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "45",
+                "45",
+                "47",
+                "57",
+                "3,86"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "ad": "Neo",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/21.jpg",
+      "secenek": [
+        {
+          "ad": "Fileli",
+          "sinif": "Sandalye",
+          "fiyat": 83
+        }
+      ],
+      "site": 7,
+      "aciklama": "Neo, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. Oturum ve sırt kısmı dış mekân filesiyle kaplanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 3,00 KG",
+          "İstifleme Üst üste maksimum 10 adet",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 7'li paket, paket ebatları 64*56*155 Brüt ağırlık 22,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "44",
+                "50",
+                "47",
+                "45,5",
+                "3"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 22,
+      "ad": "Nero",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/22.jpg",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 225
+        }
+      ],
+      "site": 81,
+      "aciklama": "Nero, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 23,
+      "ad": "Next",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/23.jpg",
+      "secenek": [
+        {
+          "ad": "Fileli",
+          "sinif": "Sandalye",
+          "fiyat": 100
+        }
+      ],
+      "site": 2,
+      "aciklama": "Next, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. Oturum ve sırt kısmı dış mekân filesiyle kaplanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 3,10 KG",
+          "İstifleme Üst üste maksimum 10 adet",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 7'li paket, paket ebatları 100*65*130 Brüt ağırlık 22,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "45,5",
+                "42,5",
+                "48",
+                "44,5",
+                "3,1"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 24,
+      "ad": "Next Iroco",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/24.jpg",
+      "secenek": [
+        {
+          "ad": "Kollu",
+          "sinif": "Sandalye",
+          "fiyat": 150
+        },
+        {
+          "ad": "Kolsuz",
+          "sinif": "Sandalye",
+          "fiyat": 135
+        }
+      ],
+      "site": 4,
+      "aciklama": "Next Iroco, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. 2 farklı seçenekte sunulur: sandalye. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Ağırlık 4,20 KG",
+          "İstifleme Üst üste maksimum 8 adet",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 5'li paket, paket ebatları 120*70*80 Brüt ağırlık 20,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "46",
+                "46",
+                "46",
+                "40",
+                "4,2"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 25,
+      "ad": "Next Ped",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/25.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Sandalye",
+          "fiyat": 112
+        }
+      ],
+      "site": 3,
+      "aciklama": "Next Ped, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 3,30 KG",
+          "İstifleme Üst üste maksimum 10 adet",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 7'li paket, paket ebatları 100*65*130 Brüt ağırlık 22,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "45,5",
+                "42,5",
+                "48",
+                "44,5",
+                "3,1"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 26,
+      "ad": "Nicea",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/26.jpg",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 140
+        }
+      ],
+      "site": 82,
+      "aciklama": "Nicea, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 27,
+      "ad": "Nona",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/27.jpg",
+      "secenek": [
+        {
+          "ad": "Örgülü",
+          "sinif": "Sandalye",
+          "fiyat": 175
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Sandalye",
+          "fiyat": 150
+        }
+      ],
+      "site": 66,
+      "aciklama": "Nona, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. 2 farklı seçenekte sunulur: sandalye. Oturum ve sırt kısmı dış mekân filesiyle kaplanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 28,
+      "ad": "Pele",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/28.jpg",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 145
+        },
+        {
+          "ad": "Bar sandalye",
+          "sinif": "Bar sandalye",
+          "fiyat": 200
+        }
+      ],
+      "site": 60,
+      "aciklama": "Pele, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. 2 farklı seçenekte sunulur: sandalye, bar sandalye. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 29,
+      "ad": "Petra",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/29.jpg",
+      "secenek": [
+        {
+          "ad": "Kolsuz",
+          "sinif": "Sandalye",
+          "fiyat": 136
+        }
+      ],
+      "site": 9,
+      "aciklama": "Petra, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 3,80 KG",
+          "İstifleme Üst üste maksimum 10 adet",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 4'lü paket, paket ebatları 120*45*45 Brüt ağırlık16,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "46",
+                "42",
+                "38",
+                "42",
+                "3,8"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 30,
+      "ad": "Petra Kollu",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/30.jpg",
+      "secenek": [
+        {
+          "ad": "Kollu",
+          "sinif": "Sandalye",
+          "fiyat": 160
+        }
+      ],
+      "site": 10,
+      "aciklama": "Petra Kollu, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 4,20 KG",
+          "İstifleme Üst üste maksimum 5 adet",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 7'li paket, paket ebatları 120*50*45 Brüt ağırlık 17,60 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "46",
+                "42",
+                "38",
+                "42",
+                "4,2"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 31,
+      "ad": "Poseidon",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/31.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Sandalye",
+          "fiyat": 127
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Sandalye",
+          "fiyat": 115
+        }
+      ],
+      "site": 1,
+      "aciklama": "Poseidon, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. 2 farklı seçenekte sunulur: sandalye. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen çift kat PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 3,80 KG",
+          "İstifleme Üst üste maksimum 6 adet",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 5'li paket, paket ebatları 64*56*185 Brüt ağırlık 20,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "45,5",
+                "43,5",
+                "49,5",
+                "44,5",
+                "3,8"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 32,
+      "ad": "Reina",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/32.jpg",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 165
+        }
+      ],
+      "site": 69,
+      "aciklama": "Reina, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 33,
+      "ad": "Tenedos Sandalye",
+      "kategori": "Sandalyeler",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 200
+        }
+      ],
+      "site": 0,
+      "aciklama": "Tenedos Sandalye, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 34,
+      "ad": "Tim",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/34.jpg",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 200
+        }
+      ],
+      "site": 12,
+      "aciklama": "Tim, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "Tekstil %100 Polyester, dış mekan örgü ve minderler",
+          "Ağırlık 5,50 KG",
+          "İstifleme Yok",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme Tekli paket, paket ebatları 60*55*89 Brüt ağırlık 6,00 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "47",
+                "47",
+                "43",
+                "50",
+                "5,5"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 35,
+      "ad": "Vera",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/35.jpg",
+      "secenek": [
+        {
+          "ad": "Sandalye",
+          "sinif": "Sandalye",
+          "fiyat": 185
+        }
+      ],
+      "site": 80,
+      "aciklama": "Vera, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 36,
+      "ad": "Zeus",
+      "kategori": "Sandalyeler",
+      "gorsel": "gorsel/36.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Sandalye",
+          "fiyat": 127
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Sandalye",
+          "fiyat": 115
+        }
+      ],
+      "site": 51,
+      "aciklama": "Zeus, yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir. 2 farklı seçenekte sunulur: sandalye. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 4,64 KG",
+          "İstifleme Üst üste maksimum 6 adet",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 6'lı paket, paket ebatları 70*130*95 Brüt ağırlık 29,34 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "45",
+                "43",
+                "50",
+                "60,5",
+                "4,64"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 37,
+      "ad": "Artemis Bar",
+      "kategori": "Bar Sandalyeleri",
+      "gorsel": "gorsel/37.jpg",
+      "secenek": [
+        {
+          "ad": "Bar sandalye",
+          "sinif": "Bar sandalye",
+          "fiyat": 200
+        }
+      ],
+      "site": 68,
+      "aciklama": "Artemis Bar, bar ve yüksek masalar için tasarlanmış dış mekân bar sandalyesidir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 38,
+      "ad": "Poseidon Bar",
+      "kategori": "Bar Sandalyeleri",
+      "gorsel": "gorsel/38.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Bar sandalye",
+          "fiyat": 162
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Bar sandalye",
+          "fiyat": 150
+        }
+      ],
+      "site": 6,
+      "aciklama": "Poseidon Bar, bar ve yüksek masalar için tasarlanmış dış mekân bar sandalyesidir. 2 farklı seçenekte sunulur: bar sandalye. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Textilen PVC ( %60 PVC- %40 Polyester) Alev almaz file",
+          "Ağırlık 4,5 KG",
+          "İstifleme Yok",
+          "Kol üstü Iroco",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 1'li paket, paket ebatları 65*56*155 Brüt ağırlık 4,7 kg"
+        ],
+        "tablolar": [
+          {
+            "basliklar": [
+              "OTURUM YÜKSEKLİĞİ",
+              "OTURUM DERİNLİĞİ",
+              "SIRT YÜKSEKLİĞİ",
+              "OTURUM GENİŞLİĞİ",
+              "TOPLAM YÜKSEKLİK",
+              "KG"
+            ],
+            "satirlar": [
+              [
+                "44",
+                "45",
+                "48",
+                "45,5",
+                "115",
+                "4,5"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 39,
+      "ad": "Burçe Masa",
+      "kategori": "Masalar",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "100*180*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 645
+        }
+      ],
+      "site": 0,
+      "aciklama": "Burçe Masa, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. Ölçüler: 100*180*H75 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 40,
+      "ad": "Concept Masa",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/40.jpg",
+      "secenek": [
+        {
+          "ad": "107*215*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 990
+        },
+        {
+          "ad": "107*275*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 1155
+        },
+        {
+          "ad": "107*335*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 1320
+        }
+      ],
+      "site": 84,
+      "aciklama": "Concept Masa, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 3 farklı seçenekte sunulur: dikdörtgen masa. Ölçüler: 107*215*H75, 107*275*H75, 107*335*H75 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 41,
+      "ad": "Donna",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/41.jpg",
+      "secenek": [
+        {
+          "ad": "Ø115 sinterize",
+          "sinif": "Yuvarlak masa",
+          "fiyat": 800
+        },
+        {
+          "ad": "Ø115 compact",
+          "sinif": "Yuvarlak masa",
+          "fiyat": 550
+        },
+        {
+          "ad": "Ø120 iroko",
+          "sinif": "Yuvarlak masa",
+          "fiyat": 550
+        }
+      ],
+      "site": 61,
+      "aciklama": "Donna, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 3 farklı seçenekte sunulur: yuvarlak masa. Ölçüler: Ø115 sinterize, Ø115 compact, Ø120 iroko (cm). Tabla seçenekleri: Iroko, Compact, Sinterize. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 42,
+      "ad": "Enzo Masa",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/42.jpg",
+      "secenek": [
+        {
+          "ad": "80*148*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 591
+        },
+        {
+          "ad": "90*168*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 653
+        },
+        {
+          "ad": "90*188*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 690
+        },
+        {
+          "ad": "100*208*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 752
+        },
+        {
+          "ad": "110*228*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 838
+        }
+      ],
+      "site": 55,
+      "aciklama": "Enzo Masa, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 5 farklı seçenekte sunulur: dikdörtgen masa. Ölçüler: 80*148*H75, 90*168*H75, 90*188*H75, 100*208*H75, 110*228*H75 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 43,
+      "ad": "Lara Masa",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/43.jpg",
+      "secenek": [
+        {
+          "ad": "70*70*H75",
+          "sinif": "Kare masa",
+          "fiyat": 357
+        },
+        {
+          "ad": "80*80*H75",
+          "sinif": "Kare masa",
+          "fiyat": 382
+        },
+        {
+          "ad": "90*90*H75",
+          "sinif": "Kare masa",
+          "fiyat": 407
+        },
+        {
+          "ad": "100*100*H75",
+          "sinif": "Kare masa",
+          "fiyat": 468
+        },
+        {
+          "ad": "70*130*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 456
+        },
+        {
+          "ad": "80*130*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 468
+        },
+        {
+          "ad": "80*140*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 492
+        },
+        {
+          "ad": "90*160*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 555
+        },
+        {
+          "ad": "90*180*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 591
+        },
+        {
+          "ad": "100*160*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 579
+        },
+        {
+          "ad": "100*180*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 516
+        },
+        {
+          "ad": "100*200*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 653
+        },
+        {
+          "ad": "110*200*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 677
+        },
+        {
+          "ad": "110*220*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 727
+        },
+        {
+          "ad": "110*240*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 788
+        }
+      ],
+      "site": 44,
+      "aciklama": "Lara Masa, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 15 farklı seçenekte sunulur: kare masa, dikdörtgen masa. Ölçüler: 70*70*H75, 80*80*H75, 90*90*H75, 100*100*H75, 70*130*H75, 80*130*H75, 80*140*H75, 90*160*H75, 90*180*H75, 100*160*H75, 100*180*H75, 100*200*H75, 110*200*H75, 110*220*H75, 110*240*H75 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 44,
+      "ad": "Loft",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/44.jpg",
+      "secenek": [],
+      "site": 70,
+      "aciklama": "Loft, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 45,
+      "ad": "Next Table",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/45.jpg",
+      "secenek": [],
+      "site": 24,
+      "aciklama": "Next Table, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 46,
+      "ad": "Qubic Masa",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/46.jpg",
+      "secenek": [
+        {
+          "ad": "100*200*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 1103
+        },
+        {
+          "ad": "100*300*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 1620
+        }
+      ],
+      "site": 76,
+      "aciklama": "Qubic Masa, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 2 farklı seçenekte sunulur: dikdörtgen masa. Ölçüler: 100*200*H75, 100*300*H75 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 47,
+      "ad": "Rondo",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/47.jpg",
+      "secenek": [
+        {
+          "ad": "Ø80",
+          "sinif": "Yuvarlak masa",
+          "fiyat": 320
+        },
+        {
+          "ad": "Ø120",
+          "sinif": "Yuvarlak masa",
+          "fiyat": 480
+        },
+        {
+          "ad": "Ø150",
+          "sinif": "Yuvarlak masa",
+          "fiyat": 640
+        }
+      ],
+      "site": 71,
+      "aciklama": "Rondo, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 3 farklı seçenekte sunulur: yuvarlak masa. Ölçüler: Ø80, Ø120, Ø150 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 48,
+      "ad": "Sera",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/48.jpg",
+      "secenek": [
+        {
+          "ad": "90*90*H75",
+          "sinif": "Kare masa",
+          "fiyat": 440
+        },
+        {
+          "ad": "100*100*H75",
+          "sinif": "Kare masa",
+          "fiyat": 525
+        }
+      ],
+      "site": 72,
+      "aciklama": "Sera, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 2 farklı seçenekte sunulur: kare masa. Ölçüler: 90*90*H75, 100*100*H75 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 49,
+      "ad": "Verona",
+      "kategori": "Masalar",
+      "gorsel": "gorsel/49.jpg",
+      "secenek": [
+        {
+          "ad": "80*140*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 739
+        },
+        {
+          "ad": "90*160*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 814
+        },
+        {
+          "ad": "90*180*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 838
+        },
+        {
+          "ad": "100*200*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 899
+        },
+        {
+          "ad": "110*220*H75",
+          "sinif": "Dikdörtgen masa",
+          "fiyat": 985
+        }
+      ],
+      "site": 35,
+      "aciklama": "Verona, yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır. 5 farklı seçenekte sunulur: dikdörtgen masa. Ölçüler: 80*140*H75, 90*160*H75, 90*180*H75, 100*200*H75, 110*220*H75 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 50,
+      "ad": "Bistro Bar",
+      "kategori": "Bar Masaları",
+      "gorsel": "gorsel/50.jpg",
+      "secenek": [
+        {
+          "ad": "60*60*H110",
+          "sinif": "Bar masa",
+          "fiyat": 370
+        },
+        {
+          "ad": "60*130*H110",
+          "sinif": "Bar masa",
+          "fiyat": 492
+        }
+      ],
+      "site": 36,
+      "aciklama": "Bistro Bar, ayakta servis ve bar alanları için yüksek dış mekân masasıdır. 2 farklı seçenekte sunulur: bar masa. Ölçüler: 60*60*H110, 60*130*H110 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 51,
+      "ad": "Burçe Bar Masa",
+      "kategori": "Bar Masaları",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "60*160*H110",
+          "sinif": "Bar masa",
+          "fiyat": 440
+        }
+      ],
+      "site": 0,
+      "aciklama": "Burçe Bar Masa, ayakta servis ve bar alanları için yüksek dış mekân masasıdır. Ölçüler: 60*160*H110 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 52,
+      "ad": "Enzo Bar Masa",
+      "kategori": "Bar Masaları",
+      "gorsel": "gorsel/52.jpg",
+      "secenek": [
+        {
+          "ad": "60*142*H110",
+          "sinif": "Bar masa",
+          "fiyat": 590
+        }
+      ],
+      "site": 75,
+      "aciklama": "Enzo Bar Masa, ayakta servis ve bar alanları için yüksek dış mekân masasıdır. Ölçüler: 60*142*H110 (cm). İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 53,
+      "ad": "Posedio Bar Table",
+      "kategori": "Bar Masaları",
+      "gorsel": "gorsel/53.jpg",
+      "secenek": [],
+      "site": 26,
+      "aciklama": "Posedio Bar Table, ayakta servis ve bar alanları için yüksek dış mekân masasıdır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 54,
+      "ad": "Bract",
+      "kategori": "Sehpalar",
+      "gorsel": "gorsel/54.jpg",
+      "secenek": [
+        {
+          "ad": "Ø50 H65",
+          "sinif": "Yan sehpa",
+          "fiyat": 185
+        },
+        {
+          "ad": "Ø60 H65",
+          "sinif": "Yan sehpa",
+          "fiyat": 200
+        }
+      ],
+      "site": 34,
+      "aciklama": "Bract, oturma grupları ve şezlonglarla birlikte kullanılan dış mekân sehpasıdır. 2 farklı seçenekte sunulur: yan sehpa. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [],
+        "tablolar": [
+          {
+            "basliklar": [
+              "Yükseklik",
+              "Genişlik",
+              "Derinlik"
+            ],
+            "satirlar": [
+              [
+                "65 cm",
+                "60 cm",
+                "60 cm"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 55,
+      "ad": "C Table",
+      "kategori": "Sehpalar",
+      "gorsel": "gorsel/55.jpg",
+      "secenek": [
+        {
+          "ad": "42*42*H65 iroko",
+          "sinif": "Şezlong sehpası",
+          "fiyat": 126
+        },
+        {
+          "ad": "42*42*H65 compact",
+          "sinif": "Şezlong sehpası",
+          "fiyat": 126
+        }
+      ],
+      "site": 38,
+      "aciklama": "C Table, oturma grupları ve şezlonglarla birlikte kullanılan dış mekân sehpasıdır. 2 farklı seçenekte sunulur: şezlong sehpası. Tabla seçenekleri: Iroko, Compact. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [],
+        "tablolar": [
+          {
+            "basliklar": [
+              "Yükseklik",
+              "Genişlik",
+              "Derinlik"
+            ],
+            "satirlar": [
+              [
+                "65 cm",
+                "60 cm",
+                "60 cm"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 56,
+      "ad": "DC Table",
+      "kategori": "Sehpalar",
+      "gorsel": "gorsel/56.jpg",
+      "secenek": [
+        {
+          "ad": "42*42*H42 iroko",
+          "sinif": "Şezlong sehpası",
+          "fiyat": 135
+        },
+        {
+          "ad": "42*42*H42 compact",
+          "sinif": "Şezlong sehpası",
+          "fiyat": 135
+        }
+      ],
+      "site": 39,
+      "aciklama": "DC Table, oturma grupları ve şezlonglarla birlikte kullanılan dış mekân sehpasıdır. 2 farklı seçenekte sunulur: şezlong sehpası. Tabla seçenekleri: Iroko, Compact. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [],
+        "tablolar": [
+          {
+            "basliklar": [
+              "Yükseklik",
+              "Genişlik",
+              "Derinlik"
+            ],
+            "satirlar": [
+              [
+                "65 cm",
+                "60 cm",
+                "60 cm"
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 57,
+      "ad": "Dido",
+      "kategori": "Sehpalar",
+      "gorsel": "gorsel/57.jpg",
+      "secenek": [
+        {
+          "ad": "42*42*H42 iroko",
+          "sinif": "Şezlong sehpası",
+          "fiyat": 95
+        },
+        {
+          "ad": "42*42*H42 compact",
+          "sinif": "Şezlong sehpası",
+          "fiyat": 95
+        }
+      ],
+      "site": 83,
+      "aciklama": "Dido, oturma grupları ve şezlonglarla birlikte kullanılan dış mekân sehpasıdır. 2 farklı seçenekte sunulur: şezlong sehpası. Tabla seçenekleri: Iroko, Compact. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 58,
+      "ad": "Diko Sehpa",
+      "kategori": "Sehpalar",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "60*120*H40",
+          "sinif": "Orta sehpa",
+          "fiyat": 280
+        }
+      ],
+      "site": 0,
+      "aciklama": "Diko Sehpa, oturma grupları ve şezlonglarla birlikte kullanılan dış mekân sehpasıdır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 59,
+      "ad": "Jupiter",
+      "kategori": "Sehpalar",
+      "gorsel": "gorsel/59.jpg",
+      "secenek": [
+        {
+          "ad": "Ø50 H50",
+          "sinif": "Yan sehpa",
+          "fiyat": 135
+        }
+      ],
+      "site": 74,
+      "aciklama": "Jupiter, oturma grupları ve şezlonglarla birlikte kullanılan dış mekân sehpasıdır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 60,
+      "ad": "Burçe Bank",
+      "kategori": "Banklar",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "İroko 45*125*45H",
+          "sinif": "Bank",
+          "fiyat": 290
+        },
+        {
+          "ad": "Minder 45*125*45H",
+          "sinif": "Bank",
+          "fiyat": 210
+        }
+      ],
+      "site": 0,
+      "aciklama": "Burçe Bank, bahçe ve geçiş alanları için dış mekân bankıdır. 2 farklı seçenekte sunulur: bank. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 61,
+      "ad": "Dogo Bank",
+      "kategori": "Banklar",
+      "gorsel": "gorsel/61.jpg",
+      "secenek": [
+        {
+          "ad": "Bank",
+          "sinif": "Bank",
+          "fiyat": 275
+        }
+      ],
+      "site": 43,
+      "aciklama": "Dogo Bank, bahçe ve geçiş alanları için dış mekân bankıdır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 62,
+      "ad": "Aqua",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/62.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Şezlong",
+          "fiyat": 431
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Şezlong",
+          "fiyat": 410
+        }
+      ],
+      "site": 73,
+      "aciklama": "Aqua, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. 2 farklı seçenekte sunulur: şezlong. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 63,
+      "ad": "Armada",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/63.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Şezlong",
+          "fiyat": 200
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Şezlong",
+          "fiyat": 180
+        }
+      ],
+      "site": 30,
+      "aciklama": "Armada, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. 2 farklı seçenekte sunulur: şezlong. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Tectilen PVC ( %60 PVC - %40 Polyester) Alev almaz file",
+          "Ağırlık 5,00 KG",
+          "İstifleme Üst üste maksimum 10 adet",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 5'li paket, paket ebatları 175*95*70, Brüt ağırlık 26,00 kg"
+        ],
+        "tablolar": []
+      }
+    },
+    {
+      "id": 64,
+      "ad": "Armada Kollu",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/64.jpg",
+      "secenek": [
+        {
+          "ad": "Kollu pedli",
+          "sinif": "Şezlong",
+          "fiyat": 220
+        },
+        {
+          "ad": "Kollu fileli",
+          "sinif": "Şezlong",
+          "fiyat": 200
+        }
+      ],
+      "site": 31,
+      "aciklama": "Armada Kollu, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. 2 farklı seçenekte sunulur: şezlong. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "İskelet %100 Alüminyum 2 mm",
+          "Boya Epoksi polyester statik toz boya, ince textüre",
+          "File Tectilen PVC ( %60 PVC - %40 Polyester) Alev almaz file",
+          "Ağırlık 5,80 KG",
+          "İstifleme Üst üste maksümum 8 adet",
+          "Ayaklar Plastik kaydırmaz tapalı",
+          "Paketleme 5'li paket, paket ebatları 175*95*70, Brüt ağırlık 31,00 kg"
+        ],
+        "tablolar": []
+      }
+    },
+    {
+      "id": 65,
+      "ad": "Daisy",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/65.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli başlıklı",
+          "sinif": "Şezlong",
+          "fiyat": 155
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Şezlong",
+          "fiyat": 140
+        }
+      ],
+      "site": 42,
+      "aciklama": "Daisy, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. 2 farklı seçenekte sunulur: şezlong. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 66,
+      "ad": "Daybed",
+      "kategori": "Şezlonglar",
+      "gorsel": "",
+      "secenek": [
+        {
+          "ad": "Double",
+          "sinif": "Daybed",
+          "fiyat": 1360
+        }
+      ],
+      "site": 0,
+      "aciklama": "Daybed, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 67,
+      "ad": "Houston",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/67.jpg",
+      "secenek": [
+        {
+          "ad": "Fileli",
+          "sinif": "Şezlong",
+          "fiyat": 210
+        }
+      ],
+      "site": 57,
+      "aciklama": "Houston, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. Oturum ve sırt kısmı dış mekân filesiyle kaplanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "Yere sağlam basan, kuvvetli bir iskelete sahiptir. Minderli veya fileli alternatifleri bulunmaktadır."
+        ],
+        "tablolar": []
+      }
+    },
+    {
+      "id": 68,
+      "ad": "Houston Ahşap Kollu",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/68.jpg",
+      "secenek": [],
+      "site": 45,
+      "aciklama": "Houston Ahşap Kollu, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "Yere sağlam basan, kuvvetli bir iskelete sahiptir. Minderli veya fileli alternatifleri bulunmaktadır."
+        ],
+        "tablolar": []
+      }
+    },
+    {
+      "id": 69,
+      "ad": "Houston Kollu",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/69.jpg",
+      "secenek": [
+        {
+          "ad": "Kollu pedli",
+          "sinif": "Şezlong",
+          "fiyat": 245
+        },
+        {
+          "ad": "Kollu fileli",
+          "sinif": "Şezlong",
+          "fiyat": 225
+        }
+      ],
+      "site": 56,
+      "aciklama": "Houston Kollu, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. 2 farklı seçenekte sunulur: şezlong. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "Yere sağlam basan, kuvvetli bir iskelete sahiptir. Minderli veya fileli alternatifleri bulunmaktadır."
+        ],
+        "tablolar": []
+      }
+    },
+    {
+      "id": 70,
+      "ad": "Houston Minderli",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/70.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Şezlong",
+          "fiyat": 235
+        }
+      ],
+      "site": 32,
+      "aciklama": "Houston Minderli, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır.",
+      "teknik": {
+        "malzeme": [
+          "Yere sağlam basan, kuvvetli bir iskelete sahiptir. Minderli veya fileli alternatifleri bulunmaktadır."
+        ],
+        "tablolar": []
+      }
+    },
+    {
+      "id": 71,
+      "ad": "Pascal",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/71.jpg",
+      "secenek": [
+        {
+          "ad": "Pedli",
+          "sinif": "Şezlong",
+          "fiyat": 270
+        },
+        {
+          "ad": "Fileli",
+          "sinif": "Şezlong",
+          "fiyat": 245
+        }
+      ],
+      "site": 63,
+      "aciklama": "Pascal, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. 2 farklı seçenekte sunulur: şezlong. Fileli veya pedli (minderli) olarak sipariş edilebilir. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 72,
+      "ad": "Perla",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/72.jpg",
+      "secenek": [
+        {
+          "ad": "Tekli",
+          "sinif": "Şezlong",
+          "fiyat": 520
+        }
+      ],
+      "site": 77,
+      "aciklama": "Perla, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    },
+    {
+      "id": 73,
+      "ad": "Perla İkili",
+      "kategori": "Şezlonglar",
+      "gorsel": "gorsel/73.jpg",
+      "secenek": [
+        {
+          "ad": "İkili",
+          "sinif": "İkili şezlong",
+          "fiyat": 800
+        }
+      ],
+      "site": 78,
+      "aciklama": "Perla İkili, havuz başı ve plaj alanları için konforlu dış mekân şezlongudur. İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır."
+    }
+  ],
+  "kumas": {
+    "BG03": "kumas/BG03.jpg",
+    "BG06": "kumas/BG06.jpg",
+    "BG09": "kumas/BG09.jpg",
+    "BG07": "kumas/BG07.jpg",
+    "BG14": "kumas/BG14.jpg",
+    "BG16": "kumas/BG16.jpg"
+  }
+}

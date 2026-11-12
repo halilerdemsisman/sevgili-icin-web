@@ -1,0 +1,29 @@
+
+/* v2.9 bayi karnesi, Excel ile fiyat güncelleme, hatırlatmalar */
+.kn-harf{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;font-weight:800;font-size:15px;color:#fff}
+.kn-harf.A{background:#059669}.kn-harf.B{background:#2563eb}.kn-harf.C{background:#d97706}.kn-harf.D{background:#dc2626}
+.kn-harf.buyuk{width:64px;height:64px;font-size:32px;border-radius:14px}
+.kn-ust{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.kn-ust h2{margin:0;font-size:22px}.kn-ust .puan{font-size:13px;color:var(--yazi2)}.kn-ust .puan b{font-size:26px;color:var(--yazi)}
+.kn-bil{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.kn-bil div{border:1px solid var(--cizgi);border-radius:12px;padding:12px 14px;background:var(--yuzey)}
+.kn-bil span{font-size:12px;color:var(--yazi2);display:flex;justify-content:space-between}.kn-bil span b{color:var(--yazi)}
+.kn-bil i{display:block;height:8px;border-radius:4px;background:var(--cizgi2,#f1f5f9);margin:8px 0 6px;overflow:hidden}.kn-bil i em{display:block;height:100%;border-radius:4px;background:var(--seri,#d97706)}
+.kn-bil small{font-size:11.5px;color:var(--soluk)}
+.kn-iki{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.kn-graf svg{width:100%;height:auto;display:block}.kn-graf .bar:hover{opacity:.8}
+.kn-kat div{display:grid;grid-template-columns:130px 1fr 70px;gap:8px;align-items:center;font-size:12.5px;margin:6px 0}
+.kn-kat i{height:10px;border-radius:0 4px 4px 0;background:var(--seri,#d97706);display:block}.kn-kat b{text-align:right;font-weight:600}
+.kn-tb tr.sec td{background:#fffbeb}
+.fx-ozet{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}.fx-ozet div{border:1px solid var(--cizgi);border-radius:10px;padding:8px 12px;font-size:12px;color:var(--yazi2)}.fx-ozet b{display:block;font-size:18px;color:var(--yazi)}
+.fx-kay{max-height:46vh;overflow:auto;border:1px solid var(--cizgi);border-radius:10px}
+.fx-kay .tablo th{position:sticky;top:0;background:var(--yuzey2);z-index:1}
+.fx-art{color:#b91c1c;font-weight:600}.fx-az{color:#047857;font-weight:600}.fx-uy td{background:#fef3c7}
+.ht-g{margin-bottom:6px}.ht{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--cizgi);font-size:13px}.ht:last-child{border-bottom:0}
+.ht .n{width:10px;height:10px;border-radius:50%;margin-top:4px;flex:none;background:#2563eb}.ht.kirmizi .n{background:#dc2626}.ht.sari .n{background:#d97706}.ht.yesil .n{background:#059669}
+.ht .m{flex:1}.ht .m small{display:block;color:var(--soluk);font-size:11.5px;margin-top:2px}.ht .a{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.ht .a .btn{padding:5px 10px;font-size:12px}
+.ht-form{display:grid;grid-template-columns:2fr 140px 1fr 1fr auto;gap:8px;align-items:end}
+.ht-form input,.ht-form select{padding:9px 10px;border:1px solid var(--cizgi);border-radius:8px;background:var(--girdi,#fff);color:var(--yazi);font-size:13px;width:100%}
+[data-tema=koyu] .kn-tb tr.sec td{background:rgba(232,163,23,.12)}[data-tema=koyu] .fx-uy td{background:rgba(217,119,6,.15)}
+@media (max-width:1000px){.kn-iki{grid-template-columns:1fr}.ht-form{grid-template-columns:1fr}}
+@media print{.kn-gizle{display:none!important}}

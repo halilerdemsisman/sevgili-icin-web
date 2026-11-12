@@ -1,0 +1,1 @@
+try{if(localStorage.getItem('exit-tema')==='koyu')document.documentElement.setAttribute('data-tema','koyu')}catch(e){}

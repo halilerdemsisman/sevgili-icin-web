@@ -1,0 +1,7 @@
+
+/* v2.4 sade giriş + kurumsal iç arka plan */
+#giris.gizli,#giris.tek.gizli,#uyg.gizli{display:none!important}
+#giris .g-sol p,#giris .g-ozellik,#giris .g-alt-yazi,#giris .g-guven,#fGiris>p.kucuk,#giris.tek .g-kutu>p{display:none!important}
+#giris .g-sol h1{margin-bottom:22px!important}
+.g-modul div{font-size:0!important;padding:14px 16px!important}.g-modul b{font-size:14px!important;margin:0!important}
+#giris .g-kutu h3,#giris .g-kutu h1{margin:14px 0 20px!important}

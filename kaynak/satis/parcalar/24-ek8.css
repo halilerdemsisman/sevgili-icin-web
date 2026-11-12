@@ -1,0 +1,5 @@
+
+.a8-bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}.a8-bar span:first-child{width:150px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.a8-bar i{display:block;height:14px;border-radius:4px;background:#2563eb;min-width:2px}.a8-bar em{font-style:normal;color:var(--yazi2,#64748b);white-space:nowrap}
+.a8-iki{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.a8-ozet{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}.a8-ozet div{flex:1;min-width:150px;background:var(--kart,#fff);border:1px solid var(--cizgi,#e5e7eb);border-radius:12px;padding:12px}.a8-ozet b{display:block;font-size:20px;margin-top:2px}
+.a8-dz{font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px}.a8-dz.bekliyor{background:#fef3c7;color:#92400e}.a8-dz.onaylandi{background:#dcfce7;color:#166534}.a8-dz.reddedildi{background:#fee2e2;color:#991b1b}

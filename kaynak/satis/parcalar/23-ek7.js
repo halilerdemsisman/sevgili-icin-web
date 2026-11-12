@@ -1,0 +1,53 @@
+
+/* v3.2 bayi sipariş düzenleme/iptal: doğrudan değişiklikleri al, talepleri onayla */
+(function () {
+  const TUR = { iptal: 'İptal', duzenle: 'Adet değişikliği' };
+  const bayiMesaj = (kul, metin) => { const M = oku('exb-hatirlat', []) || []; M.push({ id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 4), kul, tur: 'siparis', metin, zaman: Date.now(), kim: kimAd(), okundu: false }); yaz('exb-hatirlat', M); };
+  const log = (o, d) => { try { islemKaydi(o, d); } catch (e) {} };
+  // bayinin onaylanmamış siparişte yaptığı değişiklik ve iptaller
+  function al() {
+    let deg = 0;
+    (oku('exb-siparisler', []) || []).forEach(p => { const o = SIP[p.no]; if (!o || !(p.rev > (o.rev || 0))) return;
+      o.rev = p.rev;
+      if (o.durum !== 'yeni') { log('Bayi değişikliği reddedildi', `${p.no}: sipariş zaten ${o.durum}`); return; }
+      if (p.durum === 'iptal') { o.durum = 'iptal'; o.bayiIptal = p.bayiIptal; (o.gecmis = o.gecmis || []).push({ durum: 'iptal', zaman: Date.now(), kim: 'Bayi' }); log('Bayi siparişi iptal etti', p.no); }
+      else { o.kalemler = p.kalemler; o.toplam = p.toplam; o.teklif = p.teklif; o.revizyon = p.revizyon; log('Bayi siparişi düzenledi', p.no); }
+      deg++; });
+    if (deg) { yaz('exs-siparisler', SIP); try { yeniSay(); } catch (e) {} if (['siparisler', 'panel'].includes(aktif)) git(aktif); toast(deg + ' siparişte bayi değişikliği alındı.'); }
+    talepRozet();
+  }
+  const talepler = () => (oku('exb-siparisler', []) || []).filter(p => p.talep && p.talep.durum === 'bekliyor' && SIP[p.no]);
+  function talepRozet() { const n = talepler().length, b = document.querySelector('aside button.m[data-s=talepler] .say'); if (b) { b.textContent = n; b.classList.toggle('gizli', !n); } }
+  function karar(no, onay, yanit) {
+    const L = oku('exb-siparisler', []), p = L.find(x => x.no === no), o = SIP[no]; if (!p || !o || !p.talep) return;
+    const t = p.talep;
+    if (onay) {
+      if (['sevk', 'iptal'].includes(o.durum)) return toast('Sipariş artık ' + o.durum + ' durumunda; talep uygulanamaz.');
+      if (t.tur === 'iptal') { durumYaz(no, 'iptal'); }
+      else { (o.revizyon = o.revizyon || []).push({ zaman: Date.now(), eski: o.kalemler, not: t.not, kim: kimAd() }); o.kalemler = t.kalemler; o.toplam = t.kalemler.reduce((a, y) => a + (y.birim || 0) * y.adet, 0);
+        yaz('exs-siparisler', SIP); p.kalemler = t.kalemler; p.toplam = o.toplam; p.net = Math.round(tutarlar(o).net * 100) / 100; }
+    }
+    const L2 = oku('exb-siparisler', []), p2 = L2.find(x => x.no === no);
+    if (!onay || t.tur !== 'iptal') { if (onay && t.tur !== 'iptal') { p2.kalemler = t.kalemler; p2.toplam = o.toplam; p2.net = Math.round(tutarlar(o).net * 100) / 100; } }
+    p2.talep = { ...t, durum: onay ? 'onaylandi' : 'reddedildi', yanit, karar: Date.now(), kim: kimAd() }; yaz('exb-siparisler', L2);
+    bayiMesaj(o.kul, `${no} ${TUR[t.tur].toLocaleLowerCase('tr')} talebiniz ${onay ? 'onaylandı' : 'reddedildi'}${yanit ? ': ' + yanit : ''}`);
+    log(`${TUR[t.tur]} talebi ${onay ? 'onaylandı' : 'reddedildi'}`, no + (yanit ? ' · ' + yanit : ''));
+    toast('Karar bayiye iletildi.'); S6.talepler();
+  }
+  S6.talepler = function () {
+    $('#baslik').textContent = 'Bayi değişiklik talepleri';
+    const T = talepler().sort((a, b) => a.talep.zaman - b.talep.zaman);
+    const son = (oku('exb-siparisler', []) || []).filter(p => p.talep && p.talep.durum !== 'bekliyor' && SIP[p.no]).sort((a, b) => b.talep.karar - a.talep.karar).slice(0, 15);
+    const fark = (p) => { const o = SIP[p.no]; return p.talep.tur === 'iptal' ? '<b style="color:#b91c1c">Siparişin tamamı iptal</b>' : o.kalemler.map(x => { const y = p.talep.kalemler.find(z => z.ad === x.ad && (z.secenek || '') === (x.secenek || '')); const n = y ? y.adet : 0; return `<div>${esc(x.ad)}${x.secenek ? ' · ' + esc(x.secenek) : ''}: ${n === x.adet ? x.adet : `<s>${x.adet}</s> → <b>${n || 'çıkarıldı'}</b>`}</div>`; }).join(''); };
+    $('#icerik').innerHTML = `<div class="kart"><h3>Onay bekleyen talepler (${T.length})</h3><div class="alt">Bayi onaylanmamış (“Yeni talep”) siparişini kendisi düzenleyip iptal edebilir; bu değişiklikler doğrudan siparişe işlenir. Onaylanmış veya üretimdeki siparişler için talep buraya düşer. Sevk edilen sipariş değiştirilemez.</div>
+      <table class="tablo"><tr><th>Sipariş</th><th>Bayi</th><th>Talep</th><th>Değişiklik</th><th>Not</th><th></th></tr>${T.map(p => `<tr><td><b>${esc(p.no)}</b><div class="kucuk">${esc(SIP[p.no].durum)} · ${tarih(p.talep.zaman)}</div></td><td>${esc(p.firma || p.kul)}</td><td>${TUR[p.talep.tur]}</td><td class="kucuk">${fark(p)}</td><td class="kucuk">${esc(p.talep.not || '—')}</td>
+        <td class="sag-hiza" style="white-space:nowrap"><input class="s6-in" placeholder="Yanıt (isteğe bağlı)" data-ty="${esc(p.no)}" style="width:150px"> <button class="btn kucuk" data-tok="${esc(p.no)}">Onayla</button> <button class="btn kucuk cizgi" data-tred="${esc(p.no)}">Reddet</button></td></tr>`).join('') || '<tr><td colspan="6" class="kucuk">Bekleyen talep yok.</td></tr>'}</table></div>
+      ${son.length ? `<div class="kart"><h3>Son kararlar</h3><table class="tablo">${son.map(p => `<tr><td><b>${esc(p.no)}</b></td><td>${esc(p.firma || p.kul)}</td><td>${TUR[p.talep.tur]}</td><td>${p.talep.durum === 'onaylandi' ? '<span class="art">Onaylandı</span>' : '<span class="azl">Reddedildi</span>'}</td><td class="kucuk">${esc(p.talep.kim || '')} · ${new Date(p.talep.karar).toLocaleString('tr-TR')}</td></tr>`).join('')}</table></div>` : ''}`;
+    const y = no => (document.querySelector(`[data-ty="${CSS.escape(no)}"]`) || {}).value || '';
+    $$('[data-tok]').forEach(b => b.onclick = () => karar(b.dataset.tok, true, y(b.dataset.tok).trim()));
+    $$('[data-tred]').forEach(b => b.onclick = () => karar(b.dataset.tred, false, y(b.dataset.tred).trim()));
+  };
+  if (!document.querySelector('aside button.m[data-s=talepler]')) { const r = document.querySelector('aside button.m[data-s=siparisler]'); r && r.insertAdjacentHTML('afterend', `<button class="m" data-s="talepler"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Değişiklik talepleri <span class="say gizli"></span></button>`); }
+  $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
+  setInterval(al, 4000); setTimeout(al, 800);
+})();

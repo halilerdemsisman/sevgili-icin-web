@@ -1,0 +1,29 @@
+
+/* v2.5 düzeltmeler (kontrol turu) */
+aside#menu.acik .logo-ink{fill:#e5e7eb}aside#menu.acik .logo-ink-soft{fill:#cbd5e1}
+@media (max-width:900px){aside#menu{overflow-y:auto;overscroll-behavior:contain}.pencere>.tablo{display:block;overflow-x:auto}#uyg main::before{height:226px}}
+@media (max-width:800px){#uyg main>.ust .kim{border-left:0!important;padding-left:0;margin-left:0}}
+@media (max-width:480px){#uyg main>.ust .kim b{display:none}.pencere>div[style*="grid-template-columns"]{grid-template-columns:1fr!important;gap:0!important}}
+@media (max-width:1366px){#uyg main>.ust .ust-cikis span{display:none}#uyg main>.ust .ust-cikis{padding:0 10px}}
+@media (max-width:1180px){#uyg main>.ust .kim span{display:none}}
+aside .kur-kutu .btn{color:#fff}[data-tema=koyu] aside .kur-kutu .btn:not(.cizgi){background:#27497f!important}
+#icerik .tablo{box-shadow:none!important}
+@media (min-width:901px){#uyg main::before{height:220px}}
+[data-tema=koyu] .pencere #pTakip{background:var(--yuzey2)!important}
+html[data-tema=koyu]{--kotu:#f87171;--iyi:#34d399}
+[data-tema=koyu] .hata{color:#f87171}
+#nYazi{min-width:0}
+html[data-tema=koyu] body input:not([type=checkbox]):not([type=radio]):focus,html[data-tema=koyu] body select:focus,html[data-tema=koyu] body textarea:focus{border-color:#e8a317!important;box-shadow:0 0 0 3px rgba(232,163,23,.25)}
+.alan input:disabled,.kart input:disabled{opacity:.55;cursor:not-allowed}
+#mTemS,#nTur,#cVade{background:var(--girdi);color:var(--yazi)}
+.mk-izgara>.kart{min-width:0}.mk-izgara .tablo{font-size:12.5px}.mk-izgara .tablo td,.mk-izgara .tablo th{padding:8px 6px}.mk-izgara .tablo td:nth-child(2){white-space:nowrap}
+[data-kart]{white-space:nowrap}
+@media (max-width:900px){#icerik td:has(>[data-on]){position:sticky;right:0;background:var(--yuzey);white-space:normal!important;width:92px;min-width:92px;box-shadow:-10px 0 12px -10px rgba(0,0,0,.35)}#icerik td:has(>[data-on]) .btn{display:block;width:100%;margin:3px 0;padding:7px 8px}}
+[data-tema=koyu] .pencere .kart:hover{border-color:var(--cizgi)!important}
+[data-tema=koyu] .anah.on{background:#059669}
+[data-tema=koyu] #icerik .u-fiyat input{background:transparent!important}
+[data-tema=koyu] .u-bas i:not([style]){background-color:var(--yuzey2)}
+.sk-sec input[type=radio]{width:auto;margin:0;flex:none}
+.pencere .alan{min-width:0}
+@media (max-width:600px){.toast{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 32px)}}
+[data-tema=koyu] input[type=radio],[data-tema=koyu] input[type=checkbox]{accent-color:#e8a317}

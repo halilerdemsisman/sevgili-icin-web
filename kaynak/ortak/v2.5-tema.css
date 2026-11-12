@@ -1,0 +1,157 @@
+
+/* ===== v2.5 · aydınlık/karanlık tema, resmi arka plan, düzen düzeltmeleri ===== */
+:root{--sayfa:#eef1f6;--girdi:#fff;--hover:#fffbeb;--cizgi2:#f1f5f9;--bant1:#0b1f3a;--bant2:#17386f;
+  --kart-golge:0 1px 2px rgba(11,31,58,.05),0 12px 28px -18px rgba(11,31,58,.32)}
+html[data-tema=koyu]{color-scheme:dark;--bg:#0a111d;--sayfa:#0a111d;--yuzey:#111b2d;--yuzey2:#0e1727;--cizgi:#24324b;--cizgi2:#1b2740;
+  --yazi:#e6ebf3;--yazi2:#aeb9cb;--soluk:#808da3;--girdi:#0c1524;--hover:rgba(232,163,23,.08);
+  --koyu:#1d3a68;--lacivert:#1d3a68;--lacivert2:#27497f;--bant1:#06111f;--bant2:#0f2649;
+  --golge:0 12px 32px rgba(0,0,0,.5);--kart-golge:0 1px 2px rgba(0,0,0,.35),0 14px 30px -18px rgba(0,0,0,.75)}
+html.tema-gecis,html.tema-gecis *{transition:background-color .25s,border-color .25s,color .25s,fill .25s!important}
+body{background:var(--sayfa)!important}
+#uyg{background:var(--sayfa);overflow-x:clip}
+
+/* tema düğmesi */
+.tema-btn{width:40px;height:40px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;flex:none;border:1px solid var(--cizgi);background:var(--yuzey);color:var(--yazi2);cursor:pointer;padding:0}
+.tema-btn:hover{color:var(--yazi);border-color:var(--marka)}
+.tema-btn svg{transition:transform .5s cubic-bezier(.16,1,.3,1)}.tema-btn:hover svg{transform:rotate(30deg)}
+#giris .g-tema{position:absolute;top:18px;right:18px;z-index:6;box-shadow:0 6px 18px -10px rgba(11,31,58,.4)}
+
+/* ---------- satış paneli: yan menü, logolar tam görünür ---------- */
+aside#menu>*{flex:none}
+aside#menu{background:linear-gradient(180deg,#0d2547 0%,#0a1c38 55%,#071427 100%)!important;box-shadow:inset -1px 0 0 rgba(255,255,255,.06)}
+[data-tema=koyu] aside#menu{background:linear-gradient(180deg,#0a1a31 0%,#07142a 55%,#040b17 100%)!important;box-shadow:inset -1px 0 0 rgba(255,255,255,.05)}
+aside#menu button.m:hover,aside#menu button.m.on{background:rgba(255,255,255,.07)!important}
+aside#menu .logolar{overflow:visible;justify-content:center;padding:14px 6px 18px!important;margin:0 0 6px;border-bottom:1px solid rgba(255,255,255,.08)}
+aside#menu .logolar::after,#uyg header .logolar::after{display:none}
+@media (min-width:901px){
+  #uyg aside#menu{position:sticky!important;top:0;height:100vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#24406b transparent}
+}
+#cikis{display:flex;align-items:center;gap:10px;color:#fecaca!important;border:1px solid rgba(248,113,113,.28)!important;background:rgba(248,113,113,.07)!important;margin-bottom:4px}
+#cikis:hover{background:rgba(248,113,113,.16)!important;color:#fff!important}
+#cikis svg{opacity:1!important}
+
+/* ---------- satış paneli: resmi üst bant ---------- */
+#uyg main{position:relative;isolation:isolate}
+#uyg main::before{content:"";position:absolute;left:0;right:0;top:0;height:250px;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(560px 250px at 100% 0%,rgba(232,163,23,.20),transparent 70%),
+    radial-gradient(460px 220px at 0% 100%,rgba(234,36,41,.09),transparent 70%),
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(120deg,var(--bant1) 0%,var(--bant2) 62%,var(--bant1) 100%)}
+#uyg main>.ust{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;padding:2px 0 16px!important;margin-bottom:14px!important}
+#uyg main>.ust #baslik{color:#fff!important;font-size:26px}
+#uyg main>.ust .yol{color:rgba(226,232,240,.62)!important}
+#uyg main>.ust .kim{border-left-color:rgba(255,255,255,.16)!important}
+#uyg main>.ust .kim b{color:#fff}#uyg main>.ust .kim span{color:rgba(226,232,240,.66)!important}
+#uyg main>.ust .kim .av{background:var(--marka)!important;color:#1a1200!important}
+#uyg main>.ust .btn.cizgi,#uyg main>.ust #mMenu{background:rgba(255,255,255,.08)!important;color:#fff!important;border:1px solid rgba(255,255,255,.2)!important;color-scheme:dark}
+#uyg main>.ust .btn.cizgi:hover,#uyg main>.ust #mMenu:hover{background:rgba(255,255,255,.15)!important;filter:none}
+#uyg main>.ust .btn.marka{background:var(--marka)!important;color:#1a1200!important}
+#uyg main>.ust select option{color:var(--yazi);background:var(--yuzey)}
+.ust-ikon,.ust-cikis{height:38px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.2)!important;color:#fff!important;font-weight:600;flex:none}
+.ust-ikon{width:38px;padding:0}.ust-cikis{padding:0 14px}
+.ust-ikon:hover{background:rgba(255,255,255,.16)!important}
+.ust-cikis:hover{background:#c81e1e!important;border-color:#c81e1e!important}
+@media (max-width:800px){.ust-cikis span{display:none}.ust-cikis{padding:0 10px}}
+#uyg main .kart,#uyg main .kpi>div,#uyg main .swot>div{box-shadow:var(--kart-golge);border-color:rgba(11,31,58,.08)}
+#uyg main .altbilgi{border-top-color:var(--cizgi)}
+
+/* ---------- bayi portalı: sabit başlık ve kategori şeridi ---------- */
+#uyg>header{position:sticky!important;top:0;z-index:30}
+nav.kat{top:var(--hdrH,67px)!important;z-index:25;box-shadow:0 8px 18px -14px rgba(11,31,58,.45)}
+@media (min-width:901px){aside.filtre{top:calc(var(--hdrH,67px) + 66px)!important;max-height:calc(100vh - var(--hdrH,67px) - 84px);overflow-y:auto;scrollbar-width:thin}}
+.h-firma{display:flex;align-items:center;gap:8px;padding:4px 10px 4px 12px;margin-left:4px;border-left:1px solid rgba(255,255,255,.14);color:#e5e7eb;font-size:13px;font-weight:600;white-space:nowrap}
+.h-firma i{font-style:normal;width:30px;height:30px;border-radius:50%;background:var(--marka);color:#1a1200;display:inline-flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;flex:none}
+.h-cikis:hover{background:#c81e1e!important;color:#fff!important}
+header .tema-btn{width:auto;height:auto;border:0;background:none;color:#e5e7eb;padding:9px 10px;border-radius:10px}
+header .tema-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+@media (max-width:900px){.h-firma .y{display:none}.h-firma{border-left:0;padding:0 4px}}
+
+/* ---------- bayi portalı: resmi üst bant ---------- */
+#s-katalog>main,#uyg>section.sayfa{position:relative;isolation:isolate}
+#s-katalog>main::before,#uyg>section.sayfa::before{content:"";position:absolute;top:0;left:50%;width:100vw;margin-left:-50vw;height:210px;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(620px 260px at 88% 0%,rgba(232,163,23,.18),transparent 70%),
+    radial-gradient(520px 240px at 6% 100%,rgba(234,36,41,.08),transparent 70%),
+    linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/44px 44px,
+    linear-gradient(120deg,var(--bant1) 0%,var(--bant2) 62%,var(--bant1) 100%)}
+#uyg>section.sayfa::before{height:190px}
+#s-katalog .ust-satir h2{color:#fff}
+#s-katalog .ust-satir .say{color:rgba(226,232,240,.7)!important}
+#s-katalog .ust-satir .btn.cizgi{background:rgba(255,255,255,.08)!important;color:#fff!important;border:1px solid rgba(255,255,255,.22)!important}
+#s-katalog .ust-satir .btn.cizgi:hover{background:rgba(255,255,255,.16)!important;filter:none}
+#uyg>section.sayfa>h2{color:#fff;margin-top:4px}
+#uyg>section.sayfa>h2+p.kucuk{color:rgba(226,232,240,.72)!important}
+#uyg .kart,#uyg .sk,#uyg .kart-b,#uyg .sk-ozet>div,#uyg aside.filtre,#uyg .tablo{box-shadow:var(--kart-golge)}
+#uyg .kmp-ust{box-shadow:0 10px 24px -16px rgba(0,0,0,.6)}
+
+/* ---------- karanlık mod ---------- */
+[data-tema=koyu] .kpi div,[data-tema=koyu] .kart,[data-tema=koyu] .swot div,[data-tema=koyu] .pencere,[data-tema=koyu] .cekmece,
+[data-tema=koyu] .sk,[data-tema=koyu] .sk-ozet div,[data-tema=koyu] .kart-b,[data-tema=koyu] .tablo,[data-tema=koyu] aside.filtre,
+[data-tema=koyu] nav.kat,[data-tema=koyu] .p-foto,[data-tema=koyu] .p-alt,[data-tema=koyu] .g-kutu{background:var(--yuzey)!important;border-color:var(--cizgi)!important;color:var(--yazi)}
+[data-tema=koyu] .alan input,[data-tema=koyu] .alan select,[data-tema=koyu] .alan textarea,[data-tema=koyu] .filtreler input,[data-tema=koyu] .filtreler select,
+[data-tema=koyu] .ust-filtre,[data-tema=koyu] .ust-satir select,[data-tema=koyu] .hdf-in,[data-tema=koyu] .toplu input,[data-tema=koyu] .adet input,
+[data-tema=koyu] .pencere input,[data-tema=koyu] .pencere select,[data-tema=koyu] .pencere textarea,[data-tema=koyu] .kart input:not([type=checkbox]):not([type=radio]),[data-tema=koyu] .kart select,[data-tema=koyu] .kart textarea{background:var(--girdi)!important;color:var(--yazi)!important;border-color:var(--cizgi)!important}
+[data-tema=koyu] .btn.cizgi{background:var(--yuzey2)!important;color:var(--yazi)!important;border-color:var(--cizgi)!important}
+[data-tema=koyu] .tablo th{background:var(--yuzey2)!important;border-color:var(--cizgi)!important}
+[data-tema=koyu] .tablo td{border-bottom-color:var(--cizgi2)!important}
+[data-tema=koyu] .tablo tr.tik:hover td,[data-tema=koyu] .tablo tr:hover td{background:var(--hover)!important}
+[data-tema=koyu] .oneri,[data-tema=koyu] .not-satir{border-color:var(--cizgi2)!important}
+[data-tema=koyu] .d-yeni{background:rgba(56,189,248,.14);color:#7dd3fc}
+[data-tema=koyu] .d-onay{background:rgba(34,197,94,.14);color:#86efac}
+[data-tema=koyu] .d-uretim{background:rgba(245,158,11,.16);color:#fcd34d}
+[data-tema=koyu] .d-sevk{background:rgba(167,139,250,.16);color:#c4b5fd}
+[data-tema=koyu] .d-iptal{background:rgba(248,113,113,.15);color:#fca5a5}
+[data-tema=koyu] .uy-kotu,[data-tema=koyu] .onay-b.red,[data-tema=koyu] .sk-iptal,[data-tema=koyu] .kmp-bant{background:rgba(248,113,113,.12)!important;color:#fca5a5!important;border-color:rgba(248,113,113,.3)!important}
+[data-tema=koyu] .uy-uyari,[data-tema=koyu] .onay-b.bekliyor,[data-tema=koyu] .rozet:not(#sepetSay),[data-tema=koyu] .oneri .no,[data-tema=koyu] .etiket,[data-tema=koyu] .uyari,
+[data-tema=koyu] .g-not,[data-tema=koyu] .bild.bekl,[data-tema=koyu] .toplu.on,[data-tema=koyu] .u-fiyat label.degisti,[data-tema=koyu] .cip.on{background:rgba(232,163,23,.12)!important;color:#fcd34d!important;border-color:rgba(232,163,23,.38)!important}
+[data-tema=koyu] .cip.on b,[data-tema=koyu] .cip.on small{color:var(--yazi)}
+[data-tema=koyu] .uy-bilgi,[data-tema=koyu] .onay-b.bilgi{background:rgba(129,140,248,.14)!important;color:#c7d2fe!important}
+[data-tema=koyu] .onay-b.ok{background:rgba(34,197,94,.14)!important;color:#86efac!important}
+[data-tema=koyu] .kapat,[data-tema=koyu] .v-kapat{background:var(--yuzey2)!important;color:var(--yazi)!important;box-shadow:0 0 0 1px var(--cizgi)}
+[data-tema=koyu] .cubuk .iz,[data-tema=koyu] .hbar{background:#1b2740!important}
+[data-tema=koyu] .hbar em{background:#e6ebf3!important}
+[data-tema=koyu] .anah{background:#334155}
+[data-tema=koyu] .sekme{background:var(--yuzey2)!important}
+[data-tema=koyu] .sekme button.on{background:var(--yuzey)!important;color:var(--yazi)!important;box-shadow:0 0 0 1px var(--cizgi)}
+[data-tema=koyu] .cip,[data-tema=koyu] .renk,[data-tema=koyu] .sk-filtre button,[data-tema=koyu] .u-fiyat label,[data-tema=koyu] .hedefler label{background:var(--yuzey2)!important;border-color:var(--cizgi)!important;color:var(--yazi)}
+[data-tema=koyu] .sk-filtre button.on,[data-tema=koyu] .hedefler label.on{background:var(--lacivert)!important;color:#fff!important}
+[data-tema=koyu] .adim i{background:var(--yuzey)!important}
+[data-tema=koyu] .adim.tamam i{background:var(--lacivert)!important}
+[data-tema=koyu] .adim.simdi i{color:#fcd34d}
+[data-tema=koyu] .kart .foto{background-color:#fff;margin:8px 8px 0;border-radius:8px;border-bottom:0!important}
+[data-tema=koyu] .kart .foto.bos{background:var(--yuzey2)!important}
+[data-tema=koyu] .kart:hover{border-color:#3a4a68!important}
+[data-tema=koyu] .p-foto .buyuk{background-color:#fff}
+[data-tema=koyu] .yeni,[data-tema=koyu] .kmp-ad{color:#f87171}
+[data-tema=koyu] .ust,[data-tema=koyu] .kim,[data-tema=koyu] .altbilgi{border-color:var(--cizgi)}
+[data-tema=koyu] .acik .logo-ink{fill:#e5e7eb}[data-tema=koyu] .acik .logo-ink-soft{fill:#cbd5e1}
+[data-tema=koyu] header{background:#0a1a31!important}
+[data-tema=koyu] header .ara input{background:#13233f!important}
+[data-tema=koyu] .ust-bant{background:#050d19!important}
+[data-tema=koyu] .altbilgi{background-color:transparent}
+[data-tema=koyu] #uyg>.altbilgi,[data-tema=koyu] footer.altbilgi{background:#050d19!important}
+[data-tema=koyu] .toast{background:#1d3a68;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+[data-tema=koyu] .perde{background:rgba(2,6,14,.72)}
+[data-tema=koyu] .v360{background:radial-gradient(ellipse at 50% 40%,#f8fafc,#cfd6df)}
+[data-tema=koyu] .teknik th{background:var(--yuzey2)}
+[data-tema=koyu] .ozet,[data-tema=koyu] .hesap,[data-tema=koyu] .sk-bilgi,[data-tema=koyu] .toplu,[data-tema=koyu] .c-alt{background:var(--yuzey2)!important;border-color:var(--cizgi)!important}
+[data-tema=koyu] .u-bas i,[data-tema=koyu] .s-kalem .f{background-color:#fff}
+[data-tema=koyu] .bild{border-color:var(--cizgi)}
+[data-tema=koyu] .swot div{background:var(--yuzey)!important}
+[data-tema=koyu] .tc.tah em{background:#fcd34d}
+[data-tema=koyu] #uyg main .kart,[data-tema=koyu] #uyg main .kpi>div{border-color:var(--cizgi)!important}
+[data-tema=koyu] .btn.marka:not(#giris .btn){background:#e8a317!important;color:#1a1200!important}
+/* karanlık giriş */
+[data-tema=koyu] #giris .g-sag{background:radial-gradient(600px 400px at 100% 0%,rgba(232,163,23,.08),transparent 60%),#0a1424!important}
+[data-tema=koyu] #giris .g-sag::before{background-image:radial-gradient(rgba(255,255,255,.06) 1px,transparent 1px)}
+[data-tema=koyu] #giris .g-kutu{box-shadow:0 30px 70px -20px rgba(0,0,0,.85)!important}
+[data-tema=koyu] #giris .g-kutu h1,[data-tema=koyu] #giris .g-kutu h3{color:var(--yazi)!important}
+[data-tema=koyu] #giris .alan label{color:var(--yazi2)!important}
+[data-tema=koyu] .g-gir input,[data-tema=koyu] .g-gir input:focus{background:var(--girdi)!important;border-color:var(--cizgi)!important;color:var(--yazi)}
+[data-tema=koyu] .g-gir input:focus{border-color:#e8a317!important}
+[data-tema=koyu] .g-goz:hover{background:var(--yuzey2);color:var(--yazi)}
+[data-tema=koyu] #giris .btn.marka.tam{background:linear-gradient(180deg,#f0b02a,#d4930f)!important;color:#1a1200!important;box-shadow:0 10px 24px -12px rgba(232,163,23,.6)}
+[data-tema=koyu] #giris .tema-btn{background:var(--yuzey);border-color:var(--cizgi)}

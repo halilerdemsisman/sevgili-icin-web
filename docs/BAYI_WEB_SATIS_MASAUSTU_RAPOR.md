@@ -1,7 +1,7 @@
 # EXIT Garden: Bayi Web Sitesi ve Satış Masaüstü Uygulaması
 ## Analiz ve Faz Planı
 
-Hazırlanma: 12 Kasım 2026
+Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0 tamamlandı)
 Girdi: `Bayi_Satis_Kod.zip` (iki HTML uygulama, sunucu, PWA, modüller, ekran görüntüleri) ve `BAYI_SATIS_RAPOR.md`.
 
 Hedef:
@@ -19,8 +19,8 @@ Ancak bugünkü yapı **bayileri internete açmak için güvenli değil**. Uygul
 
 1. Sunucu API'sinde **kimlik doğrulama yok**. `GET /api/veri` adresini çağıran herkes tüm bayilerin siparişlerini, cari hesaplarını, dekontlarını ve kullanıcı şifre özetlerini alıyor. `POST /api/veri` ile herkes her şeyi değiştirebiliyor.
 2. Giriş ve yetki kontrolü tarayıcıda yapılıyor. "Temsilci yalnız kendi bayilerini görür" kuralı da yalnızca ekranda uygulanıyor; veri yine de temsilcinin tarayıcısına iniyor.
-3. Aynı anda iki bayi sipariş verirse **aynı sipariş numarası** üretilebiliyor ve sunucu numaraya göre birleştirdiği için **siparişlerden biri kayboluyor** (ayrıntı: 3.2).
-4. Dekontlar ve iade fotoğrafları ortak `localStorage` anahtarlarına gömülü. Tarayıcı kotası (~5 MB) birkaç düzine dekonttan sonra dolar ve **kayıtlar yazılamaz hale gelir**. Her bayi tüm bayilerin dekontlarını indirir.
+3. Aynı anda iki bayi sipariş verirse **aynı sipariş numarası** üretiliyor ve sunucu numaraya göre birleştirdiği için **siparişlerden biri kayboluyor** (ayrıntı: 3.2; Faz 0'da testle doğrulandı).
+4. Dekontlar ve iade fotoğrafları ortak `localStorage` anahtarlarına gömülü. Ortak veri tarayıcı kotasını (Chromium'da ölçülen ~8 milyon karakter) aşınca sayfa "Sunucuya bağlı" görünmeye devam eder ama **verinin bir kısmı tarayıcıya sessizce yüklenmez** (Faz 0'da testle doğrulandı). Her bayi tüm bayilerin dekontlarını indirir.
 
 Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir API + veritabanı + giriş sistemine dönüştürmek**, sonra iki uygulamayı bu API'ye taşımak üzerine kurulu. Mevcut arayüz tasarımı, ekran akışları ve iş kuralları büyük ölçüde yeniden kullanılır.
 
@@ -34,6 +34,8 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
 Faz 2 ve Faz 3, Faz 1 tamamlandıktan sonra paralel yürüyebilir.
+
+**Durum:** Faz 0 ✅ tamamlandı (bkz. bölüm 5, Faz 0 sonuçları) · Faz 1 ⏳ sıradaki.
 
 ---
 
@@ -84,18 +86,18 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 |---|---|---|---|
 | G1 | 🔴 | API'de kimlik doğrulama yok; tüm veri herkese açık ve herkes yazabilir | `sunucu.js`: `/api/veri` GET/POST, `/api/degisen` kontrolsüz |
 | G2 | 🔴 | Bayi ve satış kullanıcılarının şifre özetleri (`exb-kullanicilar`, `exs-kullanicilar`) her istemciye iniyor | ortak anahtarlar senkronda |
-| G3 | 🔴 | Şifre özeti tuzsuz SHA-256 (`'exitbayi:' + şifre`). Sızarsa sözlük saldırısıyla kolayca çözülür | `ozet()` bayi satır ~499, satış ~327 |
+| G3 | 🔴 | Şifre özeti tuzsuz SHA-256 (`'exitbayi:' + şifre`). Sızarsa sözlük saldırısıyla kolayca çözülür | `ozet()`, bkz. bölüm 8 |
 | G4 | 🔴 | Yetki (temsilci/bayi ayrımı, onay yetkisi) yalnız arayüzde. Tarayıcı konsolundan her şey değiştirilebilir | `ben` nesnesi istemcide |
-| G5 | 🟠 | Varsayılan yönetici `satis / 1234`; giriş ekranında yazıyor | satış satır ~257, ~382 |
-| G6 | 🟠 | Claude API anahtarı tarayıcıda saklanıp doğrudan tarayıcıdan çağrılıyor | satış satır ~608 |
+| G5 | 🟠 | Varsayılan yönetici `satis / 1234`; giriş ekranında yazıyor | `satis/sablon.html:83`; testle doğrulandı (G5) |
+| G6 | 🟠 | Claude API anahtarı tarayıcıda saklanıp doğrudan tarayıcıdan çağrılıyor | `satis/parcalar/03-ana.js:299` |
 | G7 | 🟠 | Sunucu HTTP; oturum yönetimi, hız sınırı, kilitleme, işlem kaydının sunucuda tutulması yok | |
 | G8 | 🟡 | HTML'in büyük kısmı `innerHTML` ile kuruluyor (bayi 48, satış 67 yer). `esc()` yardımcı fonksiyonu var; bayilerin girdiği metinlerin (firma adı, not, açıklama) her yerde kaçışlandığı denetlenmeli (XSS riski) | |
 
 ### 3.2 Veri bütünlüğü
 | # | Önem | Sorun |
 |---|---|---|
-| V1 | 🔴 | **Sipariş numarası çakışması.** Numara tarayıcıda `o yılki sipariş sayısı + 1` ile üretiliyor (bayi satır ~749). İki bayi 4 saniyelik senkron aralığında sipariş verirse ikisi de `EXG-2026-0042` alır. Sunucu `exb-siparisler`'i `no`'ya göre birleştirirken aynı no'lu kayıtta yeni geleni tutar; **ilk sipariş sessizce silinir**. Aynı sorun iade (`IAD-`) ve teklif numaralarında da var. |
-| V2 | 🔴 | **Dosyalar localStorage'da.** Dekont (PDF ≤1,5 MB veya küçültülmüş fotoğraf), iade fotoğrafları, logo base64 olarak ortak anahtarlara yazılıyor. Tarayıcı kotası (~5 MB) dolunca kayıt atılamıyor; kod bunu "dosya çok büyük" diye gösteriyor (bayi satır ~1908). Sistem büyüdükçe tüm kullanıcılar etkilenir. |
+| V1 | 🔴 | **Sipariş numarası çakışması.** Numara tarayıcıda `o yılki sipariş sayısı + 1` ile üretiliyor (`kaynak/bayi/parcalar/03-ana.js:294`). İki bayi 4 saniyelik senkron aralığında sipariş verirse ikisi de aynı numarayı alır. Sunucu `exb-siparisler`'i `no`'ya göre birleştirirken aynı no'lu kayıtta yeni geleni tutar; **ilk sipariş sessizce silinir**. Faz 0 testinde iki bayi aynı anda sipariş verdi, sunucuda tek sipariş kaldı. Aynı numaralandırma deseni iade (`IAD-`), online ödeme (`OL-`) ve teklif (`OT-`) numaralarında da var. |
+| V2 | 🔴 | **Dosyalar localStorage'da.** Dekont (PDF ≤1,5 MB veya küçültülmüş fotoğraf), iade fotoğrafları, logo base64 olarak ortak anahtarlara yazılıyor. Her istemci tüm ortak veriyi `localStorage`'a yazar; Chromium'da ölçülen sınır ~8 milyon karakter. Sınır aşılınca senkron katmanındaki yükleme döngüsü ilk hatada durur: rozet "Sunucuya bağlı" der, ama o anahtar ve **sonrasındaki anahtarlar tarayıcıda yoktur** (Faz 0 testinde `exb-odeme` ve `exs-cari` yüklenmedi). Eksik veriyle çalışan kullanıcı birleştirme dışındaki bir anahtarı (ör. cari) güncellerse sunucudaki tam veriyi ezer. |
 | V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. |
 | V4 | 🟠 | Fiyat/iskonto/kredi limiti hesapları istemcide. Sunucu, bayinin gönderdiği tutara güveniyor. |
 | V5 | 🟡 | Her açılışta ve her değişiklikte tüm veri gidip geliyor; sipariş sayısı arttıkça yavaşlar (ilk yükleme senkron XHR ile sayfayı kilitliyor). |
@@ -104,7 +106,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | # | Önem | Sorun |
 |---|---|---|
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. |
-| K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi `git` 5 kez, satış `git` 8 kez ve `durumYaz` 5 kez üst üste sarılmış; ~65 `const _eski = …` zinciri. Sıra bağımlı, hatası zor bulunur. |
+| K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. |
 | K4 | 🟡 | Otomatik test yok. |
 
@@ -181,17 +183,22 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 
 ### 4.4 Ortak kod ve repo düzeni
 
+Faz 0 sonunda repo (✅ = var, ⏳ = ilgili fazda eklenecek):
+
 ```
 uretim_planlama/
-├── sunucu/            API, veritabanı şeması, göç betikleri
-├── bayi-web/          Bayi web sitesi (Vite)
-├── satis-masaustu/    Electron kabuğu + satış ekranları
-├── ortak/             Fiyat/iskonto hesabı, para/tarih biçimleri, durum adları,
-│                      renk önizleme motoru, API istemcisi, çeviriler
-├── katalog/           urunler.json, gorsel/, maske/, kumas/
-├── eski/              Orijinal HTML'ler (başvuru için, değiştirilmez)
-├── testler/           Playwright uçtan uca testleri
-└── docs/              Raporlar ve kurulum belgeleri
+├── kaynak/            ✅ Bugünkü uygulamaların kaynağı: bayi/ ve satis/ (sablon.html + parcalar/),
+│                         ortak/ (iki uygulamada aynı 9 blok), telefon/ (PWA dosyaları)
+├── katalog/           ✅ urunler.json, gorsel/, kumas/, maske/ + maskeler.json
+├── sunucu/            ✅ Bugünkü sunucu → ⏳ Faz 1'de API, veritabanı şeması, göç betikleri
+├── araclar/           ✅ derle, ayikla, sarmalama haritası, veri_incele
+├── testler/           ✅ Playwright uçtan uca testleri (node:test)
+├── eski/              ✅ Orijinal paket (başvuru için, değiştirilmez)
+├── docs/              ✅ Raporlar
+├── bayi-web/          ⏳ Faz 2: bayi web sitesi (Vite)
+├── satis-masaustu/    ⏳ Faz 3: Electron kabuğu + satış ekranları
+└── ortak/             ⏳ Faz 1–2: fiyat/iskonto hesabı, biçimler, durum adları, renk önizleme
+                          motoru, API istemcisi, çeviriler (kaynak/ortak/ buraya taşınır)
 ```
 
 Fiyat ve iskonto hesabı `ortak/` içinde tek yerde yazılır; hem sunucu hem arayüz aynı fonksiyonu kullanır.
@@ -200,18 +207,33 @@ Fiyat ve iskonto hesabı `ortak/` içinde tek yerde yazılır; hem sunucu hem ar
 
 ## 5. Faz planı
 
-Süreler tek geliştirici için kaba tahmindir; Faz 0 sonunda netleştirilecektir.
+Süreler tek geliştirici için kaba tahmindir.
 
-### Faz 0: Hazırlık ve kaynak düzeni (≈1 hafta)
+### Faz 0: Hazırlık ve kaynak düzeni ✅ tamamlandı
 Amaç: Davranışı değiştirmeden çalışılabilir bir kaynak elde etmek.
 1. Orijinal paket `eski/` altına konur (değiştirilmez).
-2. Ayıklama betiği: `VERI` → `katalog/urunler.json`; data URI görseller → `katalog/gorsel/*.webp`; kumaşlar ve renk maskeleri → `katalog/kumas/`, `katalog/maske/`.
+2. Ayıklama betiği: `VERI` → `katalog/urunler.json`; data URI görseller → `katalog/gorsel/` (orijinal JPEG, kayıpsız; WebP dönüşümü Faz 2'de); kumaşlar ve renk maskeleri → `katalog/kumas/`, `katalog/maske/`.
 3. Her iki HTML'deki CSS ve JS blokları sırasıyla ayrı dosyalara çıkarılır; ek modüllerin sarmalama zincirleri belgelenir (hangi fonksiyon kaç kez, hangi sırayla sarılmış).
 4. **Davranış kaydı:** Playwright ile mevcut sürüm üzerinde ana akışlar test olarak yazılır (kayıt, giriş, sepete ekle, sipariş, satış onayı, ödeme bildirimi, ödeme onayı, özel teklif, değişiklik talebi). Bu testler sonraki fazlarda "hiçbir şeyi bozmadık" kontrolüdür.
 5. Mevcut `veri.json` (varsa) için yedek ve okuma betiği.
 
 Teslim: Repo yapısı, ayıklanmış katalog, test paketi, sarmalama haritası.
 Kabul: Testler orijinal HTML'lerde geçiyor.
+
+**Faz 0 sonuçları**
+
+| Çıktı | Durum |
+|---|---|
+| Orijinal paket | `eski/` |
+| Kaynak | `kaynak/bayi` (25 parça), `kaynak/satis` (17 parça), `kaynak/ortak` (iki uygulamada birebir aynı 9 blok: senkron, tema, giriş, logo animasyonu). Görseller çıkınca HTML şablonları 19 KB ve 14 KB |
+| Katalog | `katalog/urunler.json` (73 ürün), 61 fotoğraf, 6 kumaş, 20 renk maskesi |
+| Derleme | `npm run derle` → `dist/`. `npm run dogrula` ile **üç HTML de (bayi, satış, telefon) orijinalle byte byte aynı** üretildi; kayıp `build.py`'nin yerini aldı |
+| Sarmalama haritası | `docs/SARMALAMA_HARITASI.md` (otomatik üretilir) |
+| Davranış testleri | `testler/uctan-uca.test.js`: 13 test (kayıt → sipariş → onay → değişiklik → ödeme linki → ödeme → tahsilat → özel teklif). Hem `dist/` hem `eski/` üzerinde geçiyor |
+| Bilinen sorun testleri | `testler/bilinen-sorunlar.test.js`: G1 (2 test), G4, G5, V1, V2. Hepsi bugün başarısız (todo); Faz 1'in kabul ölçütü |
+| Veri inceleme | `araclar/veri_incele.mjs`: canlı `veri.json`'ı yedekler, özetler (sayılar, mükerrer numara, kota doluluğu, varsayılan şifre) |
+
+Faz 0'da yapılan ölçümle düzeltilen bilgi: Tarayıcı kotası ilk tahmindeki ~5 MB değil, Chromium'da ~8 milyon karakter. Kota aşılınca kayıt reddedilmiyor; daha kötüsü, veri sessizce eksik yükleniyor (V2).
 
 ### Faz 1: Güvenli sunucu (≈3–4 hafta)
 Amaç: Kritik sorunları (G1–G4, V1, V2, V4) kapatmak.
@@ -226,7 +248,7 @@ Amaç: Kritik sorunları (G1–G4, V1, V2, V4) kapatmak.
 9. **Geçiş köprüsü:** Eski HTML'ler bu sürede şirket içinde çalışmaya devam edebilsin diye eski `/api/veri` uçları yalnız şirket ağından ve yönetici girişiyle erişilebilir şekilde kısıtlanır; Faz 2/3 bitince kapatılır.
 
 Teslim: Çalışan API, API belgesi, göç betiği, birim testleri (fiyat/iskonto/limit/numara/yetki).
-Kabul: Bir bayi başka bir bayinin hiçbir kaydına erişemiyor (test ile); aynı anda 20 sipariş gönderildiğinde 20 ayrı numara oluşuyor; 100 dekont sonrası sistem sorunsuz.
+Kabul: `testler/bilinen-sorunlar.test.js` içindeki tüm testler `todo` işareti kaldırılmış olarak geçiyor; bir bayi başka bir bayinin hiçbir kaydına erişemiyor; aynı anda 20 sipariş gönderildiğinde 20 ayrı numara oluşuyor; 100 dekont sonrası sistem sorunsuz.
 
 ### Faz 2: Bayi web sitesi (≈4–5 hafta)
 1. Ekranlar modüllere bölünür, `localStorage` okuma/yazma çağrıları API istemcisiyle değiştirilir (sepet ve tercihler gibi kişisel durumlar da sunucuya).
@@ -297,18 +319,18 @@ Faz 0 bu kararlar olmadan başlayabilir; Faz 1 öncesinde netleşmeleri gerekir.
 
 ## 8. Ek: Kod içinde başvuru noktaları
 
-Satır numaraları, görseller çıkarılmış hâldeki dosyaya göredir (yaklaşık).
+Yollar `kaynak/` klasörüne göredir.
 
-| Konu | Bayi | Satış |
-|---|---|---|
-| Senkron katmanı | 3–35 | 3–35 (aynı) |
-| Şifre özeti `ozet()` | ~499 | ~327 |
-| Oturum (`sessionStorage`) | ~543, ~785 | ~386, ~696 |
-| Sipariş no üretimi | ~749 | — |
-| Ödeme bildirimi / dekont | ~1890–1908 | — |
-| İade no üretimi | ~2609 | — |
-| Teklif/ödeme no (ek10) | ~2860 | — |
-| Varsayılan `satis/1234` | — | ~257, ~382, ~695 |
-| Claude API çağrısı | — | ~608 |
-| Örnek veri | — | ~659–672 |
-| `git` sarmalama sayısı | 5 | 8 (+ `durumYaz` 5) |
+| Konu | Yer |
+|---|---|
+| Senkron katmanı (iki uygulamada aynı) | `ortak/senkron.js` |
+| Şifre özeti `ozet()` | `bayi/parcalar/03-ana.js:44`, `satis/parcalar/03-ana.js:18` |
+| Oturum (`sessionStorage`) | `bayi/parcalar/03-ana.js:88`, `satis/parcalar/03-ana.js:77` |
+| Sipariş no üretimi | `bayi/parcalar/03-ana.js:294` |
+| Ödeme bildirimi / dekont | `bayi/parcalar/18-v2.8-proje-sepetleri-renk-onizleme.js:156–174` |
+| İade no üretimi ve fotoğraf küçültme | `bayi/parcalar/25-ek6.js:112–129` |
+| Teklif/online ödeme no (ek10) | `bayi/parcalar/33-ek10.js:5` |
+| Varsayılan `satis/1234` | `satis/sablon.html:83`, `satis/parcalar/03-ana.js:73` ve `:386` |
+| Claude API çağrısı | `satis/parcalar/03-ana.js:299` |
+| Örnek veri | `satis/parcalar/03-ana.js:363` |
+| Fonksiyon sarmalamaları | `docs/SARMALAMA_HARITASI.md` |

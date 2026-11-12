@@ -1,0 +1,107 @@
+<!-- ek8: bayi ödeme linkleri ve net tahsilat, ürün/renk analizi ve stok planı, bayi özel teklif onayı -->
+<style>
+.a8-bar{display:flex;align-items:center;gap:8px;margin:5px 0;font-size:13px}.a8-bar span:first-child{width:150px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.a8-bar i{display:block;height:14px;border-radius:4px;background:#2563eb;min-width:2px}.a8-bar em{font-style:normal;color:var(--yazi2,#64748b);white-space:nowrap}
+.a8-iki{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.a8-ozet{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}.a8-ozet div{flex:1;min-width:150px;background:var(--kart,#fff);border:1px solid var(--cizgi,#e5e7eb);border-radius:12px;padding:12px}.a8-ozet b{display:block;font-size:20px;margin-top:2px}
+.a8-dz{font-size:12px;font-weight:700;padding:3px 8px;border-radius:20px}.a8-dz.bekliyor{background:#fef3c7;color:#92400e}.a8-dz.onaylandi{background:#dcfce7;color:#166534}.a8-dz.reddedildi{background:#fee2e2;color:#991b1b}
+</style>
+<script>
+(function () {
+  const S6 = window.S6; if (!S6) return;
+  const ico = d => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const menu = (s, ad, d, yer) => { if ($(`aside button.m[data-s=${s}]`)) return; const r = $(`aside button.m[data-s=${yer}]`), h = `<button class="m" data-s="${s}">${ico(d)}${ad} <span class="say gizli"></span></button>`; r ? r.insertAdjacentHTML('afterend', h) : $('#menu').insertAdjacentHTML('beforeend', h); };
+  const usd = n => (Math.round((n || 0) * 100) / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $';
+  const sayi8 = v => parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
+  const log = (o, d) => { try { islemKaydi(o, d); } catch (e) {} };
+  const bayiMesaj = (kul, metin) => { const M = oku('exb-hatirlat', []) || []; M.push({ id: 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 4), kul, tur: 'teklif', metin, zaman: Date.now(), kim: kimAd(), okundu: false }); yaz('exb-hatirlat', M); };
+  const firma = k => (MUS[k] || {}).firma || k;
+
+  // ================= 1. ödeme linkleri ve net tahsilat =================
+  let donem = 'ay';
+  S6.tahsilat = function () {
+    $('#baslik').textContent = 'Ödeme linkleri ve net tahsilat';
+    const LNK = oku('exb-odeme-link', {}) || {}, OD = oku('exb-odeme', []) || [], simdi = new Date();
+    const bas = donem === 'ay' ? new Date(simdi.getFullYear(), simdi.getMonth(), 1).getTime() : donem === 'yil' ? new Date(simdi.getFullYear(), 0, 1).getTime() : simdi - 30 * 864e5;
+    const R = Object.keys(MUS).filter(k => MUS[k]).map(k => { const c = CARI[k] || { hareket: [] }, o = cariOzet(k);
+      const tah = c.hareket.filter(h => h.tip === 'odeme' && h.tarih >= bas), fat = c.hareket.filter(h => h.tip === 'fatura' && h.tarih >= bas), bek = OD.filter(x => x.kul === k && x.durum === 'bekliyor');
+      return { k, link: LNK[k] || '', tah: tah.reduce((a, h) => a + h.tutar, 0), onl: tah.filter(h => /online|link/i.test(h.aciklama || h.no || '')).reduce((a, h) => a + h.tutar, 0), fat: fat.reduce((a, h) => a + h.tutar, 0), bek: bek.reduce((a, x) => a + x.tutar, 0), bekN: bek.length, bakiye: o.bakiye, gecmis: o.gecmis }; }).sort((a, b) => b.tah - a.tah || b.bakiye - a.bakiye);
+    const T = R.reduce((a, r) => ({ tah: a.tah + r.tah, fat: a.fat + r.fat, bek: a.bek + r.bek, bak: a.bak + r.bakiye }), { tah: 0, fat: 0, bek: 0, bak: 0 });
+    $('#ustSag').innerHTML = `<select class="btn cizgi" id="tDon"><option value="ay">Bu ay</option><option value="30">Son 30 gün</option><option value="yil">Bu yıl</option></select>`; $('#tDon').value = donem; $('#tDon').onchange = e => { donem = e.target.value; S6.tahsilat(); };
+    $('#icerik').innerHTML = `<div class="a8-ozet"><div>Net tahsilat<b>${usd(T.tah)}</b><span class="kucuk">onaylanmış ödemeler</span></div><div>Faturalanan<b>${usd(T.fat)}</b></div><div>Tahsilat oranı<b>${T.fat ? Math.round(T.tah / T.fat * 100) : 0}%</b></div><div>Onay bekleyen ödeme<b>${usd(T.bek)}</b></div><div>Toplam açık bakiye<b>${usd(T.bak)}</b></div></div>
+      <div class="kart"><h3>Bayi ödeme linkleri</h3><div class="alt">Her bayiye kendi sanal POS / ödeme linkini tanımlayın. Bayi portalda <b>Cari hesabım › Online öde</b> ile ayrı ödeme sayfasından bu linke yönlenir; ödemesi "Ödeme bildirimleri" ekranına düşer, onaylayınca net tahsilata işlenir.</div>
+      <table class="tablo"><tr><th>Bayi</th><th>Ödeme linki</th><th class="sag-hiza">Tahsil edilen</th><th class="sag-hiza">Faturalanan</th><th class="sag-hiza">Bekleyen bildirim</th><th class="sag-hiza">Bakiye</th></tr>
+      ${R.map(r => `<tr><td><b>${esc(firma(r.k))}</b><div class="kucuk">${esc(r.k)}</div></td><td><input class="s6-in" data-ln="${esc(r.k)}" value="${esc(r.link)}" placeholder="https://… (bayiye özel link)" style="width:100%;min-width:220px"></td>
+        <td class="sag-hiza"><b>${usd(r.tah)}</b></td><td class="sag-hiza">${usd(r.fat)}</td><td class="sag-hiza">${r.bekN ? usd(r.bek) + `<div class="kucuk">${r.bekN} bildirim</div>` : '—'}</td><td class="sag-hiza">${usd(r.bakiye)}${r.gecmis > 0 ? `<div class="kucuk" style="color:#b91c1c">${usd(r.gecmis)} vadesi geçmiş</div>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="kucuk">Bayi yok.</td></tr>'}</table></div>`;
+    $$('[data-ln]').forEach(i => i.onchange = () => { const v = i.value.trim(); if (v && !/^https:\/\//i.test(v)) { toast('Link https:// ile başlamalı.'); i.value = (oku('exb-odeme-link', {}) || {})[i.dataset.ln] || ''; return; }
+      const L = oku('exb-odeme-link', {}) || {}; if (v) L[i.dataset.ln] = v; else delete L[i.dataset.ln]; yaz('exb-odeme-link', L); log('Ödeme linki', `${firma(i.dataset.ln)}: ${v || 'kaldırıldı'}`); toast('Ödeme linki kaydedildi.'); });
+  };
+
+  // ================= 2. ürün ve renk analizi, stok planı =================
+  const temiz = s => String(s || '').replace(/\s*\(.*\)\s*$/, '').trim();
+  let aUrun = '', aGun = 180, aKap = 2;
+  function kalemler() { const sin = Date.now() - aGun * 864e5, L = [];
+    Object.values(SIP).forEach(o => { if (!o || o.durum === 'iptal' || !(o.tarih >= sin)) return; (o.kalemler || []).forEach(k => L.push({ ...k, kul: o.kul, tarih: o.tarih })); }); return L; }
+  const dagilim = (L, f) => { const m = {}; L.forEach(k => { const v = f(k); if (v) m[v] = (m[v] || 0) + (k.adet || 0); }); return Object.entries(m).sort((a, b) => b[1] - a[1]); };
+  const barlar = (D, top) => { const mx = Math.max(1, ...D.map(x => x[1])); return D.map(([a, n]) => `<div class="a8-bar"><span title="${esc(a)}">${esc(a)}</span><i style="width:${Math.max(1, n / mx * 100) * .6}%"></i><em>${n} adet · %${Math.round(n / top * 100)}</em></div>`).join('') || '<div class="kucuk">Veri yok</div>'; };
+  S6.urunanaliz = function () {
+    $('#baslik').textContent = 'Ürün ve renk analizi';
+    const L = kalemler(), U = dagilim(L, k => k.ad);
+    if (aUrun && !U.some(x => x[0] === aUrun)) aUrun = '';
+    $('#ustSag').innerHTML = `<select class="btn cizgi" id="aU"><option value="">Tüm ürünler</option>${U.map(([a, n]) => `<option ${a === aUrun ? 'selected' : ''} value="${esc(a)}">${esc(a)} (${n})</option>`).join('')}</select> <select class="btn cizgi" id="aG">${[[90, 'Son 3 ay'], [180, 'Son 6 ay'], [365, 'Son 12 ay']].map(([g, a]) => `<option value="${g}" ${g === aGun ? 'selected' : ''}>${a}</option>`).join('')}</select>`;
+    $('#aU').onchange = e => { aUrun = e.target.value; S6.urunanaliz(); }; $('#aG').onchange = e => { aGun = +e.target.value; S6.urunanaliz(); };
+    const K = aUrun ? L.filter(k => k.ad === aUrun) : L, top = K.reduce((a, k) => a + (k.adet || 0), 0), ay = aGun / 30.4;
+    // stok planı: ürün + seçenek + iskelet (+ file/kumaş) kombinasyonu
+    const kb = {}; K.forEach(k => { const key = [k.ad, k.secenek, temiz(k.iskelet), temiz(k.file) || temiz(k.kumas)].join('|'); const r = kb[key] = kb[key] || { ad: k.ad, sec: k.secenek, isk: temiz(k.iskelet), ren: temiz(k.file) || (k.kumas ? 'Kumaş ' + temiz(k.kumas) : ''), adet: 0, son90: 0, bayi: new Set() }; r.adet += k.adet || 0; if (k.tarih >= Date.now() - 90 * 864e5) r.son90 += k.adet || 0; r.bayi.add(k.kul); });
+    const P = Object.values(kb).map(r => { const aylik = r.adet / ay, trend = r.son90 / 3 > aylik * 1.2 ? '↑' : r.son90 / 3 < aylik * .8 ? '↓' : '→'; return { ...r, aylik, trend, oneri: Math.ceil(Math.max(aylik, r.son90 / 3) * aKap) }; }).sort((a, b) => b.adet - a.adet);
+    const enIsk = dagilim(K, k => temiz(k.iskelet))[0];
+    $('#icerik').innerHTML = `<div class="a8-ozet"><div>Satılan adet<b>${top.toLocaleString('tr-TR')}</b><span class="kucuk">${aUrun ? esc(aUrun) : 'tüm ürünler'}</span></div><div>Aylık ortalama<b>${Math.round(top / ay).toLocaleString('tr-TR')}</b></div><div>En çok tercih edilen iskelet<b>${enIsk ? esc(enIsk[0]) : '—'}</b>${enIsk ? `<span class="kucuk">%${Math.round(enIsk[1] / top * 100)} pay</span>` : ''}</div><div>Kombinasyon sayısı<b>${P.length}</b></div></div>
+      <div class="a8-iki">${aUrun ? '' : `<div class="kart"><h3>En çok satan ürünler</h3>${barlar(U.slice(0, 12), top)}</div>`}
+        <div class="kart"><h3>İskelet rengi tercihi</h3>${barlar(dagilim(K, k => temiz(k.iskelet)), top)}</div>
+        <div class="kart"><h3>File / kumaş tercihi</h3>${barlar(dagilim(K, k => temiz(k.file) || (k.kumas ? 'Kumaş ' + temiz(k.kumas) : '')), top)}</div>
+        <div class="kart"><h3>Seçenek</h3>${barlar(dagilim(K, k => k.secenek), top)}</div></div>
+      <div class="kart"><h3>Stok planı önerisi</h3><div class="alt">Her ürün-renk kombinasyonu için aylık satış hızına göre önerilen hazır stok. Son 3 ayda hızlanan kombinasyonlarda son 3 ayın ortalaması kullanılır. Kapsama süresi: <input class="s6-in" id="aKap" value="${aKap}" style="width:50px"> ay</div>
+      <table class="tablo"><tr><th>Ürün</th><th>Seçenek</th><th>İskelet</th><th>File / kumaş</th><th class="sag-hiza">Satılan</th><th class="sag-hiza">Aylık ort.</th><th>Eğilim</th><th class="sag-hiza">Bayi</th><th class="sag-hiza">Önerilen stok</th></tr>
+      ${P.slice(0, 60).map(r => `<tr><td><b>${esc(r.ad)}</b></td><td>${esc(r.sec || '—')}</td><td>${esc(r.isk || '—')}</td><td>${esc(r.ren || '—')}</td><td class="sag-hiza">${r.adet}</td><td class="sag-hiza">${r.aylik.toFixed(1).replace('.', ',')}</td><td style="text-align:center;color:${r.trend === '↑' ? '#16a34a' : r.trend === '↓' ? '#b91c1c' : 'inherit'}">${r.trend}</td><td class="sag-hiza">${r.bayi.size}</td><td class="sag-hiza"><b>${r.oneri}</b></td></tr>`).join('') || '<tr><td colspan="9" class="kucuk">Bu dönemde sipariş yok.</td></tr>'}</table>
+      <button class="btn cizgi" id="aXls" style="margin-top:10px">Stok planını Excel'e (CSV) indir</button></div>`;
+    $('#aKap').onchange = e => { const v = sayi8(e.target.value); if (v > 0) aKap = v; S6.urunanaliz(); };
+    $('#aXls').onclick = () => { const s = '﻿Ürün;Seçenek;İskelet;File/Kumaş;Satılan;Aylık ort.;Eğilim;Önerilen stok\n' + P.map(r => [r.ad, r.sec, r.isk, r.ren, r.adet, r.aylik.toFixed(1).replace('.', ','), r.trend, r.oneri].map(x => '"' + String(x ?? '').replace(/"/g, '""') + '"').join(';')).join('\n');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([s], { type: 'text/csv' })); a.download = 'stok_plani_' + bugun() + '.csv'; a.click(); };
+  };
+
+  // ================= 3. bayi özel teklif talepleri =================
+  const TK = () => oku('exb-teklif', []) || [];
+  const DZ = { bekliyor: 'Onay bekliyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
+  const listeF = p => { const u = VERI.urunler.find(x => x.id === p.id), s = u && u.secenek.find(x => x.ad === p.secenek); return s ? s.fiyat : 0; };
+  function rozet() { const n = TK().filter(t => t.durum === 'bekliyor').length, b = $('aside button.m[data-s=teklifler] .say'); if (b) { b.textContent = n; b.classList.toggle('gizli', !n); } }
+  let tF = 'bekliyor';
+  S6.teklifler = function () {
+    $('#baslik').textContent = 'Bayi özel teklif talepleri';
+    $('#ustSag').innerHTML = `<select class="btn cizgi" id="tkF"><option value="bekliyor">Bekleyenler</option><option value="hepsi">Tümü</option></select>`; $('#tkF').value = tF; $('#tkF').onchange = e => { tF = e.target.value; S6.teklifler(); };
+    const L = TK().filter(t => tF === 'hepsi' || t.durum === 'bekliyor').sort((a, b) => b.zaman - a.zaman);
+    const urn = p => p ? `<div><b>${esc(p.ad)}</b> · ${esc(p.secenek || '')}</div><div class="kucuk">${esc([p.iskelet, p.file, p.kumas].filter(Boolean).join(' · '))} · liste ${usd(listeF(p))}</div>` : '';
+    $('#icerik').innerHTML = `<div class="kart"><h3>Talepler</h3><div class="alt">Bayi masa ve sandalyeyi, takımdaki oranı ve renkleri kendisi seçip özel fiyat ister. Birim fiyatları girip onaylayın; bayi onaylanan teklifi tek tıkla bu fiyatlarla sepetine ekler.</div>
+      ${L.map(t => { const lm = t.masa ? listeF(t.masa) : 0, ls = listeF(t.sandalye), lt = lm + ls * t.oran;
+        return `<div style="border-top:1px solid var(--cizgi,#e5e7eb);padding:12px 0;display:grid;grid-template-columns:minmax(220px,1.2fr) minmax(220px,1.5fr) minmax(260px,1.3fr);gap:14px">
+        <div><b>${esc(t.no)}</b> <span class="a8-dz ${t.durum}">${DZ[t.durum]}</span><div>${esc(firma(t.kul))}</div><div class="kucuk">${tarih(t.zaman)}${t.termin ? ' · termin ' + tarih(t.termin) : ''}</div>${t.not ? `<div class="kucuk">“${esc(t.not)}”</div>` : ''}</div>
+        <div>${urn(t.masa)}${urn(t.sandalye)}<div class="kucuk" style="margin-top:4px"><b>${t.takim} takım</b> (${t.masa ? `1 masa + ${t.oran} sandalye; ${t.takim} masa, ${t.takim * t.oran} sandalye` : t.takim + ' adet'}) · liste takım ${usd(lt)}${t.hedef ? ` · <b>bayi hedefi ${usd(t.hedef)}</b>` : ''}</div></div>
+        <div>${t.durum === 'bekliyor' ? `<div class="s6-form" style="grid-template-columns:1fr 1fr">${t.masa ? `<div><label>Masa birim $</label><input class="s6-in" data-fm="${t.no}" value="${lm}"></div>` : ''}<div><label>Sandalye birim $</label><input class="s6-in" data-fs="${t.no}" value="${ls}"></div></div>
+          <div class="kucuk" data-fo="${t.no}" style="margin:6px 0"></div><input class="s6-in" data-fy="${t.no}" placeholder="Yanıt (isteğe bağlı)" style="width:100%;margin-bottom:6px"><button class="btn kucuk" data-fok="${t.no}">Onayla</button> <button class="btn kucuk cizgi" data-fred="${t.no}">Reddet</button>`
+          : t.durum === 'onaylandi' ? `<b>${usd(t.fiyat.takim)}</b> / takım<div class="kucuk">${t.masa ? 'masa ' + usd(t.fiyat.masa) + ' · ' : ''}sandalye ${usd(t.fiyat.sandalye)} · liste fiyatına göre %${Math.round((1 - t.fiyat.takim / lt) * 100)} indirim</div><div class="kucuk">${esc(t.kim || '')}${t.sepette ? ' · bayi sepete ekledi' : ''}</div>` : `<div class="kucuk">${esc(t.yanit || '')} · ${esc(t.kim || '')}</div>`}</div></div>`; }).join('') || '<p class="kucuk">Talep yok.</p>'}</div>`;
+    const hesap = no => { const t = TK().find(x => x.no === no), m = $(`[data-fm="${no}"]`), s = $(`[data-fs="${no}"]`), fm = m ? sayi8(m.value) || 0 : 0, fs = sayi8(s.value) || 0, lt = (t.masa ? listeF(t.masa) : 0) + listeF(t.sandalye) * t.oran, tk = fm + fs * t.oran;
+      $(`[data-fo="${no}"]`).innerHTML = `Takım ${usd(tk)} · toplam ${usd(tk * t.takim)} · indirim %${lt ? Math.round((1 - tk / lt) * 100) : 0}${t.hedef ? ' · hedef ' + usd(t.hedef) : ''}`; return { fm, fs, tk }; };
+    $$('[data-fs]').forEach(i => { const no = i.dataset.fs; hesap(no); i.oninput = () => hesap(no); const m = $(`[data-fm="${no}"]`); if (m) m.oninput = () => hesap(no); });
+    const karar = (no, onay) => { const L = TK(), t = L.find(x => x.no === no); if (!t || t.durum !== 'bekliyor') return; const y = ($(`[data-fy="${no}"]`) || {}).value || '';
+      if (onay) { const h = hesap(no); if (!(h.fs > 0) || (t.masa && !(h.fm > 0))) return toast('Birim fiyatları girin.'); t.fiyat = { masa: h.fm, sandalye: h.fs, takim: h.tk }; }
+      Object.assign(t, { durum: onay ? 'onaylandi' : 'reddedildi', yanit: y.trim(), kim: kimAd(), karar: Date.now() }); yaz('exb-teklif', L);
+      bayiMesaj(t.kul, `${t.no} özel teklif talebiniz ${onay ? 'onaylandı: takım ' + usd(t.fiyat.takim) : 'reddedildi'}${y ? ' · ' + y : ''}`);
+      log(`Özel teklif ${onay ? 'onaylandı' : 'reddedildi'}`, `${t.no} · ${firma(t.kul)}${onay ? ' · ' + usd(t.fiyat.takim) + '/takım' : ''}`); toast('Karar bayiye iletildi.'); rozet(); S6.teklifler(); };
+    $$('[data-fok]').forEach(b => b.onclick = () => karar(b.dataset.fok, true)); $$('[data-fred]').forEach(b => b.onclick = () => karar(b.dataset.fred, false));
+  };
+
+  menu('teklifler', 'Özel teklif talepleri', '<path d="M20 12V8H6a2 2 0 0 1 0-4h12v4"/><path d="M4 6v12a2 2 0 0 0 2 2h14v-4"/><circle cx="17" cy="14" r="1.5"/>', 'talepler');
+  menu('tahsilat', 'Ödeme linkleri ve tahsilat', '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/>', 'limit');
+  menu('urunanaliz', 'Ürün ve renk analizi', '<circle cx="12" cy="12" r="9"/><path d="M12 3v9l6 6"/>', 'analiz');
+  $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
+  setInterval(rozet, 4000); setTimeout(rozet, 800);
+})();
+</script>

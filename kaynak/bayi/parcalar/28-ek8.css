@@ -1,0 +1,7 @@
+
+/* v3.3 ürün bazlı renk önizleme: paket ve takımlar parça parça çizilir */
+.on-izg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
+.on-izg.tek{grid-template-columns:1fr}
+.on-p{background:#fff;border:1px solid var(--cizgi);border-radius:10px;padding:6px 8px 8px;text-align:center}
+.on-p svg{width:100%;height:auto;display:block}.on-p b{display:block;font-size:12px;margin-top:2px}.on-p span{font-size:11px;color:var(--soluk,#94a3b8)}
+.on-izg.tek .on-p{border:0;background:transparent;padding:0}.on-izg.tek .on-p svg{max-height:260px}

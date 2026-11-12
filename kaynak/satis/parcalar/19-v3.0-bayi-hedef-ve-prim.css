@@ -1,0 +1,7 @@
+
+/* v3.0 bayi hedef ve prim */
+.bh-tb input{width:120px;padding:6px 8px;border:1px solid var(--cizgi);border-radius:8px;text-align:right;background:var(--girdi,#fff);color:var(--yazi)}
+.bh-c{height:8px;border-radius:4px;background:var(--cizgi2,#f1f5f9);min-width:120px;overflow:hidden}.bh-c i{display:block;height:100%;background:var(--seri,#d97706);border-radius:4px}
+.bh-bas{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.bh-bas div{display:flex;gap:6px;align-items:center;border:1px solid var(--cizgi);border-radius:10px;padding:8px 10px;font-size:12.5px}
+.bh-bas input{width:56px;padding:5px;border:1px solid var(--cizgi);border-radius:6px;text-align:right;background:var(--girdi,#fff);color:var(--yazi)}
+.bh-bas button.x{border:0;background:none;color:var(--soluk);font-size:16px;cursor:pointer}

@@ -1,0 +1,16 @@
+{
+  "name": "exit-bayi-satis",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EXIT Garden bayi portalı ve satış paneli",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "derle": "node araclar/derle.mjs",
+    "dogrula": "node araclar/derle.mjs --dogrula",
+    "sarmalama": "node araclar/sarmalama.mjs",
+    "veri-incele": "node araclar/veri_incele.mjs",
+    "sunucu": "node dist/sunucu/sunucu.js",
+    "test": "node araclar/derle.mjs && node --test --test-reporter=spec 'testler/*.test.js'",
+    "test:eski": "TEST_PAKET=eski node --test --test-reporter=spec 'testler/*.test.js'"
+  }
+}

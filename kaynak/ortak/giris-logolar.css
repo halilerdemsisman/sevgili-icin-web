@@ -1,0 +1,1 @@
+/* giriş: logolar tek yerde (geniş ekranda sol panelde, mobilde kutuda) */@media (min-width:901px){#giris .g-kutu>.logolar{display:none!important}#giris .g-kutu h1,#giris .g-kutu h3{margin-top:4px!important}}

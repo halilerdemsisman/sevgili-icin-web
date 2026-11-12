@@ -1,0 +1,93 @@
+<style>
+/* v3.3 ürün bazlı renk önizleme: paket ve takımlar parça parça çizilir */
+.on-izg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
+.on-izg.tek{grid-template-columns:1fr}
+.on-p{background:#fff;border:1px solid var(--cizgi);border-radius:10px;padding:6px 8px 8px;text-align:center}
+.on-p svg{width:100%;height:auto;display:block}.on-p b{display:block;font-size:12px;margin-top:2px}.on-p span{font-size:11px;color:var(--soluk,#94a3b8)}
+.on-izg.tek .on-p{border:0;background:transparent;padding:0}.on-izg.tek .on-p svg{max-height:260px}
+</style>
+<script>
+(function () {
+  const RENK = { Granit: '#76766f', Seramik: '#d9d3c6', 'RAL 1013': '#EAE6CA', 'RAL 9016': '#F6F6F2', 'RAL 7006': '#75695C', 'RAL 7016': '#383E42', 'RAL 9005': '#0E0E10' };
+  const FILE = { 'Terra 01': ['#f4f4f0', '#d6d6cf'], 'Terra 05': ['#1c1c1c', '#3d3d3d'], 'Terra 02': ['#e8dec8', '#c9bc9f'], 'Terra 03': ['#8c7b66', '#6a5c4b'], 'Terra 04': ['#41464a', '#2a2e31'], 'Crome': ['#d8dde1', '#8e959b'] };
+  let sira = 0;
+  const koyu = (h, f) => { const n = parseInt(h.slice(1), 16), r = n >> 16, g = n >> 8 & 255, b = n & 255, k = x => Math.max(0, Math.min(255, Math.round(x * f))); return '#' + [k(r), k(g), k(b)].map(x => x.toString(16).padStart(2, '0')).join(''); };
+  // tek parça çizimi: tip = sandalye | bar | koltuk | kanepe2 | kanepe3 | sehpa | masa | barmasa | sezlong | bank
+  function parca(tip, isk, fl, km, ft) {
+    const id = 'o' + (++sira), fr = RENK[isk] || '#9aa3ad', fr2 = koyu(fr, .78), kUrl = km && VERI.kumas && VERI.kumas[km], tUrl = ft && VERI.kumas && VERI.kumas[ft], fh = FILE[fl] || null;
+    const dol = kUrl ? `url(#${id}k)` : fh ? `url(#${id}f)` : '#e9edf2', fit = tUrl ? `url(#${id}t)` : kUrl ? koyu('#8a8a8a', 1) : fr2, cizgi = 'rgba(15,23,42,.28)';
+    const defs = `<defs>${fh ? `<pattern id="${id}f" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="${fh[0]}"/><rect width="1.6" height="5" fill="${fh[1]}"/></pattern>` : ''}
+      ${kUrl ? `<pattern id="${id}k" width="70" height="70" patternUnits="userSpaceOnUse"><image href="${kUrl}" width="70" height="70" preserveAspectRatio="xMidYMid slice"/></pattern>` : ''}
+      ${tUrl ? `<pattern id="${id}t" width="24" height="24" patternUnits="userSpaceOnUse"><image href="${tUrl}" width="24" height="24" preserveAspectRatio="xMidYMid slice"/></pattern>` : ''}
+      <linearGradient id="${id}a" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c79a6c"/><stop offset="1" stop-color="#9c7149"/></linearGradient></defs>`;
+    const ayak = (x1, y1, x2, y2, w) => `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${fr}" stroke-width="${w || 6}" stroke-linecap="round"/>`;
+    const golge = (rx) => `<ellipse cx="120" cy="158" rx="${rx}" ry="7" fill="rgba(15,23,42,.10)"/>`;
+    const minder = (x, y, w, h, r) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r || 8}" fill="${dol}" stroke="${km ? fit : cizgi}" stroke-width="${km ? 2.5 : 1}"/>`;
+    let g = '';
+    if (tip === 'sandalye' || tip === 'bar') {
+      const b = tip === 'bar' ? 26 : 0;
+      g = golge(55) + `${ayak(84, 96 - b, 78, 156)}${ayak(156, 96 - b, 162, 156)}${ayak(96, 104 - b, 98, 148, 5)}${ayak(144, 104 - b, 142, 148, 5)}${b ? `<path d="M84 128 H156" stroke="${fr2}" stroke-width="4"/>` : ''}
+        <path d="M82 ${28 - b} Q120 ${20 - b} 158 ${28 - b} L156 ${92 - b} L84 ${92 - b} Z" fill="${fr}"/><path d="M89 ${34 - b} Q120 ${27 - b} 151 ${34 - b} L149 ${86 - b} L91 ${86 - b} Z" fill="${dol}" stroke="${cizgi}"/>
+        <path d="M74 ${96 - b} L166 ${96 - b} L158 ${110 - b} L82 ${110 - b} Z" fill="${fr}"/>${minder(80, 86 - b, 80, 16, 6)}
+        <path d="M70 ${66 - b} H96 M144 ${66 - b} H170" stroke="${fr2}" stroke-width="6" stroke-linecap="round"/><path d="M72 ${66 - b} V${98 - b} M168 ${66 - b} V${98 - b}" stroke="${fr}" stroke-width="5" stroke-linecap="round"/>`;
+    } else if (tip === 'koltuk' || tip === 'kanepe2' || tip === 'kanepe3') {
+      const n = tip === 'koltuk' ? 1 : tip === 'kanepe2' ? 2 : 3, w = n === 1 ? 110 : n === 2 ? 170 : 210, x = 120 - w / 2, sw = (w - 36) / n;
+      g = golge(w / 2 + 6) + `<rect x="${x}" y="52" width="${w}" height="70" rx="10" fill="${fr}"/><rect x="${x}" y="60" width="16" height="78" rx="5" fill="${fr2}"/><rect x="${x + w - 16}" y="60" width="16" height="78" rx="5" fill="${fr2}"/>
+        ${ayak(x + 10, 136, x + 8, 156, 6)}${ayak(x + w - 10, 136, x + w - 8, 156, 6)}
+        ${Array.from({ length: n }, (_, i) => minder(x + 18 + i * sw + 1, 40, sw - 2, 50, 10)).join('')}${Array.from({ length: n }, (_, i) => minder(x + 18 + i * sw + 1, 92, sw - 2, 30, 8)).join('')}`;
+    } else if (tip === 'sehpa') {
+      g = golge(70) + `<path d="M58 104 L182 104 L196 118 L44 118 Z" fill="url(#${id}a)"/><rect x="44" y="118" width="152" height="8" rx="2" fill="${fr}"/>${ayak(54, 126, 52, 154, 7)}${ayak(186, 126, 188, 154, 7)}${ayak(70, 120, 72, 146, 5)}${ayak(170, 120, 168, 146, 5)}`;
+    } else if (tip === 'masa' || tip === 'barmasa') {
+      const y = tip === 'barmasa' ? 30 : 64;
+      g = golge(92) + `<path d="M44 ${y} L196 ${y} L222 ${y + 18} L18 ${y + 18} Z" fill="url(#${id}a)"/><rect x="18" y="${y + 18}" width="204" height="9" rx="2" fill="${fr}"/>
+        ${ayak(30, y + 27, 26, 156, 8)}${ayak(210, y + 27, 214, 156, 8)}${ayak(52, y + 20, 54, 146, 6)}${ayak(188, y + 20, 186, 146, 6)}${tip === 'barmasa' ? `<path d="M30 120 H210" stroke="${fr2}" stroke-width="4"/>` : ''}`;
+    } else if (tip === 'sezlong') {
+      g = golge(100) + `<path d="M26 118 L156 118 L210 62" fill="none" stroke="${fr}" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M30 108 L152 108 L202 58" fill="none" stroke="${dol === '#e9edf2' ? '#e2e8f0' : dol}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>${km ? `<path d="M30 100 L150 100 L196 54" fill="none" stroke="${fit}" stroke-width="2.5"/>` : ''}
+        ${ayak(40, 120, 36, 150, 6)}${ayak(146, 120, 152, 150, 6)}<circle cx="36" cy="150" r="7" fill="${fr2}"/><circle cx="36" cy="150" r="3" fill="#cbd5e1"/>${ayak(160, 116, 172, 150, 5)}`;
+    } else if (tip === 'bank') {
+      g = golge(100) + `<rect x="24" y="44" width="192" height="44" rx="8" fill="${fr}"/>${minder(32, 50, 176, 34, 8)}<rect x="20" y="92" width="200" height="12" rx="4" fill="${fr}"/>${minder(26, 84, 188, 16, 6)}${ayak(30, 104, 28, 156, 7)}${ayak(210, 104, 212, 156, 7)}`;
+    }
+    return `<svg viewBox="0 0 240 170" role="img" aria-label="${tip}" style="filter:drop-shadow(0 0 .7px rgba(15,23,42,.55))">${defs}${g}</svg>`;
+  }
+  const katTip = (kat, ad) => { const t = (kat || '') + ' ' + (ad || '');
+    if (/Şezlong/i.test(t)) return 'sezlong'; if (/Bar Masa/i.test(kat || '')) return 'barmasa'; if (/Bar Sandalye/i.test(kat || '')) return 'bar'; if (/Bank/i.test(t)) return 'bank';
+    if (/Sehpa/i.test(t)) return 'sehpa'; if (/Masa/i.test(t)) return 'masa'; if (/Sandalye/i.test(t)) return 'sandalye'; if (/Oturma|Aile/i.test(kat || '')) return 'kanepe3'; return 'sandalye'; };
+  const AD = { sandalye: 'Sandalye', bar: 'Bar sandalyesi', koltuk: 'Tekli koltuk', kanepe2: 'İkili kanepe', kanepe3: 'Üçlü kanepe', sehpa: 'Sehpa', masa: 'Masa', barmasa: 'Bar masası', sezlong: 'Şezlong', bank: 'Bank' };
+  // seçenek adından parçaları çıkar: "Athena 3+1+1+sehpa + 6 Hera + Lara masa 90*160"
+  function parcalar(u, sec) {
+    const P = [], ekle = (tip, adet, ad) => { const x = P.find(p => p.tip === tip && p.ad === ad); if (x) x.adet += adet; else P.push({ tip, adet, ad }); };
+    const metin = String(sec || '').trim(), oturma = /Oturma|Aile/i.test(u.kategori);
+    (metin ? metin.split(/\s\+\s/) : ['']).forEach(t => { t = t.trim();
+      const grup = t.match(/(\d)(?:\s*\+\s*(\d))+(?:\s*\+\s*sehpa)?/i);
+      if (grup) { const on = t.replace(grup[0], '').trim(), ad = on && VERI.urunler.some(x => x.ad.toLocaleLowerCase('tr').startsWith(on.toLocaleLowerCase('tr'))) ? on : u.ad; grup[0].split('+').map(s => s.trim()).forEach(s => { if (/sehpa/i.test(s)) ekle('sehpa', 1, ad); else ekle(s === '1' ? 'koltuk' : s === '2' ? 'kanepe2' : 'kanepe3', 1, ad); }); return; }
+      if (oturma && /^Üçlü/i.test(t)) return ekle('kanepe3', 1, u.ad); if (oturma && /^İkili/i.test(t)) return ekle('kanepe2', 1, u.ad); if (oturma && /^Tekli/i.test(t)) return ekle('koltuk', 1, u.ad);
+      const m = t.match(/^(\d+)\s+(.+)$/), adet = m ? +m[1] : 1, ad = (m ? m[2] : t).replace(/\s*\d+\s*[*x×]\s*\d+.*$/, '').trim();
+      if (!ad || !/[a-zçğıöşü]/i.test(ad) || !/(\s|^)\D/.test(t) || (!m && !/masa|sehpa|sandalye/i.test(t) && P.length === 0 && !/\+/.test(metin))) return;
+      const kat = (VERI.urunler.find(x => x.ad.toLocaleLowerCase('tr') === ad.split(/\s+/)[0].toLocaleLowerCase('tr') || x.ad.toLocaleLowerCase('tr') === ad.toLocaleLowerCase('tr')) || {}).kategori;
+      const ad2 = ad.replace(/\s*(masa|sandalye|sehpa)$/i, ''); ekle(katTip(kat || ad, ad), adet, m || (kat && ad2) || /\smasa/i.test(t) ? ad2 || ad : u.ad); });
+    if (!P.length) ekle(katTip(u.kategori, u.ad), 1, u.ad);
+    return P;
+  }
+  function izgara(u, sec, isk, fl, km, ft) {
+    const P = parcalar(u, sec);
+    return `<div class="on-izg ${P.length === 1 ? 'tek' : ''}">${P.map(p => `<div class="on-p">${parca(p.tip, isk, fl, km, ft)}${P.length > 1 ? `<b>${p.adet > 1 ? p.adet + ' × ' : ''}${esc(AD[p.tip])}</b><span>${esc(p.ad)}</span>` : ''}</div>`).join('')}</div>`;
+  }
+  window.onizleParcalar = parcalar;
+  // set oluşturucu ve diğer yerler: tek ürün çizimi
+  window.onizleSvg = (kat, isk, fl, km, ft) => parca(katTip(kat), isk, fl, km, ft);
+  const _ua8 = urunAc;
+  urunAc = function (id) {
+    _ua8.apply(this, arguments); const p = $$('.perde').pop(), u = VERI.urunler.find(x => x.id === id); if (!p || !u) return;
+    let mesgul = false;
+    const yenile = () => { if (mesgul) return; const k = p.querySelector('.r-onizle'); if (!k) return;
+      const s = a => (p.querySelector(`.renk.on[data-a=${a}]`) || {}).dataset?.k || '', oz = p.querySelector('.p-foto .ozet');
+      const sm = oz && oz.innerText.match(/Seçenek\s*[\t\n ]\s*([^\n\t]+)/), sec = sm ? sm[1].trim() : (u.secenek[0] || {}).ad || '';
+      const isk = s('iskelet'), fl = s('file'), km = s('kumas'), ft = s('fitil'), v = [isk, fl, km, ft, sec, k.dataset.i].join('|');
+      if (k.dataset.v === v) return; mesgul = true;
+      try { const P = parcalar(u, sec); k.innerHTML = `<div class="b">Renk önizleme<span>${P.length > 1 ? P.length + ' parça · ' : ''}${isk ? 'seçtiğiniz renklerle' : 'renk seçtikçe güncellenir'}</span></div>${izgara(u, sec, isk, fl, km, ft)}`; k.dataset.v = v; }
+      finally { mesgul = false; } };
+    yenile(); new MutationObserver(yenile).observe(p, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+  };
+})();
+</script>

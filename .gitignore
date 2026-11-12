@@ -1,0 +1,12 @@
+# derleme çıktısı (npm run derle ile üretilir)
+dist/
+node_modules/
+# canlı veri ve yedekler asla repoya girmez
+sunucu/veri.json
+sunucu/mrp_veri.json
+sunucu/yedek/
+sunucu/*.tmp
+yedekler/
+*.tmp
+.DS_Store
+Thumbs.db

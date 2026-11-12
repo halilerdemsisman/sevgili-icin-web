@@ -1,0 +1,22 @@
+
+/* v2.6 logo animasyonu: parçalar sağdan, soldan, üstten ve arkadan gelir */
+.logolar{perspective:600px;overflow:visible!important}
+.logolar::after{display:none!important}
+.logolar svg{animation:none!important;overflow:visible;transform-style:preserve-3d}
+.logolar svg *{transform-box:fill-box;transform-origin:center}
+.logolar.lg-oyna svg[aria-label^="EXIT"]>polygon:first-of-type{animation:lgSol 1s cubic-bezier(.16,1,.3,1) .1s backwards}
+.logolar.lg-oyna svg[aria-label^="EXIT"]>polygon.logo-ink{animation:lgAlt 1s cubic-bezier(.16,1,.3,1) .45s backwards}
+.logolar.lg-oyna svg[aria-label^="EXIT"]>g{animation:lgSag 1.1s cubic-bezier(.16,1,.3,1) .25s backwards}
+.logolar.lg-oyna svg[aria-label^="EXIT"]>text{animation:lgUst 1s cubic-bezier(.16,1,.3,1) .6s backwards}
+.logolar.lg-oyna svg[aria-label="bg group"]>g{animation:lgUst 1.1s cubic-bezier(.34,1.56,.64,1) .5s backwards}
+.logolar.lg-oyna svg[aria-label="bg group"]>text:nth-of-type(1){animation:lgArka 1.1s cubic-bezier(.16,1,.3,1) .75s backwards}
+.logolar.lg-oyna svg[aria-label="bg group"]>text:nth-of-type(2){animation:lgSag 1.1s cubic-bezier(.16,1,.3,1) .9s backwards}
+.logolar.lg-oyna .logo-sep{animation:lgCizgi .8s ease .4s backwards;transform-origin:center}
+@keyframes lgSol{from{opacity:0;transform:translateX(-140px) rotate(-25deg)}}
+@keyframes lgSag{from{opacity:0;transform:translateX(160px)}}
+@keyframes lgUst{from{opacity:0;transform:translateY(-70px)}}
+@keyframes lgAlt{from{opacity:0;transform:translateY(60px)}}
+@keyframes lgArka{from{opacity:0;transform:scale(3.2);filter:blur(6px)}}
+@keyframes lgCizgi{from{opacity:0;transform:scaleY(0)}}
+/* giriş ekranında aralıklarla tekrar */
+

@@ -1,0 +1,56 @@
+
+/* v2.9 karşılaştırma, set oluşturucu, hatırlatmalar */
+.kr-sec{position:absolute;left:10px;bottom:10px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.95);border:1px solid #e2e8f0;border-radius:20px;padding:5px 10px 5px 7px;font-size:11.5px;font-weight:600;color:#334155;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+.kr-sec i{width:14px;height:14px;border:2px solid #94a3b8;border-radius:4px;display:inline-block;position:relative}
+.kr-sec.on{background:#111827;color:#fff;border-color:#111827}.kr-sec.on i{border-color:#fff;background:#fff}
+.kr-sec.on i::after{content:'';position:absolute;left:3px;top:0;width:4px;height:8px;border:solid #111827;border-width:0 2px 2px 0;transform:rotate(45deg)}
+#krBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:#111827;color:#fff;border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:calc(100vw - 32px)}
+#krBar .k-th{display:flex;gap:6px}#krBar .k-th span{width:38px;height:38px;border-radius:8px;background:#374151 center/cover;display:block;position:relative}
+#krBar .k-th span b{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ef4444;color:#fff;font-size:11px;line-height:18px;text-align:center;cursor:pointer}
+#krBar .btn{padding:8px 12px;font-size:13px}#krBar .btn.cizgi{background:transparent;color:#e5e7eb;border-color:#4b5563}
+#krBar .yz{font-size:12.5px;white-space:nowrap}
+.kr-p .pencere{max-width:1180px;display:block;padding:24px;width:100%}
+.kr-tb{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}
+.kr-tb th{width:150px;text-align:left;font-size:12px;color:var(--yazi2,#475569);font-weight:600;vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--cizgi)}
+.kr-tb td{vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--cizgi)}
+.kr-tb tr.fark td{background:rgba(250,204,21,.12)}
+.kr-tb .f{height:150px;border-radius:10px;background:var(--yuzey2,#f1f5f9) center/contain no-repeat;margin-bottom:8px}
+.kr-tb .u-ad{display:flex;justify-content:space-between;gap:6px;align-items:flex-start}.kr-tb .u-ad b{font-size:15px}
+.kr-tb .u-ad button{border:0;background:none;color:var(--soluk,#94a3b8);font-size:18px;cursor:pointer;line-height:1}
+.kr-tb .eniyi{display:inline-block;font-size:10.5px;font-weight:700;background:#dcfce7;color:#166534;border-radius:20px;padding:1px 8px;margin-left:6px}
+.kr-tb ul{margin:0;padding-left:16px}.kr-tb li{margin:2px 0}.kr-tb .sec-l div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--cizgi);padding:3px 0}
+.kr-ust{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.kr-kay{overflow-x:auto}
+.kr-pbtn{margin-left:8px;font-size:12px;padding:6px 10px;vertical-align:middle}
+.set-p .pencere{max-width:1180px;width:100%;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:22px;padding:24px}
+.set-p h2{margin:0 0 4px}.set-tip{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+.set-tip button{border:1px solid var(--cizgi);background:var(--yuzey,#fff);color:var(--yazi);border-radius:20px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer}
+.set-tip button.on{background:#111827;color:#fff;border-color:#111827}
+.set-kalem{display:grid;grid-template-columns:110px minmax(0,1.3fr) minmax(0,1.3fr) 64px 90px 28px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--cizgi);font-size:13px}
+.set-kalem select,.set-kalem input,.set-ad{padding:8px;border:1px solid var(--cizgi);border-radius:8px;background:var(--girdi,#fff);color:var(--yazi);font-size:13px;min-width:0;width:100%}
+.set-kalem .rol{font-weight:700;font-size:12.5px}.set-kalem .t{text-align:right;font-weight:600}.set-kalem .x{border:0;background:none;color:var(--soluk,#94a3b8);font-size:18px;cursor:pointer}
+.set-renk h4{margin:14px 0 6px;font-size:13px}.set-renk .renkler{display:flex;flex-wrap:wrap;gap:6px}
+.set-renk .renk{width:auto;min-width:76px}
+.set-sag{background:var(--yuzey2,#f8fafc);border:1px solid var(--cizgi);border-radius:12px;padding:14px;align-self:start;position:sticky;top:0}
+.set-on{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.set-on div{background:var(--yuzey,#fff);border:1px solid var(--cizgi);border-radius:10px;padding:6px;font-size:11.5px;text-align:center}
+.set-on svg{width:100%;height:auto;display:block}
+.set-top{display:flex;justify-content:space-between;align-items:baseline;margin:12px 0 4px;font-size:14px}.set-top b{font-size:22px}
+.set-sag .eksik{font-size:12px;color:#b45309;margin:6px 0}
+.hat-p .cekmece{max-width:440px}.hat-g{padding:12px 20px;border-bottom:1px solid var(--cizgi)}
+.hat-g h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--yazi2,#475569)}
+.hat{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dashed var(--cizgi);font-size:13px}.hat:last-child{border-bottom:0}
+.hat .n{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none;background:#2563eb}.hat.kirmizi .n{background:#dc2626}.hat.sari .n{background:#d97706}.hat.yesil .n{background:#059669}
+.hat .m{flex:1}.hat .m small{display:block;color:var(--soluk,#94a3b8);font-size:11.5px;margin-top:2px}
+.hat .a{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.hat .a button{font-size:11.5px;padding:4px 9px;border-radius:8px;border:1px solid var(--cizgi);background:var(--yuzey,#fff);color:var(--yazi);cursor:pointer}
+.hat .a button.ana{background:#111827;color:#fff;border-color:#111827}
+.hat-ekle{display:flex;gap:6px;flex-wrap:wrap}.hat-ekle input{padding:8px;border:1px solid var(--cizgi);border-radius:8px;background:var(--girdi,#fff);color:var(--yazi);font-size:13px}
+.hat-ekle input[type=text]{flex:1;min-width:160px}
+.hat-bos{font-size:12.5px;color:var(--soluk,#94a3b8)}
+[data-tema=koyu] .kr-sec{background:rgba(17,24,39,.92);border-color:#374151;color:#e5e7eb}
+[data-tema=koyu] .set-tip button.on,[data-tema=koyu] .hat .a button.ana{background:var(--marka);color:#111;border-color:var(--marka)}
+[data-tema=koyu] .kr-tb .eniyi{background:#064e3b;color:#a7f3d0}
+@media (max-width:900px){.set-p .pencere{grid-template-columns:1fr}.set-sag{position:static}.set-kalem{grid-template-columns:70px 1fr 28px}.set-kalem .rol,.set-kalem select{grid-column:1/-1}.kr-tb th{width:96px}}
+@media (max-width:1700px){#hHat .y{display:none}}
+@media print{#krBar{display:none!important}}
+body:has(.perde) #krBar{display:none}
+.set-sag{margin-top:34px}

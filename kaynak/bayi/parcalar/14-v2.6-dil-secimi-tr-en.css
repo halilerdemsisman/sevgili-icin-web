@@ -1,0 +1,7 @@
+
+/* v2.6 dil seçimi (TR / EN) */
+.dil-btn{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--cizgi);background:var(--yuzey);color:var(--yazi2);font-weight:700;font-size:12.5px;letter-spacing:.04em;cursor:pointer;flex:none}
+.dil-btn:hover{color:var(--yazi);border-color:var(--marka)}.dil-btn svg{width:16px;height:16px}
+#giris .g-dil{position:absolute;top:18px;right:66px;z-index:6;box-shadow:0 6px 18px -10px rgba(11,31,58,.4)}
+header .dil-btn{height:auto;border:0;background:none;color:#e5e7eb;padding:9px 10px}
+header .dil-btn:hover{background:rgba(255,255,255,.08);color:#fff}

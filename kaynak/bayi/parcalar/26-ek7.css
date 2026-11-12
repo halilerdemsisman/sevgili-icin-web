@@ -1,0 +1,8 @@
+
+/* v3.2 bayi sipariş düzenleme ve iptal */
+.sd-btns{display:inline-flex;gap:6px;margin-left:6px;flex-wrap:wrap}
+.sd-talep{margin:10px 0 0;padding:9px 12px;border-radius:10px;font-size:12.5px;background:#fff7e6;color:#92400e;border:1px solid #fde3a7}
+.sd-talep.red{background:#fef2f2;color:#991b1b;border-color:#fecaca}.sd-talep.ok{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+.sd-satir{display:grid;grid-template-columns:1fr 90px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--cizgi)}
+.sd-satir input{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--cizgi);border-radius:8px;text-align:right}
+.sd-satir.sil b{text-decoration:line-through;opacity:.5}

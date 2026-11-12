@@ -1,0 +1,19 @@
+
+/* v3.1 bildirimler, sık aldıklarım, belgelerim, iade/şikayet, kredi limiti */
+.bl-say{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+#bnPanel{position:fixed;top:70px;right:16px;width:min(380px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#fff;border:1px solid var(--cizgi);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.18);z-index:900}
+#bnPanel .bn-ust{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--cizgi);position:sticky;top:0;background:#fff}
+#bnPanel .bn{padding:10px 14px;border-bottom:1px solid var(--cizgi);cursor:pointer;font-size:13px}#bnPanel .bn.yeni{background:#fff7e6}#bnPanel .bn small{color:var(--soluk);display:block;margin-top:2px}
+.sa-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:10px 0 22px}
+.sa-k{border:1px solid var(--cizgi);border-radius:12px;padding:10px 12px;background:#fff;display:flex;flex-direction:column;gap:6px;font-size:13px}.sa-k b{font-size:13.5px}
+.sa-k .sa-alt{display:flex;gap:6px;align-items:center;margin-top:auto}.sa-k input{width:56px;padding:6px;border:1px solid var(--cizgi);border-radius:8px;text-align:right}
+.bg-sek{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 16px}.bg-sek button{padding:8px 14px;border-radius:20px;border:1px solid var(--cizgi);background:#fff;cursor:pointer;font-weight:600;font-size:13px}.bg-sek button.on{background:var(--marka);color:#fff;border-color:var(--marka)}
+.bg-tab{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;font-size:13px}.bg-tab th,.bg-tab td{padding:10px 12px;border-bottom:1px solid var(--cizgi);text-align:left}.bg-tab th{font-size:11.5px;color:var(--soluk);text-transform:uppercase}
+.bg-tab .sag{text-align:right}.iade-d{padding:3px 9px;border-radius:12px;font-size:11.5px;font-weight:700}
+.iade-yeni{background:#e0f2fe;color:#075985}.iade-inceleme{background:#fef3c7;color:#92400e}.iade-onay{background:#dcfce7;color:#166534}.iade-red{background:#fee2e2;color:#991b1b}.iade-cozuldu{background:#e2e8f0;color:#334155}
+.ia-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.ia-form label{font-size:12px;font-weight:600;display:block;margin-bottom:4px}.ia-form select,.ia-form input,.ia-form textarea{width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--cizgi);border-radius:9px;font:inherit}
+.ia-tam{grid-column:1/-1}.ia-foto{display:flex;gap:6px;flex-wrap:wrap}.ia-foto img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--cizgi)}
+.lm-kart{border:1px solid var(--cizgi);border-radius:14px;padding:14px 16px;background:#fff;margin:14px 0}.lm-bar{height:10px;border-radius:5px;background:#eef2f7;overflow:hidden;margin:8px 0}.lm-bar i{display:block;height:100%;border-radius:5px}
+@media(max-width:1280px){header .h-btn[data-git=belgeler] .y{display:none}}
+@media(max-width:640px){header .h-sag{gap:0;overflow-x:auto;max-width:100%;scrollbar-width:none}header .h-sag::-webkit-scrollbar{display:none}header .h-btn{padding:8px 7px;flex:none}.bg-tab th:nth-child(3),.bg-tab td:nth-child(3){display:none}.bg-tab td b{white-space:nowrap}.bg-tab td .kucuk{display:none}}
+@media(max-width:640px){.ia-form{grid-template-columns:1fr}.bg-tab{font-size:12px}.bg-tab th,.bg-tab td{padding:8px 6px}}
