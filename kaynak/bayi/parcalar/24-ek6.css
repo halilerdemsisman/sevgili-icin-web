@@ -17,3 +17,5 @@
 @media(max-width:1280px){header .h-btn[data-git=belgeler] .y{display:none}}
 @media(max-width:640px){header .h-sag{gap:0;overflow-x:auto;max-width:100%;scrollbar-width:none}header .h-sag::-webkit-scrollbar{display:none}header .h-btn{padding:8px 7px;flex:none}.bg-tab th:nth-child(3),.bg-tab td:nth-child(3){display:none}.bg-tab td b{white-space:nowrap}.bg-tab td .kucuk{display:none}}
 @media(max-width:640px){.ia-form{grid-template-columns:1fr}.bg-tab{font-size:12px}.bg-tab th,.bg-tab td{padding:8px 6px}}
+/* A2 (Faz 2): "Sık aldıklarım" başlığı koyu bandın üstüne düşebiliyor; her zeminde okunur bir etiket */
+#saBlok>h3{display:inline-block;background:var(--yuzey,#fff);padding:5px 14px;border-radius:999px;box-shadow:0 1px 4px rgba(15,23,42,.12)}

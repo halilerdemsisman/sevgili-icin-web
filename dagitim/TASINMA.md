@@ -95,12 +95,13 @@ sudo rm -rf /var/lib/exit/*
 - [ ] Yeni bir bayi kaydı açılabiliyor ve satışın işlem kaydında "Yeni bayi kaydı" görünüyor.
 - [ ] Bayi siparişi satış panelinde birkaç saniye içinde görünüyor.
 - [ ] `https://ALAN/mrp`: satış girişiyle (veya izinli IP'den) açılıyor; dışarıdan girişsiz açılmıyor.
-- [ ] Telefonda portal "Ana ekrana ekle" ile kurulabiliyor.
+- [ ] Telefonda portal "Ana ekrana ekle" ile kurulabiliyor; alt sekme çubuğu görünüyor.
+- [ ] Bir siparişin adresi (`https://ALAN/siparisler/EXG-…`) başka sekmede açılınca o sipariş vurgulanıyor.
 - [ ] Satış › Ayarlar: temsilciler için kullanıcılar açıldı (geçici şifreler iletildi). Claude kullanılacaksa API anahtarı girildi.
 
 ## 6. Bayilere ve ekibe duyuru
 
-- Yeni adres: `https://bayi.exitgarden.com` (satış: `/satis`).
+- Yeni adres: `https://bayi.exitgarden.com` (satış: `/satis`). Sayfaların kendi adresi var; örneğin siparişler `https://bayi.exitgarden.com/siparisler`.
 - Şifreler aynı. Şifresini unutan bayinin şifresini satış yöneticisi sıfırlar: "Temsilciler ve işlem kaydı › Şifre sıfırlama". Üretilen geçici şifre bayiye telefonla iletilir; bayi ilk girişte kendi şifresini belirler.
 - Herkes şifresini uygulamadan değiştirebilir:
   - Bayi: üst çubukta firma adına tıklar.

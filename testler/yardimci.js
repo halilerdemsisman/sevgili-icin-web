@@ -24,7 +24,7 @@ async function sunucuBaslat({ veri, ortam } = {}) {
   if (!fs.existsSync(path.join(PAKET, 'exit_satis_paneli.html'))) throw new Error(`${PAKET} yok. Önce: node araclar/derle.mjs`);
   const klasor = fs.mkdtempSync(path.join(os.tmpdir(), 'exit-test-'));
   for (const f of ['exit_bayi_siparis.html', 'exit_satis_paneli.html']) fs.copyFileSync(path.join(PAKET, f), path.join(klasor, f));
-  for (const d of ['telefon', 'sunucu']) kopyala(path.join(PAKET, d), path.join(klasor, d));
+  for (const d of ['web', 'telefon', 'sunucu']) if (fs.existsSync(path.join(PAKET, d))) kopyala(path.join(PAKET, d), path.join(klasor, d));
   if (veri) fs.writeFileSync(path.join(klasor, 'sunucu', 'veri.json'), JSON.stringify({ zaman: 1, degisim: {}, ...veri }));
   const port = await bosPort();
   const surec = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', path.join(klasor, 'sunucu', 'sunucu.js')], { env: { ...process.env, PORT: String(port), EXIT_YONETICI_SIFRE: YONETICI_SIFRE, VERI_HEMEN_KAYDET: '1', ...ortam }, stdio: ['ignore', 'pipe', 'pipe'] });

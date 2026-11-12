@@ -1,7 +1,7 @@
 # EXIT Garden: Bayi Web Sitesi ve Satış Masaüstü Uygulaması
 ## Analiz ve Faz Planı
 
-Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0, 1a, 1b-1 ve 1b-2 tamamlandı)
+Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0, 1a, 1b-1, 1b-2 ve 2a tamamlandı)
 Girdi: `Bayi_Satis_Kod.zip` (iki HTML uygulama, sunucu, PWA, modüller, ekran görüntüleri) ve `BAYI_SATIS_RAPOR.md`.
 
 Hedef:
@@ -30,14 +30,16 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 1a | Güvenli geçiş sunucusu (giriş, yetki, numara, dosyalar) — mevcut ekranlarla | Veriler korunuyor; sipariş no sunucuda; dosyalar diskte; internete açılabilir |
 | 1b-1 | Canlıya geçiş (VPS) | Sunucuda fiyat denetimi, şifre değiştirme/sıfırlama, VPS kurulum ve taşınma paketi |
 | 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda, anlık bildirim, yapay zekâ anahtarı sunucuda, REST v1; Faz 2–3'ün temeli |
-| 2 | Bayi web sitesi | `bayi.exitgarden.com`, responsive, PWA, API'ye bağlı |
+| 2a | Bayi web sitesi: temel | Ayrı dosyalar + WebP, sayfa adresleri, yeni menü ve telefon düzeni, XSS denetimi |
+| 2b | Bayi web sitesi: ekranlar | Ekranlar modüllere bölünür, veri REST'ten, kişisel durum sunucuda, TR/EN dosyaları |
+| 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
 | 3 | Satış masaüstü uygulaması | Windows kurulumu, otomatik güncelleme, masaüstü özellikleri |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1 tamamlandı; Faz 2 ve Faz 3 paralel yürüyebilir.
+Faz 1 ve Faz 2a tamamlandı; Faz 2b ve Faz 3 paralel yürüyebilir.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 2 (bayi web sitesi) ve Faz 3 (satış masaüstü).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 2b (bayi ekranları REST'e) ve Faz 3 (satış masaüstü).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -100,7 +102,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | G5 | 🟠 | Varsayılan yönetici `satis / 1234`; giriş ekranında yazıyor | `satis/sablon.html:83`; testle doğrulandı (G5) | ✅ 1a |
 | G6 | 🟠 | Claude API anahtarı tarayıcıda saklanıp doğrudan tarayıcıdan çağrılıyor | `satis/parcalar/03-ana.js:299` | ✅ 1b-2 (anahtar sunucuda; istek sunucu üzerinden, model/alan/çıkış/saatlik sınırlı) |
 | G7 | 🟠 | Sunucu HTTP; oturum yönetimi, hız sınırı, kilitleme, işlem kaydının sunucuda tutulması yok | | ✅ 1a + 1b-1 (oturum, deneme sınırı, işlem kaydı, güvenlik başlıkları; VPS paketinde Caddy ile HTTPS, HSTS, güvenlik duvarı) |
-| G8 | 🟡 | HTML'in büyük kısmı `innerHTML` ile kuruluyor (bayi 48, satış 67 yer). `esc()` yardımcı fonksiyonu var; bayilerin girdiği metinlerin (firma adı, not, açıklama) her yerde kaçışlandığı denetlenmeli (XSS riski) | | ⏳ 2–3 |
+| G8 | 🟡 | HTML'in büyük kısmı `innerHTML` ile kuruluyor (bayi 48, satış 67 yer). `esc()` yardımcı fonksiyonu var; bayilerin girdiği metinlerin (firma adı, not, açıklama) her yerde kaçışlandığı denetlenmeli (XSS riski) | | ✅ 2a (zararlı bayi testiyle denetlendi: 40 alanın hiçbiri çalışmadı; dosya alanlarına `javascript:` yazılabiliyordu, sunucuda kapatıldı; web sitesi ve satış paneline içerik güvenliği başlığı) |
 
 ### 3.2 Veri bütünlüğü
 | # | Önem | Sorun | Durum |
@@ -117,15 +119,15 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ⏳ 2–3 |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0, 1a (41 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2a (89 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
 |---|---|---|---|
-| A1 | 🟡 | Bayi üst menüsü 1440 px'de bile taşıyor: 11 öğe + arama + kullanıcı; kullanıcı adı kesiliyor ("Deniz Ba…"), "Cari hesabım" ve "Özel teklif" iki satıra kırılıyor. Telefonda daha da sıkışık. | ⏳ 2 |
-| A2 | 🟡 | Siparişlerim sayfasında "Sık aldıklarım" başlığı koyu başlık bandının üstüne biniyor, okunmuyor. | ⏳ 2 |
+| A1 | 🟡 | Bayi üst menüsü 1440 px'de bile taşıyor: 11 öğe + arama + kullanıcı; kullanıcı adı kesiliyor ("Deniz Ba…"), "Cari hesabım" ve "Özel teklif" iki satıra kırılıyor. Telefonda daha da sıkışık. | ✅ 2a (5 ana öğe + hesap menüsü; telefonda alt sekme çubuğu) |
+| A2 | 🟡 | Siparişlerim sayfasında "Sık aldıklarım" başlığı koyu başlık bandının üstüne biniyor, okunmuyor. | ✅ 2a |
 | A3 | 🟡 | Satış panelinde "Sunucuya bağlı" rozeti sol menünün son öğesinin ("Ürünler ve fiyatlar") üzerine biniyor. | ⏳ 3 |
-| A4 | 🟡 | Sayfalar URL'ye bağlı değil (`git('katalog')`); geri tuşu, yer imi, link paylaşımı (ör. bir siparişe link) çalışmıyor. Web sitesi için gerekli. | ⏳ 2 |
+| A4 | 🟡 | Sayfalar URL'ye bağlı değil (`git('katalog')`); geri tuşu, yer imi, link paylaşımı (ör. bir siparişe link) çalışmıyor. Web sitesi için gerekli. | ✅ 2a (web sitesinde) |
 
 ---
 
@@ -197,8 +199,9 @@ Faz 0 sonunda repo (✅ = var, ⏳ = ilgili fazda eklenecek):
 ```
 uretim_planlama/
 ├── kaynak/            ✅ Bugünkü uygulamaların kaynağı: bayi/ ve satis/ (sablon.html + parcalar/),
-│                         ortak/ (iki uygulamada aynı 9 blok), telefon/ (PWA dosyaları)
-├── katalog/           ✅ urunler.json, gorsel/, kumas/, maske/ + maskeler.json
+│                         ortak/ (iki uygulamada aynı 9 blok), web/ (Faz 2a: yalnız web sitesine giren
+│                         düzen, adres ve service worker dosyaları + PWA dosyaları)
+├── katalog/           ✅ urunler.json, gorsel/, webp/ (2a), kumas/, maske/ + maskeler.json
 ├── sunucu/            ✅ Faz 1a güvenli sunucu (sunucu.js + lib/: kimlik, kurallar, depo, dosya)
 │                         + lib/fiyat (1b-1) + lib/limit, lib/rest, SQLite depo (1b-2)
 ├── dagitim/           ✅ Faz 1b-1: VPS kurulumu (kur.sh, systemd, Caddy, yedek, güncelleme) ve TASINMA.md
@@ -206,7 +209,7 @@ uretim_planlama/
 ├── testler/           ✅ Playwright uçtan uca testleri (node:test)
 ├── eski/              ✅ Orijinal paket (başvuru için, değiştirilmez)
 ├── docs/              ✅ Raporlar
-├── bayi-web/          ⏳ Faz 2: bayi web sitesi (Vite)
+├── bayi-web/          ⏳ Faz 2b: modüllere bölünmüş bayi ekranları (dist/web'in yerini alır)
 ├── satis-masaustu/    ⏳ Faz 3: Electron kabuğu + satış ekranları
 └── ortak/             ⏳ Faz 1–2: fiyat/iskonto hesabı, biçimler, durum adları, renk önizleme
                           motoru, API istemcisi, çeviriler (kaynak/ortak/ buraya taşınır)
@@ -304,16 +307,38 @@ Faz 2–3'e kalanlar:
 - Diğer sözlük anahtarlarında eşzamanlı yazma (V3): yeni ekranlar REST'e geçtikçe ortadan kalkar.
 
 ### Faz 2: Bayi web sitesi (≈4–5 hafta)
-1. Ekranlar modüllere bölünür, `localStorage` okuma/yazma çağrıları API istemcisiyle değiştirilir (sepet ve tercihler gibi kişisel durumlar da sunucuya).
-2. URL tabanlı sayfa geçişi (A4).
-3. Yeni üst menü + mobil alt sekme düzeni (A1, A2).
-4. Görsel optimizasyonu, tembel yükleme, WebP.
-5. Renk önizleme motoru `ortak/` modülüne taşınır; maskeler dosyadan yüklenir.
-6. PWA (otomatik sürümleme), TR/EN dosyaları.
-7. Erişilebilirlik ve performans kontrolü (Lighthouse hedefi: performans ≥ 85 telefonda).
-8. Alan adı + HTTPS ile yayın (`bayi.exitgarden.com`), önce 2–3 pilot bayi.
+Üç alt faza bölündü. 2a, ekranlar yeniden yazılmadan web sitesinin temelini kurar: bayiler hemen hızlı, adresli ve telefona uygun bir site kullanır, sonraki ekran çalışması (2b) bu temelin üstünde parça parça yapılır.
 
-Kabul: Faz 0 testlerinin bayi kısmı yeni sitede geçiyor; telefonda (375 px) yatay kaydırma yok; ilk açılış 4G'de 3 sn altında.
+#### Faz 2a: Web sitesinin temeli ✅ tamamlandı
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Web derlemesi | `npm run derle` artık `dist/web/` üretir: 19 KB `index.html` + içerik özetli (`ana.47989c853c.js` gibi) 23 JS ve 16 CSS dosyası. Sunucu bunları bir yıl önbellekli, gzip'li ve ETag'li verir; değişmeyen dosya yeniden inmez. Tek dosyalık `exit_bayi_siparis.html` sunucusuz kullanım için üretilmeye devam eder |
+| Görseller | `araclar/webp.mjs` 61 fotoğraftan iki boy WebP üretir (`katalog/webp/`, repoda): küçük resim 420 px (toplam 218 KB; JPEG'ler 2,1 MB idi) ve tam boy (ürün penceresi, renk önizleme, PDF katalog). Renk maskeleri ayrı dosya. Web sitesinde exitgarden.com'dan 61 büyük JPEG indirilmesi kapatıldı |
+| Ölçüm (yavaş 4G, telefon) | Katalog ilk açılışta **1,2 sn**'de görünür (eski tek dosya: 10,8 sn). İlk açılış verisi: kod 143 KB (gzip) + küçük resimler. Kabul ölçütü (4G'de 3 sn altı) karşılandı |
+| Sayfa adresleri (A4) | `/katalog`, `/katalog/<kategori>`, `/urun/21-neo`, `/sepet`, `/siparisler`, `/siparisler/EXG-2026-0001`, `/cari`, `/belgeler`, `/odeme`, `/ozel-teklif`, `/projeler`. Geri/ileri tuşu ürün penceresini de kapatır/açar; sayfa yenilenince aynı yerde kalınır; oturumsuz açılan bağlantı girişten sonra açılır. Sekme başlığı sayfaya göre değişir |
+| Yeni menü (A1) | Bilgisayar: 5 ana öğe (Katalog, Siparişlerim, Cari hesabım, Belgeler, Özel teklif) + bildirim + sepet + firma adı. Firma adı hesap menüsünü açar: Projeler, Hatırlatmalar, Ödeme bildirimi, dil, tema, şifre, çıkış. 1280 ve 1440 px'de tek satır, firma adı kesilmiyor. Klavye ile açılır/kapanır (Enter, Esc) |
+| Telefon düzeni | ≤ 900 px: alt sekme çubuğu (Katalog, Siparişler, Sepet, Cari, Daha fazla; sipariş ve sepet sayaçlı); "Daha fazla" alttan açılan menü. 375 px'de 7 sayfanın hiçbirinde yatay kaydırma yok. Cari sayfasında başlığa binen düğmeler ve taşan alt bilgi düzeltildi |
+| A2 | "Sık aldıklarım" başlığı her zeminde okunur (iki sürümde de) |
+| PWA | `sw.js` derlemede sürümlenir (dosya listesi + özet); yeni sürüm bir sonraki açılışta kendiliğinden gelir. Bağlantı yokken site önbellekten açılır. Kişisel veri (`/api`), satış ve MRP hiçbir zaman önbelleğe alınmaz (eski service worker veri yanıtlarını da saklıyordu) |
+| XSS denetimi (G8) | `testler/xss.test.js`: kötü niyetli bir bayi profilindeki, siparişindeki, ödemesindeki, teklifindeki, iadesindeki, numunesindeki her metne zararlı kod yazar; satış panelinin bütün sayfaları, sipariş ve müşteri pencereleri ile bayi sitesinin bütün sayfaları açılır. Satış panelinde 40 alan ekrana düz metin olarak basıldı, hiçbiri çalışmadı. Bulunan tek açık: dekont/iade fotoğrafı/logo alanlarına `javascript:` adresi yazılabiliyordu; sunucu artık bu alanlarda yalnız dosya adresi veya resim/PDF kabul ediyor |
+| İçerik güvenliği (CSP) | Web sitesi ve satış paneli yalnız kendi sunucusuyla konuşabilir (satış: + döviz kuru servisi). Gözden kaçmış bir XSS olsa bile veri başka siteye gönderilemez |
+| Testler | 89 test (önceki 75 + web sitesi 11 + XSS 3); SQLite ve JSON depoyla geçiyor |
+
+Değişmeyenler: Satış paneli, MRP ve tek dosyalık bayi portalı aynı çalışır. Bayi ekranlarının içi (katalog, sepet, sipariş, cari…) ve veriyi eşitleme katmanı aynıdır; bunlar 2b'de değişecek.
+
+#### Faz 2b: Ekranlar (≈2–3 hafta)
+1. Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 6, `cariSayfa` 5, `git` 4 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
+2. Veri REST'ten gelir; ödeme bildirimi, iade, teklif, numune ve değişiklik talebi için REST yazma uçları. Sepet, favoriler, projeler gibi kişisel durumlar sunucuda (V3 bayi tarafında kalkar).
+3. Renk önizleme motoru `ortak/` modülüne taşınır.
+4. TR/EN çevirileri `tr.json` / `en.json` dosyalarına.
+5. Çevrimdışıyken sipariş gönderme açık uyarıyla engellenir.
+
+Kabul: Faz 0 testlerinin bayi kısmı REST'e geçmiş ekranlarda geçiyor; bayi tarayıcısında `localStorage`'da iş verisi kalmıyor.
+
+#### Faz 2c: Yayın (≈1 hafta)
+1. Erişilebilirlik ve Lighthouse denetimi (hedef: telefonda performans ≥ 85).
+2. Alan adı + HTTPS ile yayın (`bayi.exitgarden.com`), önce 2–3 pilot bayi.
 
 ### Faz 3: Satış masaüstü uygulaması (≈3–4 hafta)
 1. Electron projesi; satış ekranları modüllere bölünüp API'ye bağlanır (temsilci kısıtı artık sunucudan gelir).

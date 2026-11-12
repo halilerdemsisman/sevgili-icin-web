@@ -24,7 +24,8 @@ Faz 2 ve Faz 3'te bu zincirler tek fonksiyonda birleştirilecek.
 
 for (const [uyg, baslik] of Object.entries(UYG)) {
   const sablon = fs.readFileSync(path.join(KAYNAK, uyg, 'sablon.html'), 'utf8');
-  const parcalar = [...sablon.matchAll(/\{\{dahil ([^}]+\.js)\}\}/g)].map(m => m[1]);
+  // {{web yol}}: yalnız web sitesine giren parçalar (Faz 2a); onlar da zincirin sonuna eklenir
+  const parcalar = [...sablon.matchAll(/\{\{(?:dahil|web) ([^}]+\.js)\}\}/g)].map(m => m[1]);
   const tanim = {}, sarma = {};
   for (const p of parcalar) {
     const satirlar = fs.readFileSync(path.join(KAYNAK, p), 'utf8').split('\n');

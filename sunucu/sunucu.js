@@ -31,17 +31,18 @@ const { depoAc, HANE } = require('./lib/depo');
 const { Limitler } = require('./lib/limit');
 const { restKur } = require('./lib/rest');
 const { Kurallar, KISISEL } = require('./lib/kurallar');
-const { Dosyalar } = require('./lib/dosya');
+const { Dosyalar, dosyaAlanlariniTemizle } = require('./lib/dosya');
 const { Fiyatlar } = require('./lib/fiyat');
 const K = require('./lib/kimlik');
 
 const ENV = process.env;
 const PORT = +ENV.PORT || 8080;
 const KOK = path.join(__dirname, '..');
+const zlib = require('zlib');
 const VERI_KLASORU = ENV.VERI_KLASORU ? path.resolve(ENV.VERI_KLASORU) : __dirname;
 const VEKIL = ENV.GUVENILIR_VEKIL === '1';
 const KAYIT_ACIK = ENV.KAYIT_ACIK !== '0';
-const SURUM = '1b';
+const SURUM = '2a';
 
 const depo = depoAc(VERI_KLASORU);
 const oturumlar = new K.Oturumlar(path.join(VERI_KLASORU, 'oturumlar.json'), +ENV.OTURUM_GUN || 7);
@@ -182,7 +183,13 @@ function uygula(ot, degisen, ip) {
     if (s.red) { reddedilen.push([k, s.red]); continue; }
     (s.uyari || []).forEach(u => reddedilen.push([k, u]));
     let deger = s.deger;
-    if (deger != null && deger.includes('data:')) { try { const o = JSON.parse(deger); if (dosyaCikar(k, o)) deger = JSON.stringify(o); } catch (e) { /* JSON olmayan düz değer: olduğu gibi */ } }
+    if (deger != null && (deger.includes('data:') || /"(dosya|foto|logo)"/.test(deger))) {
+      try {
+        const o = JSON.parse(deger), c = dosyaCikar(k, o), t = dosyaAlanlariniTemizle(o);
+        if (c || t) deger = JSON.stringify(o);
+        if (t) reddedilen.push([k, `${t} dosya alanı geçersiz olduğu için silindi`]);
+      } catch (e) { /* JSON olmayan düz değer: olduğu gibi */ }
+    }
     if (depo.koy(k, deger, z)) yazilan.push(k + (s.not && s.not.length ? ` (${s.not.join(', ')})` : ''));
     if (k === 'exb-kullanicilar') Object.values(kullanicilar('bayi')).forEach(x => x && x.durum === 'pasif' && oturumlar.kullaniciyiKapat('bayi', x.kul));
     const g = kurallar.oku(k, depo.al(k) ?? null, ot);
@@ -400,8 +407,40 @@ async function api(q, r, u, p, ip) {
 }
 
 // ---------- statik dosyalar ----------
-const TIP = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.css': 'text/css' };
+const TIP = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.css': 'text/css; charset=utf-8', '.txt': 'text/plain; charset=utf-8' };
 const YASAK = [path.join(KOK, 'sunucu'), VERI_KLASORU];
+// Bayi web sitesi (Faz 2): dist/web. Eski paketlerde (web/ yoksa) telefon/ yayınlanır.
+const WEB = fs.existsSync(path.join(KOK, 'web', 'index.html')) ? 'web' : 'telefon';
+// Sitenin sayfa adresleri: hepsi aynı index.html'i döner, sayfayı tarayıcıdaki kod seçer
+const SITE_ADRESI = /^\/(katalog|urun|siparisler|cari|belgeler|odeme|ozel-teklif|projeler|sepet)(\/[^.]*)?$/;
+// Web sitesi için içerik güvenliği: yalnız kendi dosyaları; satır içi kodlar mevcut ekranlar için açık
+const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.exitgarden.com; connect-src 'self'; font-src 'self' data:; worker-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'";
+// Satış paneli (tek dosya, satır içi kod): dış bağlantı yalnız döviz kuru servisine. Bir XSS olsa bile
+// verinin başka bir siteye gönderilmesini (fetch, resim) engeller.
+const CSP_SATIS = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.exitgarden.com; connect-src 'self' https://open.er-api.com; font-src 'self' data:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'";
+const SIKISTIR = /\.(html|js|css|json|webmanifest|svg|txt)$/;
+const statikOnbellek = new Map(); // tam yol -> {zaman, veri, gz, etiket}
+function statikOku(tam) {
+  const st = fs.statSync(tam), o = statikOnbellek.get(tam);
+  if (o && o.zaman === st.mtimeMs && o.boy === st.size) return o;
+  const veri = fs.readFileSync(tam);
+  const y = { zaman: st.mtimeMs, boy: st.size, veri, etiket: '"' + require('crypto').createHash('sha1').update(veri).digest('base64url').slice(0, 16) + '"',
+    gz: SIKISTIR.test(tam) && veri.length > 1024 ? zlib.gzipSync(veri, { level: 9 }) : null };
+  if (statikOnbellek.size > 500) statikOnbellek.clear();
+  statikOnbellek.set(tam, y); return y;
+}
+function statikGonder(q, r, tam, ekBaslik = {}) {
+  let o; try { o = statikOku(tam); } catch (e) { r.writeHead(404, GUVENLIK); return r.end('Bulunamadı'); }
+  const goreli = path.relative(KOK, tam).split(path.sep).join('/');
+  // içerik özetli adlar (web/js, web/css) hiç değişmez; görseller bir gün; sayfalar her açılışta denetlenir
+  const onbellek = /^web\/(js|css)\//.test(goreli) ? 'public, max-age=31536000, immutable' : /^web\/(gorsel|maske)\//.test(goreli) || /^web\/icon-/.test(goreli) ? 'public, max-age=86400' : 'no-cache';
+  const B = { ...GUVENLIK, 'Content-Type': TIP[path.extname(tam)] || 'application/octet-stream', 'Cache-Control': onbellek, ETag: o.etiket, Vary: 'Accept-Encoding', ...ekBaslik };
+  if (q.headers['if-none-match'] === o.etiket) { r.writeHead(304, B); return r.end(); }
+  const gz = o.gz && /\bgzip\b/.test(q.headers['accept-encoding'] || '');
+  const veri = gz ? o.gz : o.veri;
+  r.writeHead(200, { ...B, 'Content-Length': veri.length, ...(gz ? { 'Content-Encoding': 'gzip' } : {}) });
+  r.end(q.method === 'HEAD' ? undefined : veri);
+}
 
 // kapanırken bekleyen yazmaları diske aktar
 for (const sinyal of ['SIGINT', 'SIGTERM']) process.on(sinyal, () => { try { depo.hemenKaydet(); if (depo.kapat) depo.kapat(); } catch (e) { console.error(e); } process.exit(0); });
@@ -426,16 +465,15 @@ http.createServer(async (q, r) => {
     }
     if (p.startsWith('/api/')) return await api(q, r, u, p, ip);
 
-    let f;
+    if (q.method !== 'GET' && q.method !== 'HEAD') { r.writeHead(405, GUVENLIK); return r.end(); }
+    let f, d; try { d = decodeURIComponent(p); } catch (e) { r.writeHead(400, GUVENLIK); return r.end(); }
     if (p === '/mrp' || p === '/mrp/') f = 'mrp.html';
     else if (p === '/satis' || p === '/satis/') f = 'exit_satis_paneli.html';
-    else f = 'telefon/' + (decodeURIComponent(p).replace(/^\/+/, '') || 'index.html');
+    else if (p === '/' || SITE_ADRESI.test(d)) f = WEB + '/index.html';
+    else f = WEB + '/' + d.replace(/^\/+/, '');
     const tam = path.resolve(KOK, f);
     if (!tam.startsWith(KOK + path.sep) || YASAK.some(y => tam === y || tam.startsWith(y + path.sep))) { r.writeHead(403, GUVENLIK); return r.end(); }
-    fs.readFile(tam, (e, d) => {
-      if (e) { r.writeHead(404, GUVENLIK); return r.end('Bulunamadı'); }
-      r.writeHead(200, { ...GUVENLIK, 'Content-Type': TIP[path.extname(tam)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); r.end(d);
-    });
+    statikGonder(q, r, tam, f.startsWith('web/') && /\.html$/.test(f) ? { 'Content-Security-Policy': CSP } : f === 'exit_satis_paneli.html' ? { 'Content-Security-Policy': CSP_SATIS } : {});
   } catch (e) {
     console.error(e); if (!r.headersSent) js(r, { hata: 'sunucu hatası' }, 500); else r.end();
   }

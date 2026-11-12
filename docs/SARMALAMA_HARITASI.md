@@ -9,23 +9,23 @@ Faz 2 ve Faz 3'te bu zincirler tek fonksiyonda birleştirilecek.
 
 ## Bayi portalı
 
-Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `13-ortak-excel-xlsx-csv-okuma.js` → `15-v2.6-dil-secimi-tr-en.js` → `16-v2.6-telefona-kurulum-pwa-yalniz.js` → `18-v2.8-proje-sepetleri-renk-onizleme.js` → `20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js` → `22-v3.0-hedef-prim-musteri-katalogu.js` → `23-v3.1-sunucuya-bagliyken-siparis-dosyasi.js` → `25-ek6.js` → `27-ek7.js` → `29-ek8.js` → `31-ek9.js` → `33-ek10.js` → `35-ek11.js` → `36-ek12-sunucu-oturum.js`
+Yükleme sırası: `senkron.js` → `erken.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `13-ortak-excel-xlsx-csv-okuma.js` → `15-v2.6-dil-secimi-tr-en.js` → `16-v2.6-telefona-kurulum-pwa-yalniz.js` → `18-v2.8-proje-sepetleri-renk-onizleme.js` → `20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js` → `22-v3.0-hedef-prim-musteri-katalogu.js` → `23-v3.1-sunucuya-bagliyken-siparis-dosyasi.js` → `25-ek6.js` → `27-ek7.js` → `29-ek8.js` → `31-ek9.js` → `33-ek10.js` → `35-ek11.js` → `36-ek12-sunucu-oturum.js` → `duzen.js` → `adres.js`
 
 | Fonksiyon | Tanım | Sarma sayısı | Sarmalayıcılar (yükleme sırasıyla; sonuncusu en dışta) |
 |---|---|---|---|
-| `urunAc` | 03-ana.js:182 | 6 | 13-ortak-excel-xlsx-csv-okuma.js:124 (`_urunAc`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:102 (`_uaP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:71 (`_urunAcK`) → 29-ek8.js:71 (`_ua8`) → 31-ek9.js:26 (`_ua9`) → 33-ek10.js:83 (`_ua10`) |
-| `cariSayfa` | 03-ana.js:384 | 5 | 18-v2.8-proje-sepetleri-renk-onizleme.js:178 (`_cariP`) → 22-v3.0-hedef-prim-musteri-katalogu.js:23 (`_cariH`) → 22-v3.0-hedef-prim-musteri-katalogu.js:64 (`_cariA`) → 25-ek6.js:153 (`_cariL`) → 33-ek10.js:36 (`_cari10`) |
-| `git` | 03-ana.js:97 | 4 | 18-v2.8-proje-sepetleri-renk-onizleme.js:219 (`_gitP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:80 (`_gitK`) → 25-ek6.js:162 (`_gitB`) → 33-ek10.js:89 (`_git10`) |
-| `siparislerim` | 03-ana.js:319 | 4 | 13-ortak-excel-xlsx-csv-okuma.js:168 (`_siparislerim`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:209 (`_spP`) → 25-ek6.js:144 (`_sip`) → 27-ek7.js:34 (`_sip7`) |
-| `girisYap` | 03-ana.js:87 | 3 | 03-ana.js:401 (`_girisYap`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:144 (`_gyP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:211 (`_girisH`) |
-| `katalog` | 03-ana.js:126 | 3 | 13-ortak-excel-xlsx-csv-okuma.js:96 (`_katalog`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:134 (`_kP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:69 (`_katalogK`) |
-| `siparisDosyasi` | 03-ana.js:304 | 3 | 13-ortak-excel-xlsx-csv-okuma.js:244 (`_siparisDosyasi`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:68 (`_sdP`) → 23-v3.1-sunucuya-bagliyken-siparis-dosyasi.js:3 (`_sd`) |
-| `siparisKarti` | 03-ana.js:339 | 3 | 13-ortak-excel-xlsx-csv-okuma.js:175 (`_siparisKarti`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:75 (`_skP`) → 35-ek11.js:11 (`_sk`) |
-| `katalogIndir` | 03-ana.js:411 | 1 | 15-v2.6-dil-secimi-tr-en.js:197 (`_katalogIndir`) |
-| `sepetKaydet` | 03-ana.js:271 | 1 | 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:216 (`_sepetKH`) |
-| `uygun` | 03-ana.js:106 | 1 | 13-ortak-excel-xlsx-csv-okuma.js:92 (`_uygun`) |
+| `urunAc` | 03-ana.js:183 | 7 | 13-ortak-excel-xlsx-csv-okuma.js:124 (`_urunAc`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:102 (`_uaP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:71 (`_urunAcK`) → 29-ek8.js:71 (`_ua8`) → 31-ek9.js:27 (`_ua9`) → 33-ek10.js:83 (`_ua10`) → adres.js:49 (`_urunAc`) |
+| `cariSayfa` | 03-ana.js:385 | 5 | 18-v2.8-proje-sepetleri-renk-onizleme.js:178 (`_cariP`) → 22-v3.0-hedef-prim-musteri-katalogu.js:23 (`_cariH`) → 22-v3.0-hedef-prim-musteri-katalogu.js:64 (`_cariA`) → 25-ek6.js:153 (`_cariL`) → 33-ek10.js:36 (`_cari10`) |
+| `git` | 03-ana.js:98 | 5 | 18-v2.8-proje-sepetleri-renk-onizleme.js:219 (`_gitP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:80 (`_gitK`) → 25-ek6.js:162 (`_gitB`) → 33-ek10.js:89 (`_git10`) → adres.js:25 (`_git`) |
+| `girisYap` | 03-ana.js:88 | 4 | 03-ana.js:402 (`_girisYap`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:144 (`_gyP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:211 (`_girisH`) → adres.js:135 (`_girisYap`) |
+| `katalog` | 03-ana.js:127 | 4 | 13-ortak-excel-xlsx-csv-okuma.js:96 (`_katalog`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:134 (`_kP`) → 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:69 (`_katalogK`) → adres.js:37 (`_katalog`) |
+| `siparislerim` | 03-ana.js:320 | 4 | 13-ortak-excel-xlsx-csv-okuma.js:168 (`_siparislerim`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:209 (`_spP`) → 25-ek6.js:144 (`_sip`) → 27-ek7.js:34 (`_sip7`) |
+| `siparisDosyasi` | 03-ana.js:305 | 3 | 13-ortak-excel-xlsx-csv-okuma.js:244 (`_siparisDosyasi`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:68 (`_sdP`) → 23-v3.1-sunucuya-bagliyken-siparis-dosyasi.js:3 (`_sd`) |
+| `siparisKarti` | 03-ana.js:340 | 3 | 13-ortak-excel-xlsx-csv-okuma.js:175 (`_siparisKarti`) → 18-v2.8-proje-sepetleri-renk-onizleme.js:75 (`_skP`) → 35-ek11.js:11 (`_sk`) |
+| `katalogIndir` | 03-ana.js:412 | 1 | 15-v2.6-dil-secimi-tr-en.js:197 (`_katalogIndir`) |
+| `sepetKaydet` | 03-ana.js:272 | 1 | 20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:216 (`_sepetKH`) |
+| `uygun` | 03-ana.js:107 | 1 | 13-ortak-excel-xlsx-csv-okuma.js:92 (`_uygun`) |
 
-Toplam: 11 fonksiyon, 34 sarmalama.
+Toplam: 11 fonksiyon, 38 sarmalama.
 
 ## Satış paneli
 

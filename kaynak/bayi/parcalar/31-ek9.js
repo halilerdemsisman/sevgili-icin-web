@@ -3,7 +3,8 @@
   const RENK9 = { Granit: '#76766f', Seramik: '#d9d3c6', 'RAL 1013': '#EAE6CA', 'RAL 9016': '#F6F6F2', 'RAL 7006': '#75695C', 'RAL 7016': '#383E42', 'RAL 9005': '#0E0E10' };
   const FILE9 = { 'Terra 01': ['#f4f4f0', '#d6d6cf'], 'Terra 05': ['#1c1c1c', '#3d3d3d'], 'Terra 02': ['#e8dec8', '#c9bc9f'], 'Terra 03': ['#8c7b66', '#6a5c4b'], 'Terra 04': ['#41464a', '#2a2e31'], 'Crome': ['#d8dde1', '#8e959b'] };
   const MASKE = /*@maskeler*/null, ASIL = {};
-  VERI.urunler.forEach(u => { if (MASKE[u.id] && u.gorsel && u.gorsel.startsWith('data:')) ASIL[u.id] = u.gorsel; });
+  // renk önizleme aynı kökenli fotoğraf ister (tuval); web sitesinde tam boy WebP, dosya sürümünde gömülü görsel
+  VERI.urunler.forEach(u => { if (MASKE[u.id] && u.gorsel && (u.gorselB || u.gorsel.startsWith('data:'))) ASIL[u.id] = u.gorselB || u.gorsel; });
   const yukle = s => new Promise((r, h) => { const i = new Image(); i.onload = () => r(i); i.onerror = h; i.src = s; });
   const piksel = (im, w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(im, 0, 0, w, h); return x.getImageData(0, 0, w, h); };
   // sRGB <-> Lab

@@ -6,7 +6,8 @@
 //   • Numara (sipariş, ödeme, teklif…) sunucudan alınır: window.sunucuNo('EXG') → 'EXG-2026-0042'.
 (function () {
   if (!/^https?:$/.test(location.protocol)) return;
-  const UYG = /satis/i.test(location.pathname) ? 'satis' : 'bayi';
+  // /satis (sunucu) veya exit_satis_paneli.html (dosya); bayi sitesinin /siparisler gibi adresleri bayidir
+  const UYG = /^\/satis(\/|$)|satis_paneli/i.test(location.pathname) ? 'satis' : 'bayi';
   const OTURUM_ANAHTARI = UYG === 'satis' ? 'exs-oturum' : 'exb-oturum';
   const YEREL = /^(exb-dil|exb-oturum|exs-oturum|exs-ai-anahtar|exit-tema|exb-kars)$/;
   const ORTAK = k => /^ex[bs]-/.test(k) && !YEREL.test(k);

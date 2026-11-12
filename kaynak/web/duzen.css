@@ -1,0 +1,93 @@
+/* Faz 2 · yeni menü düzeni (A1, A2). Yalnız web sitesine girer; duzen.js ile birlikte çalışır. */
+
+/* ---- üst çubuk: tek satır, taşma yok */
+#uyg>header{flex-wrap:nowrap}
+header .h-sag{flex-wrap:nowrap;gap:2px;min-width:0}
+header .h-btn,header .h-btn .y{white-space:nowrap}
+header .ara{min-width:140px}
+.hm-sar{position:relative;display:flex;align-items:center;margin-left:6px}
+.h-firma{cursor:pointer;border-radius:10px;max-width:220px}
+.h-firma:hover,.h-firma[aria-expanded=true]{background:rgba(255,255,255,.08)}
+.h-firma:focus-visible{outline:2px solid var(--marka);outline-offset:2px}
+.h-firma .y{overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.hm-ok{display:inline-flex;opacity:.7}
+.hm-ok svg{width:14px;height:14px}
+.hm-nokta>.h-firma i,.as-btn.hm-nokta svg{position:relative}
+.hm-sar.hm-nokta>.h-firma i::after,.as-btn.hm-nokta::after{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:#ef4444;border:2px solid var(--lacivert,#0b1f3a)}
+.hm-sar.hm-nokta>.h-firma i::after{top:-2px;right:-2px}
+.as-btn.hm-nokta::after{top:6px;left:calc(50% + 6px)}
+
+/* ---- kullanıcı menüsü */
+.h-menu{position:absolute;top:calc(100% + 8px);right:0;min-width:260px;background:var(--yuzey,#fff);color:var(--metin,#0f172a);border:1px solid var(--cizgi,#e5e7eb);border-radius:14px;box-shadow:0 18px 50px rgba(15,23,42,.25);padding:6px;z-index:45}
+.h-menu[hidden]{display:none}
+.hm-baslik{padding:10px 12px 8px;border-bottom:1px solid var(--cizgi,#e5e7eb);margin-bottom:4px}
+.hm-baslik b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-baslik span{font-size:12px;color:var(--soluk,#64748b)}
+.hm-grup{display:flex;flex-direction:column;padding:4px 0}
+.hm-grup+.hm-grup{border-top:1px solid var(--cizgi,#e5e7eb)}
+header .h-menu .h-btn,.h-menu .h-btn{width:100%;justify-content:flex-start;color:inherit;padding:10px 12px;border-radius:9px;gap:10px;font-size:14px;height:auto;border:0;background:none;text-align:left}
+.h-menu .h-btn:hover,.h-menu .h-btn:focus-visible{background:var(--yuzey2,#f1f5f9);outline:none}
+.h-menu .h-btn .y{display:inline!important}
+.h-menu .h-btn .rozet{position:static;margin-left:auto}
+.h-menu .h-btn .rozet.gizli{display:none}
+.h-menu .tema-btn::after{content:attr(title);font-size:14px}
+.h-menu .dil-btn::before{content:"Dil · Language";margin-right:auto;font-weight:400}
+.h-menu .dil-btn{font-weight:700}
+.h-menu .h-cikis{color:#b91c1c}
+.hm-perde{display:none}
+.yalniz-mobil{display:none!important}
+
+/* ---- alt sekme çubuğu (telefon/tablet) */
+.alt-sekme{display:none}
+#uyg.gizli~.alt-sekme,body:has(#uyg.gizli) .alt-sekme{display:none!important}
+
+@media (max-width:1180px){
+  header .h-btn[data-git] .y{display:none}
+  header .h-sag>.h-btn[data-git=katalog] .y,header .h-sag>.h-btn[data-git=siparisler] .y{display:inline}
+}
+@media (max-width:900px){
+  .yalniz-masa{display:none!important}
+  .yalniz-mobil{display:flex!important}
+  #uyg>header{flex-wrap:wrap;padding:10px 14px;gap:8px 10px}
+  header .ara{order:3;flex-basis:100%;max-width:none;min-width:0}
+  header .h-sag{gap:2px;overflow:visible}
+  header .h-sag>[data-git=katalog],header .h-sag>[data-git=siparisler],header .h-sag>[data-git=cari],header .h-sag>#hSepet{display:none}
+  .h-firma .y{display:none}
+  .h-firma .hm-ok{display:none}
+  .alt-sekme{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--lacivert,#0b1f3a);border-top:1px solid rgba(255,255,255,.08);padding:4px 4px calc(4px + env(safe-area-inset-bottom));justify-content:space-around}
+  .as-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:#cbd5e1;font-size:11px;font-weight:600;padding:6px 2px;border-radius:10px;position:relative;min-height:48px}
+  .as-btn.aktif{color:#fff;background:rgba(255,255,255,.08)}
+  .as-btn .y{display:block}
+  .as-btn .rozet{position:absolute;top:2px;left:calc(50% + 4px)}
+  .as-btn .rozet.gizli{display:none}
+  body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+  #sunucuDurum{bottom:calc(70px + env(safe-area-inset-bottom))!important}
+  .toast{bottom:calc(80px + env(safe-area-inset-bottom))!important}
+  body:has(.perde) .alt-sekme{display:none}
+  /* Cari hesabım: "Online öde" ve "Ödeme bildir" başlığın üstüne binmesin */
+  #s-cari #olAc,#s-cari #obAc{float:none!important;margin:0 8px 14px 0!important}
+  /* menü telefonda alttan açılan panel */
+  .h-menu{position:fixed;top:auto;left:0;right:0;bottom:0;min-width:0;border-radius:18px 18px 0 0;max-height:80vh;overflow:auto;padding:8px 8px calc(12px + env(safe-area-inset-bottom));z-index:60;animation:hmYuk .18s ease-out}
+  .hm-perde{display:block;position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:55}
+  /* menü başlığın içinde; başlık (sticky, z-index 30) karartmanın ve alt çubuğun üstüne çıkmalı */
+  body.hm-acik #uyg>header{z-index:61}
+  .hm-perde[hidden]{display:none}
+  .h-menu .h-btn{padding:13px 12px;font-size:15px}
+}
+@keyframes hmYuk{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* ---- koyu tema */
+[data-tema=koyu] .h-menu{background:#0f2340;color:#e5e7eb;border-color:#1e3a5f}
+[data-tema=koyu] .hm-baslik,[data-tema=koyu] .hm-grup+.hm-grup{border-color:#1e3a5f}
+[data-tema=koyu] .h-menu .h-btn:hover{background:#16304f}
+[data-tema=koyu] .h-menu .h-cikis{color:#fca5a5}
+
+/* ---- erişilebilirlik: klavye odağı görünür */
+.h-btn:focus-visible,.as-btn:focus-visible{outline:2px solid var(--marka);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.h-menu{animation:none}}
+
+/* ---- alt bilgi: telefonda sütunlar taşmasın; Bayi sütunundaki öğeler bağlantı */
+.altbilgi .ic>div{min-width:0}
+.altbilgi a.ab-git{color:inherit;text-decoration:none}
+.altbilgi a.ab-git:hover{color:#fff;text-decoration:underline}
+@media (max-width:800px){.altbilgi .ic>div:first-child{grid-column:1/-1}.altbilgi .logolar svg{max-width:100%}}

@@ -1,0 +1,22 @@
+EXIT Garden Bayi Portalı · Telefona ve bilgisayara kurulum
+
+Bayi portalı, ortak sunucunun ana adresinde yayınlanan bir web sitesidir
+(ör. https://bayi.exitgarden.com). Bu klasörü ayrıca bir yere yüklemeye gerek yoktur;
+sunucu (sunucu/sunucu.js) dist/web klasörünü kendisi yayınlar.
+
+Kurulum yalnız https ile açılan adreste görünür.
+
+Android (Chrome)
+   Adresi açın > sağ üstteki ⋮ menü > "Uygulamayı yükle" veya "Ana ekrana ekle".
+
+iPhone / iPad (Safari)
+   Adresi açın > Paylaş düğmesi > "Ana Ekrana Ekle".
+
+Bilgisayar (Chrome / Edge)
+   Adres çubuğunun sağındaki "Yükle" simgesine tıklayın.
+
+Kurulduktan sonra
+   - Uygulama tam ekran, EXIT simgesiyle açılır.
+   - Katalog internet yokken de açılır; bir kez görüntülenen ürün fotoğrafları önbellekte tutulur.
+     Sipariş göndermek için bağlantı gerekir.
+   - Portal güncellendiğinde telefonlar bir sonraki açılışta yeni sürümü kendiliğinden alır.

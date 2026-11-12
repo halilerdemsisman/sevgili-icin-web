@@ -62,4 +62,27 @@ class Dosyalar {
   }
 }
 
-module.exports = { Dosyalar, ADRES };
+// G8 (Faz 2): dosya alanlarına (dekont, iade fotoğrafı, logo) yalnız dosya adresi veya küçük bir
+// resim/PDF data URI yazılabilir. Aksi hâlde ekranlardaki "Görüntüle" bağlantısı ve <img src> için
+// "javascript:…" ya da tırnakla öznitelikten çıkan bir değer yazılabilirdi.
+const DOSYA_ALANI = new Set(['dosya', 'foto', 'logo']);
+const GECERLI = /^(api\/dosya\/[0-9a-f]{32}\.[a-z0-9]{2,5}|data:(image\/(png|jpeg|webp|gif)|application\/pdf);base64,[A-Za-z0-9+/=]*)$/;
+/** Değerdeki dosya alanlarını denetler (yerinde). @returns {number} temizlenen alan sayısı */
+function dosyaAlanlariniTemizle(deger) {
+  let n = 0;
+  const gez = x => {
+    if (Array.isArray(x)) return x.forEach(gez);
+    if (!x || typeof x !== 'object') return;
+    for (const [a, y] of Object.entries(x)) {
+      if (DOSYA_ALANI.has(a)) {
+        if (typeof y === 'string' && y && !GECERLI.test(y)) { x[a] = null; n++; }
+        else if (Array.isArray(y)) { const t = y.filter(z => typeof z === 'string' && GECERLI.test(z)); if (t.length !== y.length) { x[a] = t; n++; } }
+        else if (y && typeof y === 'object') gez(y);
+      } else if (y && typeof y === 'object') gez(y);
+    }
+  };
+  gez(deger);
+  return n;
+}
+
+module.exports = { Dosyalar, ADRES, dosyaAlanlariniTemizle };

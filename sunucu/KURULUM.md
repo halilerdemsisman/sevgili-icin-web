@@ -1,4 +1,4 @@
-# EXIT Garden ortak sunucu kurulumu (sürüm 1b)
+# EXIT Garden ortak sunucu kurulumu (sürüm 2a)
 
 > **VPS'e kurulum ve şirket sunucusundan taşınma:** `dagitim/TASINMA.md` (adım adım, hazır betiklerle). Bu belge sunucunun genel ayarlarını anlatır.
 
@@ -21,6 +21,13 @@ Sürüm 1a ile gelen güvenlik düzeni:
 - Değişiklikler diğer ekranlara anlık bildirimle (SSE) 1 saniyenin altında yansır.
 - "Claude ile derin analiz" sunucu üzerinden çalışır. API anahtarı sunucuda tutulur, tarayıcılara gitmez.
 - REST API v1 (bayi web sitesi ve masaüstü uygulaması için): `docs/API.md`.
+
+Sürüm 2a ile bayi portalı bir web sitesi olarak yayınlanır (`web/` klasörü):
+- Her sayfanın adresi var (`/katalog`, `/siparisler/EXG-2026-0001`, `/cari`…); bağlantı paylaşılabilir, geri tuşu çalışır.
+- Telefonda alt sekme çubuğu; bilgisayarda sade üst menü ve firma adından açılan hesap menüsü.
+- Kod dosyaları sıkıştırılmış ve önbellekli gider; ürün fotoğrafları WebP. Katalog yavaş 4G'de ~1 sn'de açılır.
+- Sayfalar içerik güvenliği başlığıyla (CSP) gider: yalnız bu sunucuyla konuşabilir.
+- Dekont, iade fotoğrafı ve logo alanlarına yalnız dosya kabul edilir.
 
 ## 1. Gereken
 
@@ -108,6 +115,8 @@ HTTPS ile açıldığında bayiler portalı telefonlarına uygulama gibi kurabil
 | `sunucu/yedek/` | Günlük `veri-YYYY-AA-GG.sqlite` ve `.json` (son 30 gün) ve `dosyalar/` kopyası |
 | `sunucu/mrp_veri.json` | MRP verisi |
 
+Program dosyaları (verinin dışında): `web/` bayi web sitesi, `exit_satis_paneli.html`, `mrp.html` (varsa), `sunucu/`. Güncellemede bunlar değiştirilir; veri klasörüne dokunulmaz.
+
 - Yedek her gün otomatik alınır. Yine de `yedek/` klasörünü düzenli olarak sunucu dışına (başka disk veya bulut) kopyalayın.
 - Geri dönmek için sunucuyu kapatın, istenen `veri-….sqlite` yedeğini `veri.sqlite` adıyla kopyalayın (yanındaki `veri.sqlite-wal` ve `-shm` dosyalarını silin), sunucuyu başlatın.
 - Çalışırken tutarlı yedek: `node sunucu.js --yedek KLASOR` (veri.sqlite + veri.json).
@@ -121,4 +130,5 @@ HTTPS ile açıldığında bayiler portalı telefonlarına uygulama gibi kurabil
   - "Oturum kapandı": sayfayı yenileyip yeniden giriş yapın.
 - Hatalı giriş sınırı: aynı kullanıcı adıyla 15 dakikada 5 hatalı denemeden sonra 15 dakika beklenir.
 - Bir bayi satış panelinde "pasif" yapılırsa açık oturumu hemen kapanır.
-- HTML dosyaları sunucu olmadan çift tıklanarak da açılır; o zaman veri yalnız o tarayıcıda kalır ve yukarıdaki korumalar devrede değildir.
+- `exit_bayi_siparis.html` ve `exit_satis_paneli.html` sunucu olmadan çift tıklanarak da açılır; o zaman veri yalnız o tarayıcıda kalır ve yukarıdaki korumalar devrede değildir. Bayilere her zaman web sitesinin adresini verin.
+- Telefona daha önce kurulmuş bayi uygulaması (PWA) bir sonraki açılışta yeni siteye kendiliğinden geçer; yeniden kurmak gerekmez.

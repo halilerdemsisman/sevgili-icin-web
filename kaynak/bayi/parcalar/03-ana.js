@@ -27,6 +27,7 @@ const yaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 
 // exitgarden.com HD görselleri: internet varsa sitedeki büyük görsel yüklenir, yoksa gömülü görsel kalır
 (function hdGorsel() {
+  if (window.EXIT_WEB) return; // web sitesinde katalogun kendi WebP görselleri kullanılır (61 büyük JPEG indirilmez)
   let bekleyen = 0, yenile = null;
   VERI.urunler.forEach(u => {
     if (!u.site) return; const url = 'https://www.exitgarden.com/pic/product/' + u.site + '.jpg';
@@ -196,7 +197,7 @@ function urunAc(id) {
     const birim = S.sec ? S.sec.fiyat : null;
     const isk = ISKELET.find(x => x.kod === S.iskelet), fl = FILE.find(x => x.kod === S.file);
     perde.innerHTML = `<div class="pencere" style="position:relative"><button class="kapat" aria-label="Kapat">×</button>
-      <div class="p-foto"><div class="buyuk" title="360° görünüm için tıklayın" style="cursor:zoom-in;position:relative;${u.gorsel ? `background-image:url(${u.gorsel})` : 'background:var(--yuzey2)'}">${u.gorsel ? '<span class="r360">360°</span>' : ''}</div>
+      <div class="p-foto"><div class="buyuk" title="360° görünüm için tıklayın" style="cursor:zoom-in;position:relative;${u.gorsel ? `background-image:url(${u.gorselB || u.gorsel})` : 'background:var(--yuzey2)'}">${u.gorsel ? '<span class="r360">360°</span>' : ''}</div>
         <div class="ozet"><div><span>Ürün</span><b>${esc(u.ad)}</b></div><div><span>Seçenek</span><b>${S.sec ? esc(S.sec.ad) : '—'}</b></div>
         <div><span>İskelet</span><b>${isk ? esc(isk.ad + ' · ' + isk.kod) : '—'}</b></div>
         ${ih.file ? `<div><span>File</span><b>${fl ? esc(fl.ad + ' · ' + fl.kod) : '—'}</b></div>` : ''}
@@ -240,7 +241,7 @@ function goruntule360(u) {
   const kareler = u.acilar && u.acilar.length > 1 ? u.acilar : null;
   const v = document.createElement('div'); v.className = 'v360';
   v.innerHTML = `<div class="v-ust"><b>${esc(u.ad)}</b><span class="kucuk">${kareler ? 'Sürükleyerek döndürün' : 'Sürükleyerek döndürün · tekerlekle yakınlaştırın'}</span><button class="v-kapat" aria-label="Kapat">×</button></div>
-    <div class="v-sahne"><div class="v-tabla"><div class="v-urun"><div class="v-yuz on" style="background-image:url(${u.gorsel})"></div><div class="v-yuz arka" style="background-image:url(${u.gorsel})"></div></div><div class="v-golge"></div></div></div>
+    <div class="v-sahne"><div class="v-tabla"><div class="v-urun"><div class="v-yuz on" style="background-image:url(${u.gorselB || u.gorsel})"></div><div class="v-yuz arka" style="background-image:url(${u.gorselB || u.gorsel})"></div></div><div class="v-golge"></div></div></div>
     <div class="v-alt"><button class="btn cizgi" data-v="sol">⟲</button><input type="range" min="0" max="359" value="0" class="v-aci"><button class="btn cizgi" data-v="sag">⟳</button><button class="btn marka" data-v="oto">Otomatik döndür</button></div>`;
   document.body.appendChild(v);
   const urun = v.querySelector('.v-urun'), on = v.querySelector('.v-yuz.on'), aralik = v.querySelector('.v-aci');
@@ -420,7 +421,7 @@ function katalogIndir() {
     table{border-collapse:collapse;font-size:11px;margin:6px 0}td,th{border:1px solid #e5e7eb;padding:3px 7px;text-align:left}th{background:#f8fafc}.f{font-size:11.5px}.f b{font-weight:600}
     ul{margin:4px 0;padding-left:16px;font-size:11.5px;color:#334155}@page{margin:12mm}</style></head><body>
     <div class="kapak"><div class="lg">${$('#giris .logolar').innerHTML}</div><h1>Dış Mekân Koleksiyonu ${new Date().getFullYear()}</h1><p>${L.length} ürün · ${kats.join(' · ')}</p><p>Bayi fiyat listesi · USD · ${new Date().toLocaleDateString('tr-TR')}</p></div>
-    ${kats.map(k => `<h2>${esc(k)}</h2>${L.filter(u => u.kategori === k).map(u => `<div class="u"><div class="g" style="background-image:url(${u.gorsel})"></div><div><h3>${esc(u.ad)}</h3><p class="a">${esc(u.aciklama || '')}</p>
+    ${kats.map(k => `<h2>${esc(k)}</h2>${L.filter(u => u.kategori === k).map(u => `<div class="u"><div class="g" style="background-image:url(${u.gorselB || u.gorsel})"></div><div><h3>${esc(u.ad)}</h3><p class="a">${esc(u.aciklama || '')}</p>
       ${u.teknik ? `${(u.teknik.malzeme || []).length ? `<ul>${u.teknik.malzeme.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}${(u.teknik.tablolar || []).map(tb => `<table><tr>${tb.basliklar.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${tb.satirlar.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table>`).join('')}` : ''}
       <div class="f">${u.secenek.map(s => `${esc(s.ad)}: <b>${para(s.fiyat)}</b>`).join(' · ')}</div></div></div>`).join('')}`).join('')}
     <script>setTimeout(()=>print(),600)<\/script></body></html>`);

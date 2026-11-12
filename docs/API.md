@@ -1,4 +1,4 @@
-# EXIT Garden sunucu API'si (sürüm 1b)
+# EXIT Garden sunucu API'si (sürüm 2a)
 
 Tüm uçlar JSON konuşur. Hatalar `{ "hata": "açıklama" }` biçimindedir. Yapay zekâ aktarımı ise Claude API'nin hata biçimini (`{ "error": { "message": … } }`) olduğu gibi döner.
 

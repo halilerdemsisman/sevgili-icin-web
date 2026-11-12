@@ -37,8 +37,9 @@ describe('Şifre sıfırlama ve fiyat uyarısı (tarayıcı)', () => {
     assert.equal(await bayi.locator('#exSifPerde').count(), 0);
   });
 
-  test('bayi firma adına tıklayıp şifresini değiştirebilir', async () => {
+  test('bayi hesap menüsünden (firma adı) şifresini değiştirebilir', async () => {
     await bayi.click('.h-firma');
+    await bayi.click('#hMenu >> text=Şifremi değiştir');
     await bayi.fill('#exSifEski', 'AyseYeni2026'); await bayi.fill('#exSifYeni', 'AyseDaha2027'); await bayi.fill('#exSifYeni2', 'farkli-sifre');
     await bayi.click('#exSifPerde button[type=submit]');
     await bayi.locator('#exSifHata', { hasText: 'aynı değil' }).waitFor();

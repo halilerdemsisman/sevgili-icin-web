@@ -115,6 +115,7 @@ for (const u of UYG) {
 }
 
 // Telefon (PWA) dosyaları: index.html derlemede bayi portalından üretilir
-for (const f of fs.readdirSync(path.join(ESKI, 'telefon'))) if (f !== 'index.html') yaz(path.join(KAYNAK, 'telefon', f), fs.readFileSync(path.join(ESKI, 'telefon', f)));
+// PWA dosyaları (Faz 2'de kaynak/web/ altına taşındı; sw.js derlemede şablondan üretilir)
+for (const f of fs.readdirSync(path.join(ESKI, 'telefon'))) if (!['index.html', 'sw.js'].includes(f)) yaz(path.join(KAYNAK, 'web', 'statik', f), fs.readFileSync(path.join(ESKI, 'telefon', f)));
 for (const f of fs.readdirSync(path.join(ESKI, 'sunucu'))) yaz(path.join(SUNUCU, f), fs.readFileSync(path.join(ESKI, 'sunucu', f)));
 console.log('ortak blok:', ortak.size, '· katalog/ ve kaynak/ yazıldı.');
