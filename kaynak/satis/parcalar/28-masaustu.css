@@ -1,0 +1,18 @@
+/* Faz 3: durum çubuğu (A3), hızlı arama (Ctrl+K), masaüstü uygulaması */
+/* menü ekrana sığmazsa kendi içinde kayar (900 px yükseklikte Çıkış düğmesi ekran dışında kalıyordu); çubuk en altta sabit */
+@media (min-width:901px){aside#menu{overflow-y:auto;overscroll-behavior:contain}}
+aside .durum-cubugu{margin:10px -12px -18px;padding:8px 14px;border-top:1px solid #1e3355;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font:600 11px Inter,Segoe UI,sans-serif;color:#94a3b8;position:sticky;bottom:-18px;background:inherit}
+aside .durum-cubugu #sunucuDurum{padding:3px 9px;border-radius:999px;background:#ecfdf5;color:#047857;max-width:100%;white-space:normal;line-height:1.35}
+aside .durum-cubugu .ds-surum{margin-left:auto;opacity:.8}
+.ha-perde{position:fixed;inset:0;z-index:10001;background:rgba(15,23,42,.45);display:flex;justify-content:center;align-items:flex-start;padding:12vh 16px 16px}
+.ha-kutu{width:100%;max-width:620px;background:var(--yuzey,#fff);color:var(--yazi,#0f172a);border-radius:14px;box-shadow:0 24px 60px rgba(0,0,0,.35);overflow:hidden}
+.ha-kutu input{width:100%;box-sizing:border-box;border:0;border-bottom:1px solid var(--cizgi,#e2e8f0);padding:16px 18px;font:500 16px Inter,Segoe UI,sans-serif;background:transparent;color:inherit;outline:0}
+.ha-liste{max-height:52vh;overflow:auto;padding:6px}
+.ha-sonuc{display:flex;flex-direction:column;padding:9px 12px;border-radius:9px;cursor:pointer}
+.ha-sonuc span{font-size:12px;color:var(--yazi2,#64748b)}
+.ha-sonuc.on,.ha-sonuc:hover{background:var(--zemin,#f1f5f9)}
+.ha-bos{padding:18px;text-align:center;color:var(--yazi2,#64748b)}
+.ha-ipucu{padding:8px 14px;font-size:11px;color:var(--yazi2,#64748b);border-top:1px solid var(--cizgi,#e2e8f0)}
+.ayri-pencere{margin:8px 0 0;padding:6px 12px;font-size:12px}
+aside .durum-cubugu .ds-indir{margin-left:auto;color:#cbd5e1;text-decoration:underline;text-underline-offset:2px}
+aside .durum-cubugu .ds-indir:hover{color:#fff}

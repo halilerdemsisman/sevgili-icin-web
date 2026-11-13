@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'">
+<title>EXIT Satış · Sunucu</title><link rel="stylesheet" href="ortak.css"></head>
+<body><form class="kutu" id="f">
+  <img class="logo" src="../simge/simge.png" alt="">
+  <h1>EXIT Satış</h1>
+  <p>Şirket sunucusunun adresini girin. Bu bilgi bir kez sorulur; daha sonra <b>Dosya › Sunucu adresi</b> menüsünden değiştirilebilir.</p>
+  <label for="adres">Sunucu adresi</label>
+  <input id="adres" placeholder="https://bayi.exitgarden.com" autocomplete="url" spellcheck="false" required autofocus>
+  <div class="kucuk" style="margin-top:6px">Bilgi işlemden aldığınız adres. Yalnız şirket içi ağda http:// kullanılabilir.</div>
+  <div class="hata" id="hata" role="alert"></div>
+  <div class="dugmeler"><button type="button" id="vazgec" hidden>Vazgeç</button><button class="ana" id="baglan">Bağlan</button></div>
+</form><script src="kurulum.js"></script></body></html>

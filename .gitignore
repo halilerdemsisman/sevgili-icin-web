@@ -16,3 +16,5 @@ Thumbs.db
 sunucu/veri.sqlite*
 sunucu/gizli.json
 sunucu/veri.json.tasindi-*
+# masaüstü uygulaması paket çıktısı
+satis-masaustu/cikti/

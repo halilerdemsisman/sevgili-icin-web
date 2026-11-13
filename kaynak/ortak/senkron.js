@@ -131,6 +131,8 @@
       () => { durum(false); return { ok: false, durum: 0, cevrimdisi: true, hata: 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip yeniden deneyin.' }; });
   const cek = () => fetch('api/degisen?son=' + son, { cache: 'no-store', headers: { 'X-Exit-Uyg': UYG } }).then(r => r.json()).then(j => {
     son = j.zaman; if (oturum && !j.oturum) return oturumKapandi(); durum(true);
+    // ekranlar sunucudan gelen değişikliği dinleyebilir (masaüstü bildirimleri): addEventListener('exit-degisti', e => e.detail)
+    if (j.degisen.length) setTimeout(() => dispatchEvent(new CustomEvent('exit-degisti', { detail: j.degisen.map(x => x[0]) })), 0);
     j.degisen.forEach(([k, v]) => { if (kuyruk.has(k)) return;
       try { v == null ? remI.call(localStorage, k) : getI.call(localStorage, k) !== v && setI.call(localStorage, k, v); eksik.delete(k); } catch (e) { eksik.add(k); try { remI.call(localStorage, k); } catch (e2) {} } }); }).catch(() => durum(false));
   // Anlık bildirim (SSE): sunucu her değişiklikte sinyal gönderir, istemci hemen çeker. Bağlantı açıkken

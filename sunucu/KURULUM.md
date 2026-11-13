@@ -1,4 +1,4 @@
-# EXIT Garden ortak sunucu kurulumu (sürüm 2b-1)
+# EXIT Garden ortak sunucu kurulumu (sürüm 3a)
 
 > **VPS'e kurulum ve şirket sunucusundan taşınma:** `dagitim/TASINMA.md` (adım adım, hazır betiklerle). Bu belge sunucunun genel ayarlarını anlatır.
 
@@ -83,6 +83,7 @@ Bayiler portalda "Kayıt ol" ile hesap açar (şifre en az 8 karakter). Her yeni
 | `GUVENILIR_VEKIL` | 0 | `1`: önünde Caddy/Nginx var. İstemci IP'si ve https bilgisi `X-Forwarded-*` başlıklarından okunur. **Vekil yoksa açmayın.** |
 | `HTTPS` | 0 | `1`: çerezler yalnız https ile gönderilir (vekilsiz doğrudan https sunuluyorsa) |
 | `MRP_IZINLI_IP` | — | MRP'ye girişsiz erişebilecek IP'ler, virgülle (ör. şirketin sabit IP'si `85.1.2.3`; `85.1.2.` ile başlayanlar). Bunların dışında MRP'ye yerel ağ ve satış paneline giriş yapmış kullanıcılar erişir |
+| `MASAUSTU_KLASORU` | `<VERI_KLASORU>/masaustu` | Satış masaüstü uygulamasının kurulum ve güncelleme dosyaları (bkz. bölüm 7) |
 | `MRP_HERKESE_ACIK` | 0 | `1`: MRP herkese açık (önerilmez; MRP'nin kendi girişi yok) |
 | `VERI_KLASORU` | `sunucu/` | Veri, dosya, yedek ve kayıt klasörü |
 | `DEPO` | sqlite | `json`: veriyi `veri.json`'da tut (eski Node sürümleri) |
@@ -127,9 +128,33 @@ Program dosyaları (verinin dışında): `web/` bayi web sitesi, `exit_satis_pan
 - Çalışırken tutarlı yedek: `node sunucu.js --yedek KLASOR` (veri.sqlite + veri.json).
 - Eski sürümün okuyabileceği biçimde dışa aktarma: `node sunucu.js --disa-aktar veri.json`.
 
-## 7. Notlar
+## 7. Satış ekibi için masaüstü uygulaması
 
-- Sayfanın sol altında bağlantı durumu görünür:
+Sürüm 3a ile satış paneli Windows uygulaması olarak da kullanılabilir ("EXIT Satış"; ayrıntı: `satis-masaustu/BENIOKU.md`). Uygulama ekranları bu sunucudan yükler. Tarayıcıdan `/satis` adresiyle kullanım da sürer.
+
+**Kurulum dosyasını sunucuya koyma:**
+1. GitHub Actions'taki "Masaüstü paketi" iş akışının çıktısını indirin. Üç dosya içerir:
+   - `EXIT-Satis-Kurulum-<sürüm>.exe`
+   - `.exe.blockmap`
+   - `latest.yml`
+2. Bu üç dosyayı veri klasöründeki `masaustu/` klasörüne kopyalayın. VPS'te bu klasör `/var/lib/exit/masaustu/`; farklı bir yer için `MASAUSTU_KLASORU` ayarını kullanın. VPS'e kopyalama örneği:
+   ```bash
+   scp EXIT-Satis-Kurulum-1.0.0.exe* latest.yml kullanici@vps:/tmp/
+   ```
+   Ardından VPS'te dosyaları `/var/lib/exit/masaustu/` klasörüne taşıyın ve sahibini değiştirin:
+   ```bash
+   sudo chown exit:exit /var/lib/exit/masaustu/*
+   ```
+3. Satış ekibi kurulum dosyasını `https://<alan adı>/masaustu/indir` adresinden indirir. Satış panelinin sol altındaki durum çubuğunda da "Masaüstü uygulaması" bağlantısı çıkar.
+4. İlk açılışta sunucu adresi sorulur (`https://<alan adı>`).
+
+**Güncelleme:** Yeni sürümün üç dosyasını aynı klasöre koymanız yeterlidir. `latest.yml`'nin üzerine yazılır; eski `.exe` dosyaları silinebilir. Uygulamalar en geç 4 saat içinde yeni sürümü indirir.
+
+Kurulum dosyası imzalanana kadar Windows "Tanınmayan uygulama" uyarısı verir ("Ek bilgi › Yine de çalıştır").
+
+## 8. Notlar
+
+- Bağlantı durumu bayi sitesinde sayfanın sol altında, satış panelinde menünün altındaki durum çubuğunda görünür:
   - "Sunucuya bağlı": her şey yolunda.
   - "Sunucu bağlantısı yok": değişiklikler bekletilir, bağlantı gelince gönderilir.
   - "Oturum kapandı": sayfayı yenileyip yeniden giriş yapın.

@@ -1,4 +1,4 @@
-# EXIT Garden sunucu API'si (sürüm 2b-1)
+# EXIT Garden sunucu API'si (sürüm 3a)
 
 Tüm uçlar JSON konuşur. Hatalar `{ "hata": "açıklama" }` biçimindedir. Yapay zekâ aktarımı ise Claude API'nin hata biçimini (`{ "error": { "message": … } }`) olduğu gibi döner.
 
@@ -119,3 +119,13 @@ Bayi kendi özetini görür; satış `?bayi=kul` ile seçer.
 - yerel ağ,
 - `MRP_IZINLI_IP` listesindeki adresler,
 - satış oturumu olan istekler.
+
+## Masaüstü uygulaması güncellemeleri
+
+| Uç | Açıklama |
+|---|---|
+| `GET /masaustu/guncelleme/latest.yml` | Son sürüm bilgisi (electron-updater, generic). Önbelleğe alınmaz |
+| `GET /masaustu/guncelleme/<ad>.exe` (ve `.blockmap`) | Kurulum dosyası; `Range` ile parça parça indirilebilir (`206`) |
+| `GET /masaustu/indir` | `latest.yml`'deki son kurulum dosyasına yönlendirir (`302`); yüklenmemişse bilgi sayfası (`404`) |
+
+Dosyalar `MASAUSTU_KLASORU` (varsayılan `<veri klasörü>/masaustu`) klasöründen verilir; yalnız `.yml`, `.exe`, `.blockmap`, `.zip`, `.AppImage`, `.dmg` adları, oturum gerekmez.

@@ -1,0 +1,39 @@
+# EXIT Satış masaüstü uygulaması (Faz 3): Windows kurulum dosyası.
+# Elle (Actions › "Masaüstü paketi" › Run workflow) veya "masaustu-v1.2.3" etiketiyle çalışır.
+# Çıktı (EXIT-Satis-Kurulum-<sürüm>.exe, .blockmap, latest.yml) iş akışının "Artifacts" bölümünden indirilir ve
+# sunucudaki güncelleme klasörüne kopyalanır (sunucu/KURULUM.md › Masaüstü uygulaması).
+# Kod imzalama sertifikası alındığında WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD gizlileri tanımlanır.
+name: Masaüstü paketi
+on:
+  workflow_dispatch:
+  push:
+    tags: ['masaustu-v*']
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: satis-masaustu
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: satis-masaustu/package-lock.json
+      - run: npm ci
+      - name: Kurulum dosyası
+        run: npx electron-builder --win nsis --x64 --publish never
+        env:
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exit-satis-windows
+          path: |
+            satis-masaustu/cikti/*.exe
+            satis-masaustu/cikti/*.blockmap
+            satis-masaustu/cikti/latest.yml
+          if-no-files-found: error

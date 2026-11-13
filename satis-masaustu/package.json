@@ -1,0 +1,74 @@
+{
+  "name": "exit-satis-masaustu",
+  "productName": "EXIT Satış",
+  "version": "1.0.0",
+  "description": "EXIT Garden satış paneli masaüstü uygulaması",
+  "main": "ana.js",
+  "private": true,
+  "author": "BG Group · EXIT Innovative Solutions",
+  "scripts": {
+    "baslat": "electron .",
+    "paketle": "electron-builder --win nsis --x64",
+    "paketle-linux": "electron-builder --linux dir"
+  },
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  },
+  "devDependencies": {
+    "electron": "44.10.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.exitgarden.satis",
+    "productName": "EXIT Satış",
+    "copyright": "© 2026 BG Group · EXIT Innovative Solutions",
+    "directories": {
+      "output": "cikti"
+    },
+    "files": [
+      "ana.js",
+      "onyukle.js",
+      "sayfalar/**",
+      "simge/**",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "simge/simge.png",
+      "artifactName": "EXIT-Satis-Kurulum-${version}.${ext}",
+      "signExecutable": false,
+      "legalTrademarks": "EXIT Garden"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "EXIT Satış",
+      "uninstallDisplayName": "EXIT Satış",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "icon": "simge/simge.png",
+      "category": "Office"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://sunucu-adresi-uygulamada-ayarlanir/masaustu/guncelleme/"
+      }
+    ]
+  }
+}

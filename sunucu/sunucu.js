@@ -42,7 +42,7 @@ const zlib = require('zlib');
 const VERI_KLASORU = ENV.VERI_KLASORU ? path.resolve(ENV.VERI_KLASORU) : __dirname;
 const VEKIL = ENV.GUVENILIR_VEKIL === '1';
 const KAYIT_ACIK = ENV.KAYIT_ACIK !== '0';
-const SURUM = '2b-1';
+const SURUM = '3a';
 
 const depo = depoAc(VERI_KLASORU);
 const oturumlar = new K.Oturumlar(path.join(VERI_KLASORU, 'oturumlar.json'), +ENV.OTURUM_GUN || 7);
@@ -442,6 +442,36 @@ function statikGonder(q, r, tam, ekBaslik = {}) {
   r.end(q.method === 'HEAD' ? undefined : veri);
 }
 
+// ---------- masaüstü uygulamasının güncellemeleri (Faz 3) ----------
+// electron-builder çıktısı (latest.yml, kurulum .exe ve .blockmap) bu klasöre kopyalanır; uygulama
+// <sunucu>/masaustu/guncelleme/latest.yml'i denetler. /masaustu/indir son kurulum dosyasına yönlendirir.
+const MASAUSTU = ENV.MASAUSTU_KLASORU ? path.resolve(ENV.MASAUSTU_KLASORU) : path.join(VERI_KLASORU, 'masaustu');
+const MASAUSTU_AD = /^[\w][\w .()-]*\.(yml|exe|blockmap|zip|AppImage|dmg)$/;
+function masaustuGonder(q, r, ad) {
+  if (!MASAUSTU_AD.test(ad) || ad.includes('..')) { r.writeHead(404, GUVENLIK); return r.end(); }
+  const tam = path.join(MASAUSTU, ad); let st; try { st = fs.statSync(tam); if (!st.isFile()) throw 0; } catch (e) { r.writeHead(404, GUVENLIK); return r.end('Bulunamadı'); }
+  const tip = ad.endsWith('.yml') ? 'text/yaml; charset=utf-8' : 'application/octet-stream';
+  const B = { ...GUVENLIK, 'Content-Type': tip, 'Cache-Control': ad.endsWith('.yml') ? 'no-cache' : 'public, max-age=3600', 'Accept-Ranges': 'bytes', 'Last-Modified': st.mtime.toUTCString(),
+    ...(ad.endsWith('.exe') ? { 'Content-Disposition': `attachment; filename="${ad.replace(/"/g, '')}"` } : {}) };
+  // tek aralık (Range) desteği: güncelleyici yalnız değişen parçaları indirebilir
+  const m = String(q.headers.range || '').match(/^bytes=(\d*)-(\d*)$/);
+  let bas = 0, son = st.size - 1, kod = 200;
+  if (m && (m[1] || m[2])) {
+    if (m[1]) { bas = +m[1]; if (m[2]) son = Math.min(+m[2], st.size - 1); } else { bas = Math.max(0, st.size - +m[2]); }
+    if (bas > son || bas >= st.size) { r.writeHead(416, { ...B, 'Content-Range': `bytes */${st.size}` }); return r.end(); }
+    kod = 206; B['Content-Range'] = `bytes ${bas}-${son}/${st.size}`;
+  }
+  r.writeHead(kod, { ...B, 'Content-Length': son - bas + 1 });
+  if (q.method === 'HEAD') return r.end();
+  fs.createReadStream(tam, { start: bas, end: son }).on('error', () => r.destroy()).pipe(r);
+}
+function masaustuIndir(q, r) {
+  let yol = null; try { yol = (fs.readFileSync(path.join(MASAUSTU, 'latest.yml'), 'utf8').match(/^path:\s*(.+)$/m) || [])[1]; } catch (e) {}
+  yol = yol && yol.trim().replace(/^['"]|['"]$/g, '');
+  if (!yol || !MASAUSTU_AD.test(yol)) { r.writeHead(404, { ...GUVENLIK, 'Content-Type': 'text/html; charset=utf-8' }); return r.end('<!doctype html><meta charset="utf-8"><title>EXIT Satış</title><p style="font:16px sans-serif;margin:40px">Masaüstü uygulaması bu sunucuya henüz yüklenmedi.</p>'); }
+  r.writeHead(302, { ...GUVENLIK, Location: '/masaustu/guncelleme/' + encodeURIComponent(yol), 'Cache-Control': 'no-cache' }); r.end();
+}
+
 // kapanırken bekleyen yazmaları diske aktar
 for (const sinyal of ['SIGINT', 'SIGTERM']) process.on(sinyal, () => { try { depo.hemenKaydet(); if (depo.kapat) depo.kapat(); } catch (e) { console.error(e); } process.exit(0); });
 
@@ -467,6 +497,8 @@ http.createServer(async (q, r) => {
 
     if (q.method !== 'GET' && q.method !== 'HEAD') { r.writeHead(405, GUVENLIK); return r.end(); }
     let f, d; try { d = decodeURIComponent(p); } catch (e) { r.writeHead(400, GUVENLIK); return r.end(); }
+    if (d === '/masaustu/indir') return masaustuIndir(q, r);
+    if (d.startsWith('/masaustu/guncelleme/')) return masaustuGonder(q, r, d.slice('/masaustu/guncelleme/'.length));
     if (p === '/mrp' || p === '/mrp/') f = 'mrp.html';
     else if (p === '/satis' || p === '/satis/') f = 'exit_satis_paneli.html';
     else if (p === '/' || SITE_ADRESI.test(d)) f = WEB + '/index.html';

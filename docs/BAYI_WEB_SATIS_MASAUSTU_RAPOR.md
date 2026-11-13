@@ -1,7 +1,7 @@
 # EXIT Garden: Bayi Web Sitesi ve Satış Masaüstü Uygulaması
 ## Analiz ve Faz Planı
 
-Hazırlanma: 12 Kasım 2026 · Son güncelleme: 13 Kasım 2026 (Faz 0, 1a, 1b-1, 1b-2, 2a ve 2b-1 tamamlandı)
+Hazırlanma: 12 Kasım 2026 · Son güncelleme: 13 Kasım 2026 (Faz 0, 1a, 1b-1, 1b-2, 2a, 2b-1 ve 3a tamamlandı)
 Girdi: `Bayi_Satis_Kod.zip` (iki HTML uygulama, sunucu, PWA, modüller, ekran görüntüleri) ve `BAYI_SATIS_RAPOR.md`.
 
 Hedef:
@@ -34,13 +34,14 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 2b-1 | Bayi web sitesi: veri | Kayıtlar REST ile (numara, fiyat sunucuda, sonuç beklenir), iş verisi tarayıcıda saklanmaz, çevrimdışı sipariş engeli |
 | 2b-2 | Bayi web sitesi: ekranlar | Ekranlar modüllere bölünür, sarmalama zincirleri birleşir, renk önizleme ortak modülde, TR/EN dosyaları |
 | 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
-| 3 | Satış masaüstü uygulaması | Windows kurulumu, otomatik güncelleme, masaüstü özellikleri |
+| 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
+| 3b | Satış masaüstü: pilot ve ekranlar | Kod imzalama, Windows'ta pilot, satış ekranlarının modüllere bölünüp REST'e geçmesi, çevrimdışı salt okunur listeler |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a ve 2b-1 tamamlandı; Faz 2b-2 ve Faz 3 paralel yürüyebilir.
+Faz 1, 2a, 2b-1 ve 3a tamamlandı; Faz 2b-2 ve 3b paralel yürüyebilir.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 2b-2 (bayi ekranlarının modüllere bölünmesi) ve Faz 3 (satış masaüstü).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 3b (Windows'ta pilot, kod imzalama) ve Faz 2b-2 (bayi ekranlarının modüllere bölünmesi).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -120,14 +121,14 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ⏳ 2–3 |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-1 (102 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 3a (116 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
 |---|---|---|---|
 | A1 | 🟡 | Bayi üst menüsü 1440 px'de bile taşıyor: 11 öğe + arama + kullanıcı; kullanıcı adı kesiliyor ("Deniz Ba…"), "Cari hesabım" ve "Özel teklif" iki satıra kırılıyor. Telefonda daha da sıkışık. | ✅ 2a (5 ana öğe + hesap menüsü; telefonda alt sekme çubuğu) |
 | A2 | 🟡 | Siparişlerim sayfasında "Sık aldıklarım" başlığı koyu başlık bandının üstüne biniyor, okunmuyor. | ✅ 2a |
-| A3 | 🟡 | Satış panelinde "Sunucuya bağlı" rozeti sol menünün son öğesinin ("Ürünler ve fiyatlar") üzerine biniyor. | ⏳ 3 |
+| A3 | 🟡 | Satış panelinde "Sunucuya bağlı" rozeti sol menünün son öğesinin ("Ürünler ve fiyatlar") üzerine biniyor. | ✅ 3a (menünün altında sabit durum çubuğu; menü ekrana sığmazsa kendi içinde kayar, Çıkış düğmesi artık 900 px yükseklikte de erişilebilir) |
 | A4 | 🟡 | Sayfalar URL'ye bağlı değil (`git('katalog')`); geri tuşu, yer imi, link paylaşımı (ör. bir siparişe link) çalışmıyor. Web sitesi için gerekli. | ✅ 2a (web sitesinde) |
 
 ---
@@ -211,7 +212,7 @@ uretim_planlama/
 ├── eski/              ✅ Orijinal paket (başvuru için, değiştirilmez)
 ├── docs/              ✅ Raporlar
 ├── bayi-web/          ⏳ Faz 2b-2: modüllere bölünmüş bayi ekranları (dist/web'in yerini alır)
-├── satis-masaustu/    ⏳ Faz 3: Electron kabuğu + satış ekranları
+├── satis-masaustu/    ✅ Faz 3a: Electron uygulaması (satış panelini sunucudan yükler); ⏳ 3b: satış ekranları modüllere
 └── ortak/             ⏳ Faz 1–2: fiyat/iskonto hesabı, biçimler, durum adları, renk önizleme
                           motoru, API istemcisi, çeviriler (kaynak/ortak/ buraya taşınır)
 ```
@@ -357,14 +358,43 @@ Kabul: Faz 0 testlerinin bayi kısmı modüllere bölünmüş ekranlarda geçiyo
 1. Erişilebilirlik ve Lighthouse denetimi (hedef: telefonda performans ≥ 85).
 2. Alan adı + HTTPS ile yayın (`bayi.exitgarden.com`), önce 2–3 pilot bayi.
 
-### Faz 3: Satış masaüstü uygulaması (≈3–4 hafta)
-1. Electron projesi; satış ekranları modüllere bölünüp API'ye bağlanır (temsilci kısıtı artık sunucudan gelir).
-2. Masaüstü özellikleri: bildirimler, görev çubuğu sayacı, ayrı pencere, kısayollar, Excel/PDF dışa aktarım, yazdırma.
-3. Yapay zekâ ekranı sunucu vekiline bağlanır.
-4. Windows kurulum dosyası, kod imzalama, otomatik güncelleme.
-5. Pilot: satış yöneticisi + 1 temsilci, sonra tüm ekip.
+### Faz 3: Satış masaüstü uygulaması
+Teknoloji kararı beklenmeden önerilen **Electron** ile ilerlendi (bkz. 4.3; Tauri'ye geçiş gerekirse ana süreç ~300 satırdır, satış paneline eklenen kod ikisinde de aynı kalır).
 
-Kabul: Faz 0 testlerinin satış kısmı geçiyor; yeni bayi siparişi 2 sn içinde masaüstü bildirimi olarak düşüyor; yeni sürüm yayınlandığında uygulama kendini güncelliyor.
+Tasarım kararı: Uygulama ekranları paketlemez, satış panelini sunucudan yükler. Böylece ekranlar ve API her zaman aynı sürümdedir ve satış ekranlarındaki her düzeltme bir sunucu güncellemesiyle bütün bilgisayarlara ulaşır. Uygulamanın kendisi (kabuk) yalnız masaüstü özellikleri değiştiğinde güncellenir.
+
+#### Faz 3a: Masaüstü uygulaması ✅ tamamlandı
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Uygulama (`satis-masaustu/`) | Electron 44. İlk açılışta sunucu adresi sorulur ve sunucunun gerçekten EXIT sunucusu olduğu denetlenir; sonra hatırlanır. Pencere boyutu/yeri hatırlanır, en küçük 1280×720. Tek kopya çalışır (ikinci açılış var olan pencereyi öne getirir). Sunucuya ulaşılamazsa bağlantı hatası sayfası, bağlantı gelince kendiliğinden açılır |
+| Bildirimler | Yeni sipariş talebi, değişiklik/iptal talebi, ödeme bildirimi, iade, numune, özel teklif: sistem bildirimi. Bildirime tıklayınca kayıt açılır. Anlık bildirim (SSE) sayesinde ölçülen gecikme **0,5 sn** (kabul ölçütü 2 sn). Temsilci yalnız kendi bayilerinin işlerini görür (sunucu süzer) |
+| Görev çubuğu | Bekleyen iş sayısı simgenin üstünde kırmızı sayaç ve pencere başlığında; pencere kapatılınca bildirim alanında çalışmaya devam (kapatılabilir); "Bilgisayar açılınca başlat" |
+| Ayrı pencere, kısayollar | Sipariş penceresinde "Ayrı pencerede aç", Ctrl+N yeni pencere; Ctrl+K hızlı arama (tarayıcıda da), Ctrl+1..9 menü sayfaları, F5, Ctrl+P, Ctrl+Shift+S (PDF) |
+| Dışa aktarım ve yazdırma | Excel/CSV ve rapor dosyaları "Kaydet" penceresiyle son kullanılan klasöre; görünen sayfa PDF olarak kaydedilir; yazdırma |
+| Güvenlik | Sayfa Node'a ve Electron'a erişemez (contextIsolation, sandbox), yalnız dar bir arayüz görür. Yalnız sunucunun adresinde gezinilir, dış bağlantılar varsayılan tarayıcıda açılır. Sunucu adresini yalnız uygulamanın kendi sayfası değiştirebilir. https zorunlu (yerel ağ hariç). Kamera, konum gibi izinler kapalı |
+| Otomatik güncelleme | electron-updater, sunucunun `/masaustu/guncelleme/` klasöründen (yeni sunucu yolu; parça parça indirme için Range desteği). `/masaustu/indir` son kurulum dosyasına yönlendirir; satış panelinde indirme bağlantısı |
+| Windows kurulum dosyası | NSIS (kurulum klasörü seçilebilir, masaüstü ve Başlat menüsü kısayolu), ~120 MB. Bu ortamda Wine ile üretildi; GitHub Actions'ta Windows makinesinde üreten iş akışı eklendi (`.github/workflows/masaustu.yml`) |
+| Satış paneli (tarayıcı da) | A3 çözüldü: bağlantı rozeti menünün altındaki sabit durum çubuğunda; menü ekrana sığmazsa kendi içinde kayar (900 px yükseklikte Çıkış düğmesi ekran dışında kalıyordu). Ctrl+K hızlı arama. `/satis?ac=siparis:EXG-…` ile kayıt doğrudan açılır |
+| Testler | 116 test (önceki 102 + `testler/masaustu.test.js` 14): Electron uygulaması Playwright ile gerçek test sunucusuna bağlanarak sürülür (adres sorma, yalıtım, gezinme kısıtı, bildirim ve gecikme, sayaç, bildirimden kayıt açma, ayrı pencere, kısayollar, dosya ve PDF kaydı, bağlantı hatası); tarayıcıda durum çubuğu ve hızlı arama; sunucunun güncelleme dosyalarını vermesi. Paketlenmiş uygulamanın (asar) açıldığı ayrıca denetlendi |
+
+Doğrulanamayanlar (Windows makinesi gerekir; 3b'de pilotla):
+- Kurulum dosyasının Windows'ta kurulması.
+- Bildirimlerin ve görev çubuğu sayacının Windows'taki görünümü.
+- Otomatik güncellemenin baştan sona çalışması: sunucuya yeni sürüm koyma, indirme, yeniden başlatınca kurulma.
+
+Bu ortamda yalnız sunucu tarafı (güncelleme dosyalarının ve parçalarının verilmesi) test edildi.
+
+#### Faz 3b: Pilot ve satış ekranları (≈2–3 hafta)
+1. Kod imzalama sertifikası (SmartScreen uyarısı kalksın); GitHub'a `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD` gizlileri.
+2. Pilot: satış yöneticisi + 1 temsilci, Windows'ta kurulum ve bir güncelleme turu; sonra tüm ekip.
+3. Satış ekranları modüllere bölünüp REST'e geçer (onay, tahsilat, talep kararları için REST yazma uçları); 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir. Bu, bayi tarafındaki 2b-2 ile aynı yaklaşımla yapılır.
+4. Çevrimdışıyken son görülen listelerin salt okunur gösterilmesi.
+
+Kabul (Faz 3 geneli):
+- Faz 0 testlerinin satış kısmı geçiyor ✅.
+- Yeni bayi siparişi 2 sn içinde masaüstü bildirimi olarak düşüyor ✅ (0,5 sn).
+- Yeni sürüm yayınlandığında uygulama kendini güncelliyor (⏳ pilotta Windows'ta doğrulanacak).
 
 ### Faz 4: Entegrasyonlar (≈3–6 hafta, seçilen sağlayıcıya göre)
 1. **Online ödeme:** iyzico veya PayTR ile ödeme sayfası + sunucuya geri bildirim (callback). Ödeme doğrulanınca otomatik "Ödeme alındı" ve cari hareketi; satışın manuel onayı yalnız havale/EFT için kalır.

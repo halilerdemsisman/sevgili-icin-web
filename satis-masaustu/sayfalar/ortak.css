@@ -1,0 +1,16 @@
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:15px/1.5 Inter,"Segoe UI",system-ui,sans-serif;background:#0b1f3a;color:#0f172a;display:flex;align-items:center;justify-content:center;padding:24px}
+.kutu{background:#fff;border-radius:16px;padding:32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+h1{font-size:22px;margin:0 0 6px}
+p{color:#475569;margin:0 0 18px}
+label{display:block;font-weight:600;margin:0 0 6px}
+input{width:100%;padding:11px 13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}
+input:focus{outline:2px solid #2563eb;outline-offset:1px}
+.dugmeler{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
+button{padding:11px 18px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;font:600 14px inherit;cursor:pointer}
+button.ana{background:#0b1f3a;border-color:#0b1f3a;color:#fff}
+button:disabled{opacity:.6;cursor:default}
+.hata{color:#b91c1c;min-height:22px;margin-top:10px}
+.kucuk{font-size:13px;color:#64748b}
+.logo{width:56px;height:56px;margin-bottom:12px}
