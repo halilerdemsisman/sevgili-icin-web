@@ -44,13 +44,13 @@ async function sunucuBaslat({ veri, ortam } = {}) {
       const sq = path.join(veriKlasoru, 'veri.sqlite');
       return veriOku(fs.existsSync(sq) ? sq : path.join(veriKlasoru, 'veri.json'));
     },
-    /** API çağrısı. secenek: { cerez, uyg: 'bayi'|'satis', basliklar } */
+    /** API çağrısı. secenek: { cerez, uyg: 'bayi'|'satis', basliklar, yontem } (gövde varsa POST) */
     async api(yol, govde, secenek = {}) {
       const h = { 'X-Exit-Uyg': secenek.uyg || 'satis', ...(secenek.basliklar || {}) };
       const cerez = secenek.cerez === undefined ? s.yoneticiCerez : secenek.cerez;
       if (cerez) h.Cookie = cerez;
       if (govde !== undefined) h['Content-Type'] = 'application/json';
-      const r = await fetch(url + yol, govde !== undefined ? { method: 'POST', headers: h, body: JSON.stringify(govde) } : { headers: h });
+      const r = await fetch(url + yol, govde !== undefined ? { method: secenek.yontem || 'POST', headers: h, body: JSON.stringify(govde) } : { method: secenek.yontem || 'GET', headers: h });
       const metin = await r.text(); let json = null; try { json = JSON.parse(metin); } catch (e) {}
       return { durum: r.status, json, metin, basliklar: r.headers };
     },

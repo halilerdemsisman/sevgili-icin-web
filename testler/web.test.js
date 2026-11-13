@@ -30,7 +30,7 @@ describe('Bayi web sitesi: sunucu', () => {
 
   test('js/css içerik özetli ve kalıcı önbellekli; gzip ve ETag çalışır', async () => {
     const ana = await (await getir(s.url + '/')).text();
-    const js = ana.match(/src="(\/js\/[^"]+)"/)[1];
+    const js = ana.match(/src="(\/js\/ana\.[^"]+)"/)[1];
     assert.match(js, /\.[0-9a-f]{10}\.js$/);
     const r = await getir(s.url + js, { 'Accept-Encoding': 'gzip' });
     assert.equal(r.headers.get('cache-control'), 'public, max-age=31536000, immutable');

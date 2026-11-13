@@ -42,7 +42,7 @@ const zlib = require('zlib');
 const VERI_KLASORU = ENV.VERI_KLASORU ? path.resolve(ENV.VERI_KLASORU) : __dirname;
 const VEKIL = ENV.GUVENILIR_VEKIL === '1';
 const KAYIT_ACIK = ENV.KAYIT_ACIK !== '0';
-const SURUM = '2a';
+const SURUM = '2b-1';
 
 const depo = depoAc(VERI_KLASORU);
 const oturumlar = new K.Oturumlar(path.join(VERI_KLASORU, 'oturumlar.json'), +ENV.OTURUM_GUN || 7);
@@ -205,7 +205,7 @@ const rest = restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, is
 // ---------- API ----------
 async function api(q, r, u, p, ip) {
   const tur = uygulama(q, u);
-  if (q.method === 'POST' && !kaynakUygun(q)) return js(r, { hata: 'kaynak reddedildi' }, 403);
+  if (q.method !== 'GET' && q.method !== 'HEAD' && !kaynakUygun(q)) return js(r, { hata: 'kaynak reddedildi' }, 403);
 
   if (p === '/api/oturum') return js(r, { oturum: oturumOzeti(oturum(q, tur)), surum: SURUM, kayitAcik: KAYIT_ACIK });
 

@@ -1,10 +1,10 @@
 # EXIT Garden · Bayi Portalı ve Satış Paneli
 
 Bu repoda iki uygulama var:
-- **Bayi portalı:** Bayilerin katalog, sipariş, cari, ödeme ve özel teklif işlemleri. Sunucunun ana adresinde web sitesi olarak yayınlanır (Faz 2a: sayfa adresleri, telefon düzeni, WebP görseller, telefona kurulum).
+- **Bayi portalı:** Bayilerin katalog, sipariş, cari, ödeme ve özel teklif işlemleri. Sunucunun ana adresinde web sitesi olarak yayınlanır (Faz 2a: sayfa adresleri, telefon düzeni, WebP görseller, telefona kurulum; Faz 2b-1: kayıtlar REST ile, iş verisi tarayıcıda saklanmaz).
 - **Satış paneli:** Satış yöneticisi ve temsilcilerin onay, tahsilat, müşteri ve analiz ekranları. Hedef: masaüstü uygulaması.
 
-İki uygulama da ortak bir Node.js sunucusuna bağlanır. Sunucu (sürüm 2a):
+İki uygulama da ortak bir Node.js sunucusuna bağlanır. Sunucu (sürüm 2b-1):
 - giriş ister,
 - her kullanıcıya yalnız görmesi gereken veriyi gönderir ve yalnız izinli değişiklikleri kabul eder,
 - veriyi SQLite'ta tutar (Node 22.5+, ek paket yok),
@@ -90,7 +90,7 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 
 ## Testler
 
-`npm test` sekiz dosyayı çalıştırır (toplam 89 test; her biri kendi geçici sunucusunu boş veriyle açar). `DEPO=json npm test` aynı testleri JSON depoyla çalıştırır.
+`npm test` dokuz dosyayı çalıştırır (toplam 102 test; her biri kendi geçici sunucusunu boş veriyle açar). `DEPO=json npm test` aynı testleri JSON depoyla çalıştırır.
 
 - `testler/uctan-uca.test.js`: Bayi ve satış aynı sunucuya bağlanır. Akış: kayıt, sepet, sipariş, onay (%15 iskonto), değişiklik talebi, ödeme linki, ödeme, tahsilat, özel teklif. Her adımda sunucudaki veri de kontrol edilir.
 - `testler/bilinen-sorunlar.test.js`: Rapordaki kritik sorunlar (kimliksiz API erişimi, başka bayinin verisi, varsayılan şifre, sipariş kaybı, kota). Faz 0'da orijinal pakette hepsinin başarısız olduğu görüldü; Faz 1a'da kapatıldı.
@@ -99,4 +99,5 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 - `testler/sifre.test.js`: Tarayıcıda: yöneticinin geçici şifre üretmesi, bayinin zorunlu şifre değişikliği, firma adından şifre değiştirme; bayi sepetteki fiyatı düşürse de siparişin katalog fiyatıyla kaydedilmesi ve satışın uyarıyı görmesi.
 - `testler/web.test.js`: Bayi web sitesi: sayfa adresleri, önbellek/gzip/ETag, içerik güvenliği başlığı, sunucu klasörüne erişim, ilk açılış ağırlığı, service worker; tarayıcıda geri/ileri, derin bağlantılar (sipariş, ürün, sepet, girişten sonra), 1280/1440 px'de tek satır menü, 375 px'de yatay kaydırma olmaması ve alt sekme çubuğu, çevrimdışı açılış.
 - `testler/xss.test.js`: Kötü niyetli bir bayinin bütün metin alanlarına yazdığı zararlı kodun satış panelinde ve bayi sitesinde çalışmadığı; dosya alanlarına `javascript:` yazılamadığı.
+- `testler/rest-yazma.test.js`: REST yazma uçları (ödeme bildirimi, iade, numune, özel teklif, sipariş değişikliği; satış alanlarının ve başka bayinin kaydının reddi, 409 yanıtları, düşük fiyatın işaretlenmesi); tarayıcıda iş verisinin localStorage'a yazılmaması, bağlantı yokken siparişin gönderilmemesi, sunucuya ulaşılamazken giriş ve kaydın kapalı olması; tek dosyalık portalın sunucusuz çalışmaya devam etmesi.
 - `testler/ayarlar.test.js`: Tarayıcıda: Ayarlar'dan sunucuya Claude anahtarı ve yeni temsilci, "Claude ile derin analiz"in sunucu üzerinden çalışması, bayi siparişinin anlık bildirimle satışa 2 sn içinde düşmesi.

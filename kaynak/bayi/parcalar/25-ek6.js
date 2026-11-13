@@ -125,9 +125,11 @@
     $('#iaFoto').onchange = async e => { for (const f of [...e.target.files].slice(0, 4 - FOTO.length)) { const d = await kucult(f); if (d) FOTO.push(d); } $('#iaOn').innerHTML = FOTO.map(f => `<img src="${f}">`).join(''); e.target.value = ''; };
     $('#iaGonder').onclick = () => {
       const ac = $('#iaAcik').value.trim(); if (!ac) return toast('Lütfen açıklama yazın.');
-      const o = O.find(x => x.no === $('#iaSip').value), ui = $('#iaUrun').value, k = ui === '' ? null : o.kalemler[+ui], L = oku('exb-iade', []) || [], y = new Date().getFullYear();
-      const x = { id: 'ia' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), no: (window.sunucuNo && sunucuNo('IAD')) || 'IAD-' + y + '-' + String(L.filter(z => (z.no || '').includes('-' + y + '-')).length + 1).padStart(4, '0'), kul: ben.kul, firma: ben.firma, sip: o.no, urun: k ? k.ad + (k.secenek ? ' · ' + k.secenek : '') : 'Tüm sipariş', adet: +$('#iaAdet').value || 1, tur: $('#iaTur').value, aciklama: ac, foto: FOTO, durum: 'yeni', zaman: Date.now(), gecmis: [{ zaman: Date.now(), durum: 'yeni', kim: ben.firma || ben.kul }] };
-      L.push(x); yaz('exb-iade', L); p.remove(); toast('Kaydınız alındı: ' + x.no); try { const B = bnOku(); B.iz && (B.iz.i[x.id] = x.durum + '|'); bnYaz(B); } catch (e) {} belgeSek('iade');
+      const o = O.find(x => x.no === $('#iaSip').value), ui = $('#iaUrun').value, k = ui === '' ? null : o.kalemler[+ui];
+      bekleyerek($('#iaGonder'), async () => {
+        const x = await kayitEkle('iadeler', { sip: o.no, urun: k ? k.ad + (k.secenek ? ' · ' + k.secenek : '') : 'Tüm sipariş', adet: +$('#iaAdet').value || 1, tur: $('#iaTur').value, aciklama: ac, foto: FOTO, durum: 'yeni', gecmis: [{ zaman: Date.now(), durum: 'yeni', kim: ben.firma || ben.kul }] });
+        p.remove(); toast('Kaydınız alındı: ' + x.no); try { const B = bnOku(); B.iz && (B.iz.i[x.id] = x.durum + '|'); bnYaz(B); } catch (e) {} belgeSek('iade');
+      });
     };
   }
 

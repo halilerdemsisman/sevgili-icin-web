@@ -1,7 +1,7 @@
 # EXIT Garden: Bayi Web Sitesi ve Satış Masaüstü Uygulaması
 ## Analiz ve Faz Planı
 
-Hazırlanma: 12 Kasım 2026 · Son güncelleme: 12 Kasım 2026 (Faz 0, 1a, 1b-1, 1b-2 ve 2a tamamlandı)
+Hazırlanma: 12 Kasım 2026 · Son güncelleme: 13 Kasım 2026 (Faz 0, 1a, 1b-1, 1b-2, 2a ve 2b-1 tamamlandı)
 Girdi: `Bayi_Satis_Kod.zip` (iki HTML uygulama, sunucu, PWA, modüller, ekran görüntüleri) ve `BAYI_SATIS_RAPOR.md`.
 
 Hedef:
@@ -31,15 +31,16 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 1b-1 | Canlıya geçiş (VPS) | Sunucuda fiyat denetimi, şifre değiştirme/sıfırlama, VPS kurulum ve taşınma paketi |
 | 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda, anlık bildirim, yapay zekâ anahtarı sunucuda, REST v1; Faz 2–3'ün temeli |
 | 2a | Bayi web sitesi: temel | Ayrı dosyalar + WebP, sayfa adresleri, yeni menü ve telefon düzeni, XSS denetimi |
-| 2b | Bayi web sitesi: ekranlar | Ekranlar modüllere bölünür, veri REST'ten, kişisel durum sunucuda, TR/EN dosyaları |
+| 2b-1 | Bayi web sitesi: veri | Kayıtlar REST ile (numara, fiyat sunucuda, sonuç beklenir), iş verisi tarayıcıda saklanmaz, çevrimdışı sipariş engeli |
+| 2b-2 | Bayi web sitesi: ekranlar | Ekranlar modüllere bölünür, sarmalama zincirleri birleşir, renk önizleme ortak modülde, TR/EN dosyaları |
 | 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
 | 3 | Satış masaüstü uygulaması | Windows kurulumu, otomatik güncelleme, masaüstü özellikleri |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1 ve Faz 2a tamamlandı; Faz 2b ve Faz 3 paralel yürüyebilir.
+Faz 1, 2a ve 2b-1 tamamlandı; Faz 2b-2 ve Faz 3 paralel yürüyebilir.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 2b (bayi ekranları REST'e) ve Faz 3 (satış masaüstü).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 2b-2 (bayi ekranlarının modüllere bölünmesi) ve Faz 3 (satış masaüstü).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -108,8 +109,8 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | # | Önem | Sorun | Durum |
 |---|---|---|---|
 | V1 | 🔴 | **Sipariş numarası çakışması.** Numara tarayıcıda `o yılki sipariş sayısı + 1` ile üretiliyor (`kaynak/bayi/parcalar/03-ana.js:294`). İki bayi 4 saniyelik senkron aralığında sipariş verirse ikisi de aynı numarayı alır. Sunucu `exb-siparisler`'i `no`'ya göre birleştirirken aynı no'lu kayıtta yeni geleni tutar; **ilk sipariş sessizce silinir**. Faz 0 testinde iki bayi aynı anda sipariş verdi, sunucuda tek sipariş kaldı. Aynı numaralandırma deseni iade (`IAD-`), online ödeme (`OL-`) ve teklif (`OT-`) numaralarında da var. | ✅ 1a (numara sunucudan; çakışan yeniden numaralanır) |
-| V2 | 🔴 | **Dosyalar localStorage'da.** Dekont (PDF ≤1,5 MB veya küçültülmüş fotoğraf), iade fotoğrafları, logo base64 olarak ortak anahtarlara yazılıyor. Her istemci tüm ortak veriyi `localStorage`'a yazar; Chromium'da ölçülen sınır ~8 milyon karakter. Sınır aşılınca senkron katmanındaki yükleme döngüsü ilk hatada durur: rozet "Sunucuya bağlı" der, ama o anahtar ve **sonrasındaki anahtarlar tarayıcıda yoktur** (Faz 0 testinde `exb-odeme` ve `exs-cari` yüklenmedi). Eksik veriyle çalışan kullanıcı birleştirme dışındaki bir anahtarı (ör. cari) güncellerse sunucudaki tam veriyi ezer. | ✅ 1a (dosyalar diske; tarayıcıya yalnız kendi verisi; eksik yükleme algılanır) |
-| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ◐ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir; diğer sözlük anahtarları Faz 2–3'te REST'e geçişle kalkar |
+| V2 | 🔴 | **Dosyalar localStorage'da.** Dekont (PDF ≤1,5 MB veya küçültülmüş fotoğraf), iade fotoğrafları, logo base64 olarak ortak anahtarlara yazılıyor. Her istemci tüm ortak veriyi `localStorage`'a yazar; Chromium'da ölçülen sınır ~8 milyon karakter. Sınır aşılınca senkron katmanındaki yükleme döngüsü ilk hatada durur: rozet "Sunucuya bağlı" der, ama o anahtar ve **sonrasındaki anahtarlar tarayıcıda yoktur** (Faz 0 testinde `exb-odeme` ve `exs-cari` yüklenmedi). Eksik veriyle çalışan kullanıcı birleştirme dışındaki bir anahtarı (ör. cari) güncellerse sunucudaki tam veriyi ezer. | ✅ 1a (dosyalar diske; tarayıcıya yalnız kendi verisi; eksik yükleme algılanır) · 2b-1: bayi sitesinde iş verisi tarayıcıya hiç yazılmaz |
+| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ◐ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir · 2b-1: bayinin bütün kayıt yazmaları REST'te, kayıt bazında; satış tarafındaki sözlük anahtarları Faz 3'te REST'e geçişle kalkar |
 | V4 | 🟠 | Fiyat/iskonto/kredi limiti hesapları istemcide. Sunucu, bayinin gönderdiği tutara güveniyor. | ✅ 1b-1 + 1b-2 (birim fiyat denetimi; kredi limiti sunucuda; REST siparişinde fiyatı sunucu belirler) |
 | V5 | 🟡 | Her açılışta ve her değişiklikte tüm veri gidip geliyor; sipariş sayısı arttıkça yavaşlar (ilk yükleme senkron XHR ile sayfayı kilitliyor). | ✅ 1a + 1b-2 (herkes yalnız kendi verisini indirir; 4 sn'lik yoklama yerine anlık bildirim) |
 
@@ -119,7 +120,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ⏳ 2–3 |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2a (89 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-1 (102 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -209,7 +210,7 @@ uretim_planlama/
 ├── testler/           ✅ Playwright uçtan uca testleri (node:test)
 ├── eski/              ✅ Orijinal paket (başvuru için, değiştirilmez)
 ├── docs/              ✅ Raporlar
-├── bayi-web/          ⏳ Faz 2b: modüllere bölünmüş bayi ekranları (dist/web'in yerini alır)
+├── bayi-web/          ⏳ Faz 2b-2: modüllere bölünmüş bayi ekranları (dist/web'in yerini alır)
 ├── satis-masaustu/    ⏳ Faz 3: Electron kabuğu + satış ekranları
 └── ortak/             ⏳ Faz 1–2: fiyat/iskonto hesabı, biçimler, durum adları, renk önizleme
                           motoru, API istemcisi, çeviriler (kaynak/ortak/ buraya taşınır)
@@ -327,14 +328,30 @@ Faz 2–3'e kalanlar:
 
 Değişmeyenler: Satış paneli, MRP ve tek dosyalık bayi portalı aynı çalışır. Bayi ekranlarının içi (katalog, sepet, sipariş, cari…) ve veriyi eşitleme katmanı aynıdır; bunlar 2b'de değişecek.
 
-#### Faz 2b: Ekranlar (≈2–3 hafta)
-1. Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 6, `cariSayfa` 5, `git` 4 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
-2. Veri REST'ten gelir; ödeme bildirimi, iade, teklif, numune ve değişiklik talebi için REST yazma uçları. Sepet, favoriler, projeler gibi kişisel durumlar sunucuda (V3 bayi tarafında kalkar).
+#### Faz 2b-1: Veri REST'ten, tarayıcıda iş verisi yok ✅ tamamlandı
+Neden ikiye bölündü: Kabul ölçütünün asıl kısmı (bayi tarayıcısında iş verisi kalmaması, kayıtların REST ile yazılması) ekranlar yeniden yazılmadan sağlanabildi. Bütün kayıt yazmaları iki fonksiyondan geçecek biçimde toplandı; ekranların modüllere bölünmesi (2b-2) artık veri katmanına dokunmadan yapılabilir.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| REST yazma uçları | `POST /api/v1/odemeler`, `iadeler`, `numuneler`, `teklifler`; `PATCH /api/v1/siparisler/:no` (düzenleme, iptal, değişiklik/iptal talebi, proje, tahmini teslim) ve `PATCH /api/v1/teklifler/:no` (sepete eklendi). Numara, sahip, zaman ve ilk durum sunucuda; yazma eşitleme ucuyla aynı kurallardan geçer (izinli alanlar, dosyalar diske, fiyat denetimi, işlem kaydı). Kurala takılan değişiklik artık sessizce yok sayılmaz: `409` ve sunucudaki son hâl döner (ör. "Sipariş bu arada satış ekibince işleme alındı"). Liste uçları (`GET`). Belge: `docs/API.md` |
+| Ekranlar REST'e | Sipariş, sipariş düzenleme/iptal/talep, ödeme bildirimi (havale ve online ödeme linki), iade/şikâyet, numune ve özel teklif talebi `kayitEkle` / `kayitGuncelle` üzerinden yazılır. Gönder düğmesi istek bitene kadar kilitlenir (çift kayıt olmaz); hata bayiye gösterilir. Dört ayrı yerdeki tarayıcıda numara üretme kodu ve eşzamanlı (sayfayı donduran) numara isteği kalktı |
+| Sipariş fiyatı | Sepetten giden siparişin fiyatını sunucu belirler; sepette beklerken fiyat değiştiyse bayi "Güncel fiyatlarla toplam …" uyarısını görür. Tarayıcıda düşürülmüş fiyat yine işaretlenir ve satış "Fiyat düzeltildi" uyarısını görür |
+| Tarayıcıda iş verisi yok | Bayi sitesinde sipariş, cari, ödeme, dekont, sepet, proje gibi veriler `localStorage`'a yazılmaz; yalnız sayfa açıkken bellekte durur. Önceki sürümden kalan kopyalar ilk açılışta silinir. Tarayıcıda yalnız dil, tema ve karşılaştırma listesi kalır. Böylece V2 (tarayıcı kotası) bayi sitesinde tamamen ortadan kalktı; ortak bilgisayarda çıkış yapmadan kapatılan sekme veri bırakmaz |
+| Kişisel durum | Sepet, favoriler, projeler, adresler, hatırlatmalar zaten sunucudaydı (bayiye özel anahtarlar); artık yalnız sunucuda. Başka cihazda giriş yapan bayi aynı sepeti görür |
+| Çevrimdışı | Bağlantı yokken sipariş ve diğer kayıtlar gönderilmez, açık uyarı çıkar, sepet korunur. Site sunucuya hiç ulaşamazsa giriş ve kayıt kapalı açılır (yerelde hesap ve sipariş oluşamaz), bağlantı gelince kendiliğinden yenilenir |
+| Güvenlik | CSRF denetimi `PATCH`/`PUT`/`DELETE` isteklerini de kapsar. Aynı anda gelen iki değişiklik birbirini ezmez |
+| Tek dosyalık portal | Sunucusuz kullanımda kayıtlar yine yerelde oluşur (aynı iki fonksiyonun yerel kolu; testle doğrulandı) |
+| Testler | 102 test (önceki 89 + `testler/rest-yazma.test.js` 13); SQLite ve JSON depoyla geçiyor. Faz 0'ın uçtan uca akışı (kayıt → sipariş → onay → değişiklik talebi → ödeme → teklif) yeni yazma yoluyla geçiyor |
+
+Bilinçli olarak bırakılanlar: Okumalar hâlâ eşitleme ucuyla (`/api/veri` + anlık bildirim) gelir; sepet, favori, proje gibi kişisel anahtarlar ve satış mesajlarının "okundu" işareti de eşitleme ucuyla yazılır. Bunlar tek bayinin kendi anahtarları olduğu için eşzamanlı yazma (V3) sorunu yaratmaz. Okumaların REST'e geçmesi ekranlar modüllere bölünürken (2b-2) sayfa sayfa yapılacak.
+
+#### Faz 2b-2: Ekranlar (≈2 hafta)
+1. Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 7, `git` 5, `cariSayfa` 5 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
+2. Okumalar sayfa sayfa REST'e geçer (katalog fiyatları, siparişler, cari); eşitleme ucu bayi sitesinde yalnız kişisel anahtarlar için kalır.
 3. Renk önizleme motoru `ortak/` modülüne taşınır.
 4. TR/EN çevirileri `tr.json` / `en.json` dosyalarına.
-5. Çevrimdışıyken sipariş gönderme açık uyarıyla engellenir.
 
-Kabul: Faz 0 testlerinin bayi kısmı REST'e geçmiş ekranlarda geçiyor; bayi tarayıcısında `localStorage`'da iş verisi kalmıyor.
+Kabul: Faz 0 testlerinin bayi kısmı modüllere bölünmüş ekranlarda geçiyor; sarmalama haritasında bayi tarafında sarılan fonksiyon kalmıyor.
 
 #### Faz 2c: Yayın (≈1 hafta)
 1. Erişilebilirlik ve Lighthouse denetimi (hedef: telefonda performans ≥ 85).

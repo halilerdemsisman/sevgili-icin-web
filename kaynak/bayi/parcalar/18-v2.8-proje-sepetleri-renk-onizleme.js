@@ -2,7 +2,6 @@
 (function () {
   const sayi = v => parseFloat(String(v || '').replace(/\./g, '').replace(',', '.')) || 0;
   const zaman = t => new Date(t).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' });
-  const yeniNo = (on, L) => { const y = new Date().getFullYear(); return (window.sunucuNo && sunucuNo(on)) || on + '-' + y + '-' + String(L.filter(x => String(x.no).includes('-' + y + '-')).length + 1).padStart(3, '0'); };
   function pencere(html, sinif) {
     const p = document.createElement('div'); p.className = 'perde ' + (sinif || 'form-p'); p.onclick = e => { if (e.target === p) p.remove(); };
     p.innerHTML = `<div class="pencere" style="position:relative"><button class="kapat" aria-label="Kapat">×</button>${html}</div>`; document.body.appendChild(p);
@@ -69,7 +68,7 @@
   siparisDosyasi = function (o) {
     const ak = aktifPr(), L = prOku(), p = L.find(x => x.id === ak);
     if (p && !o.proje) { o.proje = p.ad; p.siparisler = [...(p.siparisler || []), o.no]; p.guncel = Date.now(); prYaz(L); aktifPrAyarla('');
-      const S = oku('exb-siparisler', []), x = S.find(y => y.no === o.no); if (x) { x.proje = p.ad; yaz('exb-siparisler', S); } }
+      kayitGuncelle('siparisler', o.no, { proje: p.ad }).catch(e => console.warn('proje kaydedilemedi:', e.message)); }
     return _sdP(o);
   };
   const _skP = siparisKarti;
@@ -167,12 +166,14 @@
       <div class="hata" id="obHata"></div><div class="alt-d"><button class="btn cizgi" id="obVaz">Vazgeç</button><button class="btn marka" id="obGon">Bildir</button></div>`);
     p.querySelector('#obVaz').onclick = () => p.remove();
     p.querySelector('#obDos').onclick = () => dosyaSec('image/*,application/pdf', async f => { try { p.querySelector('#obDosAd').textContent = 'Hazırlanıyor…'; dosya = await dosyaHazirla(f); p.querySelector('#obDosAd').textContent = f.name; } catch (e) { dosya = null; p.querySelector('#obDosAd').textContent = 'Seçilmedi'; toast(String(e)); } });
-    p.querySelector('#obGon').onclick = () => {
+    const gon = p.querySelector('#obGon');
+    gon.onclick = () => {
       const t = sayi(p.querySelector('#obTut').value); if (!(t > 0)) return p.querySelector('#obHata').textContent = 'Tutarı yazın.';
-      const L = oku('exb-odeme', []);
-      L.push({ no: yeniNo('OB', L), kul: ben.kul, firma: ben.firma, ad: ben.ad, tutar: t, tarih: p.querySelector('#obTar').value || bugun(), yontem: p.querySelector('#obYon').value, ref: p.querySelector('#obRef').value.trim(), not: p.querySelector('#obNot').value.trim(), dosya, durum: 'bekliyor', zaman: Date.now() });
-      try { localStorage.setItem('exb-odeme', JSON.stringify(L)); } catch (e) { return p.querySelector('#obHata').textContent = 'Kaydedilemedi: dekont dosyası çok büyük. Daha küçük bir fotoğraf deneyin.'; }
-      p.remove(); toast('Ödeme bildiriminiz satış ekibine iletildi.'); cariSayfa();
+      bekleyerek(gon, async () => {
+        try { await kayitEkle('odemeler', { tutar: t, tarih: p.querySelector('#obTar').value || bugun(), yontem: p.querySelector('#obYon').value, ref: p.querySelector('#obRef').value.trim(), not: p.querySelector('#obNot').value.trim(), dosya, durum: 'bekliyor' }, 'OB'); }
+        catch (e) { return p.querySelector('#obHata').textContent = e.message; }
+        p.remove(); toast('Ödeme bildiriminiz satış ekibine iletildi.'); cariSayfa();
+      });
     };
   }
   const _cariP = cariSayfa;
@@ -197,13 +198,16 @@
       <div class="alan"><label>Not</label><input id="nmNot"></div><div class="hata" id="nmHata"></div>
       <div class="alt-d"><button class="btn cizgi" id="nmVaz">Vazgeç</button><button class="btn marka" id="nmGon">Talebi gönder</button></div>`);
     p.querySelector('#nmVaz').onclick = () => p.remove();
-    p.querySelector('#nmGon').onclick = () => {
+    const gon = p.querySelector('#nmGon');
+    gon.onclick = () => {
       const tur = [...p.querySelectorAll('input[type=checkbox]:checked')].map(x => x.value); if (!tur.length) return p.querySelector('#nmHata').textContent = 'En az bir tür seçin.';
       const adr = p.querySelector('#nmAdr').value.trim(); if (!adr) return p.querySelector('#nmHata').textContent = 'Gönderim adresini yazın.';
-      const L = oku('exb-numune', []);
-      L.push({ no: yeniNo('NMN', L), kul: ben.kul, firma: ben.firma, ad: ben.ad, tel: ben.tel, tur, urun: p.querySelector('#nmUrun').value, adet: Math.max(1, parseInt(p.querySelector('#nmAdet').value) || 1), kod: p.querySelector('#nmKod').value.trim(), adres: adr, not: p.querySelector('#nmNot').value.trim(), durum: 'yeni', zaman: Date.now() });
-      yaz('exb-numune', L); p.remove(); toast('Numune talebiniz alındı: ' + L[L.length - 1].no);
-      if (!$('#s-siparisler').classList.contains('gizli')) siparislerim();
+      bekleyerek(gon, async () => {
+        let x; try { x = await kayitEkle('numuneler', { tel: ben.tel, tur, urun: p.querySelector('#nmUrun').value, adet: Math.max(1, parseInt(p.querySelector('#nmAdet').value) || 1), kod: p.querySelector('#nmKod').value.trim(), adres: adr, not: p.querySelector('#nmNot').value.trim(), durum: 'yeni' }); }
+        catch (e) { return p.querySelector('#nmHata').textContent = e.message; }
+        p.remove(); toast('Numune talebiniz alındı: ' + x.no);
+        if (!$('#s-siparisler').classList.contains('gizli')) siparislerim();
+      });
     };
   }
   const _spP = siparislerim;

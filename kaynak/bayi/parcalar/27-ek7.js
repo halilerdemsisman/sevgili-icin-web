@@ -3,7 +3,10 @@
   const ACIK = ['yeni', 'onay', 'uretim'];
   const perde = html => { const p = document.createElement('div'); p.className = 'perde form-p'; p.onclick = e => { if (e.target === p) p.remove(); }; p.innerHTML = `<div class="pencere" style="position:relative;max-width:620px"><button class="kapat" aria-label="Kapat">×</button>${html}</div>`; document.body.appendChild(p); p.querySelector('.kapat').onclick = () => p.remove(); return p; };
   const TD = { bekliyor: 'Satış ekibinin onayı bekleniyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
-  function kaydet(no, f) { const L = oku('exb-siparisler', []), o = L.find(x => x.no === no); if (!o) return null; f(o); yaz('exb-siparisler', L); return o; }
+  // f kaydın kopyasını değiştirir; değişen alanlar sunucuya (veya yerel kayda) gönderilir
+  function kaydet(no, f) { const o = oku('exb-siparisler', []).find(x => x.no === no); if (!o) return Promise.reject(new Error('Sipariş bulunamadı.'));
+    const y = JSON.parse(JSON.stringify(o)); f(y); const d = {}; for (const a of Object.keys(y)) if (JSON.stringify(y[a]) !== JSON.stringify(o[a])) d[a] = y[a];
+    return kayitGuncelle('siparisler', no, d); }
   function duzenle(no, iptalMi) {
     const o = oku('exb-siparisler', []).find(x => x.no === no); if (!o || !ACIK.includes(o.durum)) return toast('Bu sipariş artık değiştirilemez.');
     const dogrudan = o.durum === 'yeni';
@@ -14,21 +17,22 @@
       <label class="kucuk" style="display:block;margin-top:10px"><b>${iptalMi ? 'İptal nedeni' : 'Açıklama'}</b></label><textarea id="sdNot" rows="2" style="width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--cizgi);border-radius:9px;font:inherit"></textarea>
       <button class="btn marka" id="sdOk" style="margin-top:12px;width:100%">${iptalMi ? (dogrudan ? 'Siparişi iptal et' : 'İptal talebi gönder') : (dogrudan ? 'Değişiklikleri kaydet' : 'Değişiklik talebi gönder')}</button>`);
     p.querySelectorAll('[data-sd]').forEach(i => i.oninput = () => p.querySelector(`[data-sr="${i.dataset.sd}"]`).classList.toggle('sil', !(+i.value > 0)));
-    p.querySelector('#sdOk').onclick = () => {
+    const ok = p.querySelector('#sdOk');
+    ok.onclick = () => {
       const not = p.querySelector('#sdNot').value.trim(), simdi = Date.now();
       let K = null;
       if (!iptalMi) { K = o.kalemler.map((x, i) => ({ ...x, adet: Math.max(0, parseInt(p.querySelector(`[data-sd="${i}"]`).value) || 0) })).filter(x => x.adet > 0);
         if (K.every((x, i) => o.kalemler[i] && x.adet === o.kalemler[i].adet) && K.length === o.kalemler.length) return toast('Değişiklik yapmadınız.');
         if (!K.length) return toast('Tüm kalemleri çıkarmak için “Siparişi iptal et”i kullanın.'); }
       if (iptalMi && !dogrudan && !not) return toast('Lütfen iptal nedenini yazın.');
-      kaydet(o.no, x => {
+      bekleyerek(ok, () => kaydet(o.no, x => {
         if (dogrudan) {
           if (iptalMi) { x.durum = 'iptal'; (x.gecmis = x.gecmis || [{ durum: 'yeni', zaman: x.tarih }]).push({ durum: 'iptal', zaman: simdi, kim: 'Bayi' }); x.bayiIptal = { zaman: simdi, not }; }
           else { (x.revizyon = x.revizyon || []).push({ zaman: simdi, eski: x.kalemler, not }); x.kalemler = K; x.toplam = K.reduce((a, y) => a + (y.birim || 0) * y.adet, 0); x.teklif = K.some(y => y.birim == null); }
           x.rev = (x.rev || 0) + 1; x.revZaman = simdi;
         } else x.talep = { id: 't' + simdi.toString(36), tur: iptalMi ? 'iptal' : 'duzenle', kalemler: K, not, zaman: simdi, durum: 'bekliyor', durumAnda: x.durum };
-      });
-      p.remove(); toast(dogrudan ? (iptalMi ? 'Sipariş iptal edildi.' : 'Sipariş güncellendi.') : 'Talebiniz satış ekibine iletildi.'); siparislerim();
+      }).then(() => { p.remove(); toast(dogrudan ? (iptalMi ? 'Sipariş iptal edildi.' : 'Sipariş güncellendi.') : 'Talebiniz satış ekibine iletildi.'); siparislerim(); },
+        e => { siparislerim(); throw e; }));
     };
   }
   const _sip7 = siparislerim;

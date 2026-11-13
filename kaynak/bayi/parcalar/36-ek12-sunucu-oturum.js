@@ -3,6 +3,15 @@
 // yüklenince sunucu yalnız bu bayinin verisini gönderir (senkron katmanı), uygulama oturumu oradan açar.
 // Sunucu yoksa (dosyadan açılan sürüm) eski davranış aynen sürer.
 (function () {
+  // Faz 2b: web sitesi sunucuya ulaşamadıysa giriş ve kayıt kapalı (yerelde hesap/sipariş oluşmasın)
+  if (window.EXIT_CEVRIMDISI) {
+    const m = 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin; bağlantı gelince sayfa kendiliğinden yenilenir.';
+    ['#fGiris', '#fKayit'].forEach(s => { const f = $(s); if (!f) return; f.onsubmit = e => { e.preventDefault(); };
+      f.querySelectorAll('button[type=submit], button.marka').forEach(b => { b.disabled = true; }); });
+    ['#gHata', '#kHata'].forEach(s => { const h = $(s); if (h) h.textContent = m; });
+    document.body.classList.add('cevrimdisi');
+    return;
+  }
   if (!window.EXIT_SUNUCU) return;
   const bekle = (form, acik) => { const b = form.querySelector('button[type=submit], button.marka'); if (b) b.disabled = !acik; };
   $('#fGiris').onsubmit = async e => {

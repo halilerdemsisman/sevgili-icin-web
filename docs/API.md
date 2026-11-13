@@ -1,4 +1,4 @@
-# EXIT Garden sunucu API'si (sürüm 2a)
+# EXIT Garden sunucu API'si (sürüm 2b-1)
 
 Tüm uçlar JSON konuşur. Hatalar `{ "hata": "açıklama" }` biçimindedir. Yapay zekâ aktarımı ise Claude API'nin hata biçimini (`{ "error": { "message": … } }`) olduğu gibi döner.
 
@@ -6,7 +6,7 @@ Tüm uçlar JSON konuşur. Hatalar `{ "hata": "açıklama" }` biçimindedir. Yap
 
 - Giriş HttpOnly çerezle yapılır: bayi `exit_b`, satış `exit_s`. Aynı tarayıcıda iki uygulama birlikte açık olabilir.
 - Her istekte hangi uygulamanın oturumunun kullanılacağı `X-Exit-Uyg: bayi|satis` başlığıyla bildirilir. Başlık eklenemeyen durumlarda (EventSource, sendBeacon) `?uyg=` parametresi kullanılır.
-- Yazma isteklerinde `Origin` başlığı varsa sunucunun adresiyle aynı olmalıdır (CSRF koruması).
+- Yazma isteklerinde (`POST`, `PATCH`…) `Origin` başlığı varsa sunucunun adresiyle aynı olmalıdır (CSRF koruması).
 - Geçici şifreyle giren kullanıcının oturumunda `sifreDegistir: true` bulunur. Bu kullanıcı `/api/sifre` çağrılana kadar veri göremez, yazamaz.
 
 | Uç | Gövde | Açıklama |
@@ -22,7 +22,7 @@ Tüm uçlar JSON konuşur. Hatalar `{ "hata": "açıklama" }` biçimindedir. Yap
 
 ## REST v1
 
-Faz 2 (bayi web sitesi) ve Faz 3 (satış masaüstü) bu uçları kullanacak. Veri, eşitleme ucuyla aynıdır: REST ile verilen sipariş eski ekranlarda da anında görünür.
+Bayi web sitesi (Faz 2b-1'den beri) bütün kayıt oluşturma ve değiştirme işlemlerini bu uçlarla yapar; Faz 3'teki satış masaüstü uygulaması da bunları kullanacak. Veri, eşitleme ucuyla aynıdır: REST ile verilen sipariş eski ekranlarda da anında görünür. Yazmalar eşitleme ucuyla aynı kurallardan geçer (izinli alanlar, dosyaların diske çıkarılması, fiyat denetimi, işlem kaydı).
 
 Görünürlük her uçta aynıdır:
 - bayi yalnız kendi kayıtlarını görür,
@@ -61,9 +61,31 @@ Tek sipariş. Görülemeyen sipariş `404` döner.
                   "iskelet": "Granit (Granit)", "file": "Siyah (Terra 05)", "kumas": "", "fitil": "", "not": "",
                   "teklif": "OT-2026-0003" } ] }
 ```
-- Birim fiyatı **sunucu** belirler: katalog, fiyat güncellemesi, kampanya; `teklif` verilmişse onaylı özel teklif fiyatı. Gövdedeki fiyat alanları yok sayılır.
+- Birim fiyatı **sunucu** belirler: katalog, fiyat güncellemesi, kampanya; `teklif` verilmişse onaylı özel teklif fiyatı.
+- Kalemde `birim` gönderilir ve sunucunun fiyatından düşükse sipariş katalog fiyatıyla kaydedilir ve `fiyatKontrol` ile işaretlenir (satış panelinde "Fiyat düzeltildi" uyarısı). Yüksek veya gönderilmemiş fiyat yok sayılır.
+- `kaynak: "web"` siparişin bayi sitesinden verildiğini işaretler (varsayılan `"api"`).
 - Numarayı sunucu verir. Sipariş `201` ile döner, `Location` başlığında adresi bulunur.
 - Hatalı kalem `400` döner; açıklamada kalem sırası yazar (ör. "2. kalem: …").
+
+### `PATCH /api/v1/siparisler/:no` (yalnız bayi, kendi siparişi)
+Gövde değişecek alanlardır: `kalemler`, `adres`, `durum` (`"iptal"`), `revizyon`, `rev`, `revZaman`, `gecmis`, `bayiIptal`, `proje`, `tahminiTeslim`, `talep`.
+- `yeni` siparişte kalemler ve iptal hemen uygulanır (fiyat ve toplam sunucuda yeniden hesaplanır). Onaylanmış siparişte yalnız `talep` (değişiklik/iptal talebi, `durum: "bekliyor"`) ve `proje` değişir.
+- İstenen değişiklik kurallara takılırsa (ör. sipariş bu arada onaylandı, zaten bekleyen bir talep var) `409` döner: `{hata, alanlar, kayit}`; `kayit` siparişin sunucudaki son hâlidir.
+- Başka bayinin siparişi `404`, değiştirilemeyen alan (ör. `net`, `fiyat`) yok sayılır; hiç izinli alan yoksa `400`.
+
+### Ödeme bildirimi, iade, numune, özel teklif (yalnız bayi)
+`POST /api/v1/odemeler | iadeler | numuneler | teklifler` yeni kayıt oluşturur ve `201` ile kaydı döner. Numara (`OB`/`OL`, `IAD`, `NMN`, `OT`), sahip (`kul`, `firma`, `ad`), zaman ve ilk durum sunucuda belirlenir; satışa ait alanlar (`karar`, `fiyat`, `yanit`…) kabul edilmez. Yanıtta `uyari` varsa bir alan düzeltilmiştir (ör. geçersiz dosya silindi).
+
+| Uç | Gövde | Kural |
+|---|---|---|
+| `odemeler` | `{tutar, tarih?, yontem?, ref?, not?, dosya?, siparis?, online?, on?: "OB"\|"OL"}` | `tutar > 0`. `dosya`: resim/PDF data URI (diske çıkarılır) |
+| `iadeler` | `{sip, urun?, adet?, tur?, aciklama, foto?: [data URI…]}` | `sip` bayinin kendi siparişi; en fazla 4 fotoğraf |
+| `numuneler` | `{tur: [..], adres, urun?, adet?, kod?, not?}` | en az bir tür ve adres |
+| `teklifler` | `{sandalye: {id, ad, secenek, iskelet, file?, kumas?}, masa?: {…}, oran, takim, hedef?, termin?, not?}` | sandalye zorunlu; masa yoksa oran 1 |
+
+`GET /api/v1/odemeler | iadeler | numuneler | teklifler` listeler (`?durum=`, `?sayfa=`, `?adet=`; bayi kendi kayıtlarını, satış kapsamındakileri görür).
+
+`PATCH /api/v1/teklifler/:no` gövdesi `{sepette: true}`: onaylanmış teklifin ürünleri sepete eklendi. Onaylanmamış teklifte `409`.
 
 ### `GET /api/v1/cari`
 Bayi kendi özetini görür; satış `?bayi=kul` ile seçer.

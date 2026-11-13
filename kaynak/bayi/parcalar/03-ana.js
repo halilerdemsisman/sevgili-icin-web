@@ -24,6 +24,42 @@ const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const para = n => n == null ? '—' : n.toLocaleString('tr-TR') + ' $';
 const oku = (k, v) => { try { const x = localStorage.getItem(k); return x ? JSON.parse(x) : v; } catch (e) { return v; } };
 const yaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('Kayıt yapılamadı: tarayıcı depolaması kapalı.'); } };
+// Kayıt ekleme ve güncelleme (Faz 2b). Sunucuya bağlıyken REST ile: numara, sahip ve fiyat sunucuda belirlenir,
+// yanıt beklenir, hata bayiye gösterilir (bağlantı yoksa kayıt gönderilmez, yerelde de oluşmaz).
+// Sunucusuz (dosyadan açılan) sürümde kayıt yerelde oluşturulur. İkisi de Promise döner; hata Error.message'dadır.
+const KAYIT_TUR = { siparisler: ['exb-siparisler', 'no', 'EXG'], odemeler: ['exb-odeme', 'no', 'OB'], iadeler: ['exb-iade', 'id', 'IAD'], numuneler: ['exb-numune', 'no', 'NMN'], teklifler: ['exb-teklif', 'no', 'OT'] };
+const restKayit = r => { const { ok, durum, uyari, hata, kayit, alanlar, ...x } = r; return x; };
+function yerelNo(on, L) { const y = new Date().getFullYear(), m = L.map(x => +(String(x.no || '').match(new RegExp('^' + on + '-' + y + '-(\\d+)$')) || [])[1] || 0); return on + '-' + y + '-' + String(Math.max(0, ...m) + 1).padStart(({ OB: 3, NMN: 3 })[on] || 4, '0'); } // hane sayısı sunucudakiyle aynı
+async function kayitEkle(tur, x, on) {
+  const [k, a, on0] = KAYIT_TUR[tur];
+  if (window.EXIT_REST) {
+    const r = await EXIT_REST('POST', tur, { ...x, on: on || on0 });
+    if (!r.ok) throw new Error(r.hata || 'Kaydedilemedi.');
+    const y = restKayit(r); EXIT_KAYIT_ISLE(k, y, a); return y;
+  }
+  const L = oku(k, []) || [], y = { ...x, no: yerelNo(on || on0, L), kul: ben.kul, firma: ben.firma, ad: ben.ad };
+  if (tur !== 'siparisler' && !y.zaman) y.zaman = Date.now();
+  if (a === 'id' && !y.id) y.id = tur.slice(0, 2) + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  L.push(y);
+  try { localStorage.setItem(k, JSON.stringify(L)); } catch (e) { throw new Error('Kaydedilemedi: tarayıcı alanı dolu. Dosya eklediyseniz daha küçük bir dosya deneyin.'); }
+  return y;
+}
+async function kayitGuncelle(tur, no, alanlar) {
+  const [k, a] = KAYIT_TUR[tur];
+  if (window.EXIT_REST) {
+    const r = await EXIT_REST('PATCH', tur + '/' + encodeURIComponent(no), alanlar);
+    if (r.kayit) EXIT_KAYIT_ISLE(k, r.kayit, a);
+    if (!r.ok) throw new Error(r.hata || 'Değişiklik kaydedilemedi.');
+    const y = restKayit(r); EXIT_KAYIT_ISLE(k, y, a); return y;
+  }
+  const L = oku(k, []) || [], o = L.find(x => x && x[a] === no); if (!o) throw new Error('Kayıt bulunamadı.');
+  Object.assign(o, alanlar); yaz(k, L); return o;
+}
+// Gönder düğmesi: istek sürerken ikinci tıklamayı engeller
+async function bekleyerek(b, f) {
+  if (!b || b.disabled) return; const m = b.textContent; b.disabled = true; b.textContent = 'Gönderiliyor…';
+  try { return await f(); } catch (e) { toast(e.message || String(e)); } finally { if (b.isConnected) { b.disabled = false; b.textContent = m; } }
+}
 
 // exitgarden.com HD görselleri: internet varsa sitedeki büyük görsel yüklenir, yoksa gömülü görsel kalır
 (function hdGorsel() {
@@ -291,12 +327,13 @@ $('#hSepet').onclick = () => {
     c.querySelectorAll('[data-d]').forEach(b => b.onclick = () => { const s = sepet(); s[b.dataset.i].adet = Math.max(1, s[b.dataset.i].adet + +b.dataset.d); sepetKaydet(s); ciz(); });
     c.querySelectorAll('.c-liste input').forEach(i => i.onchange = () => { const s = sepet(); s[i.dataset.i].adet = Math.max(1, parseInt(i.value) || 1); sepetKaydet(s); ciz(); });
     c.querySelectorAll('[data-sil]').forEach(b => b.onclick = () => { const s = sepet(); s.splice(+b.dataset.sil, 1); sepetKaydet(s); ciz(); });
-    const g = c.querySelector('#sGonder'); if (g) g.onclick = () => {
-      const S = oku('exb-siparisler', []), yil = new Date().getFullYear(), no = (window.sunucuNo && sunucuNo('EXG')) || 'EXG-' + yil + '-' + String(S.filter(x => x.no.includes('-' + yil + '-')).length + 1).padStart(4, '0');
-      S.push({ no, kul: ben.kul, firma: ben.firma, ad: ben.ad, tarih: Date.now(), kalemler: sepet(), toplam: top, teklif, adres: c.querySelector('#sAdres').value.trim(), durum: 'yeni' });
-      yaz('exb-siparisler', S); sepetKaydet([]); c.remove(); toast('Sipariş talebiniz alındı: ' + no);
-      siparisDosyasi(S[S.length - 1]); git('siparisler');
-    };
+    const g = c.querySelector('#sGonder'); if (g) g.onclick = () => bekleyerek(g, async () => {
+      const o = await kayitEkle('siparisler', { tarih: Date.now(), kalemler: sepet(), toplam: top, teklif, adres: c.querySelector('#sAdres').value.trim(), durum: 'yeni', kaynak: 'web' });
+      sepetKaydet([]); c.remove();
+      // fiyatı sunucu belirler: sepette beklerken kampanya bittiyse veya fiyat değiştiyse bayi görsün
+      toast('Sipariş talebiniz alındı: ' + o.no + (Math.abs((o.toplam || 0) - top) > 0.01 ? ' · Güncel fiyatlarla toplam ' + para(o.toplam) : ''));
+      siparisDosyasi(o); git('siparisler');
+    });
   }
   ciz();
 };

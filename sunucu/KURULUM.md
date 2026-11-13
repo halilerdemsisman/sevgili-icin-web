@@ -1,4 +1,4 @@
-# EXIT Garden ortak sunucu kurulumu (sürüm 2a)
+# EXIT Garden ortak sunucu kurulumu (sürüm 2b-1)
 
 > **VPS'e kurulum ve şirket sunucusundan taşınma:** `dagitim/TASINMA.md` (adım adım, hazır betiklerle). Bu belge sunucunun genel ayarlarını anlatır.
 
@@ -28,6 +28,11 @@ Sürüm 2a ile bayi portalı bir web sitesi olarak yayınlanır (`web/` klasör�
 - Kod dosyaları sıkıştırılmış ve önbellekli gider; ürün fotoğrafları WebP. Katalog yavaş 4G'de ~1 sn'de açılır.
 - Sayfalar içerik güvenliği başlığıyla (CSP) gider: yalnız bu sunucuyla konuşabilir.
 - Dekont, iade fotoğrafı ve logo alanlarına yalnız dosya kabul edilir.
+
+Sürüm 2b-1 ile:
+- Bayi sitesi sipariş, değişiklik/iptal, ödeme bildirimi, iade, numune ve özel teklif kayıtlarını REST API ile gönderir; numarayı ve fiyatı sunucu verir, bayi kaydın alındığını ya da neden alınmadığını hemen görür.
+- Bayilerin siparişleri, cari hesapları, dekontları tarayıcıda saklanmaz (yalnız sayfa açıkken bellekte durur). Önceki sürümden tarayıcıda kalan kopyalar ilk açılışta silinir. Dil ve tema tercihi tarayıcıda kalır.
+- Bağlantı yokken sipariş gönderilmez, sepet korunur. Site sunucuya hiç ulaşamazsa giriş ve kayıt kapalı açılır; bağlantı gelince kendiliğinden yenilenir.
 
 ## 1. Gereken
 

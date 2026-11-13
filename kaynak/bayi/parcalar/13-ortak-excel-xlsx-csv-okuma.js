@@ -245,7 +245,7 @@ const gunSonra = g => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate
   siparisDosyasi = function (o) {
     if (window._sepetTermin && !o.tahminiTeslim) {
       o.tahminiTeslim = window._sepetTermin; window._sepetTermin = null;
-      const S = oku('exb-siparisler', []), x = S.find(y => y.no === o.no); if (x) { x.tahminiTeslim = o.tahminiTeslim; yaz('exb-siparisler', S); }
+      kayitGuncelle('siparisler', o.no, { tahminiTeslim: o.tahminiTeslim }).catch(e => console.warn('tahmini teslim kaydedilemedi:', e.message));
     }
     return _siparisDosyasi(o);
   };

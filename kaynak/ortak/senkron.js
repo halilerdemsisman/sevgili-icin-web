@@ -4,6 +4,10 @@
 //   • Tarayıcı alanı dolduğu için yüklenemeyen anahtarlar "eksik" sayılır; eksik veriyle sunucudaki tam
 //     verinin ezilmemesi için bu anahtarlardaki değişiklikler gönderilmez ve uyarı gösterilir.
 //   • Numara (sipariş, ödeme, teklif…) sunucudan alınır: window.sunucuNo('EXG') → 'EXG-2026-0042'.
+// Faz 2b (bayi web sitesi, EXIT_WEB): iş verisi tarayıcının kalıcı alanına (localStorage) hiç yazılmaz; sunucudan
+//   gelen kopya yalnız bellekte durur ve sekme kapanınca kaybolur. Ekranlar yine localStorage üzerinden okur/yazar,
+//   bu katman ilgili anahtarları belleğe yönlendirir. Sunucuya ulaşılamazsa site çevrimdışı modda açılır
+//   (EXIT_CEVRIMDISI): giriş ve kayıt kapalı, bağlantı gelince sayfa kendiliğinden yenilenir.
 (function () {
   if (!/^https?:$/.test(location.protocol)) return;
   // /satis (sunucu) veya exit_satis_paneli.html (dosya); bayi sitesinin /siparisler gibi adresleri bayidir
@@ -11,7 +15,20 @@
   const OTURUM_ANAHTARI = UYG === 'satis' ? 'exs-oturum' : 'exb-oturum';
   const YEREL = /^(exb-dil|exb-oturum|exs-oturum|exs-ai-anahtar|exit-tema|exb-kars)$/;
   const ORTAK = k => /^ex[bs]-/.test(k) && !YEREL.test(k);
-  const S = Storage.prototype, setI = S.setItem, remI = S.removeItem, getI = S.getItem;
+  const S = Storage.prototype, setI0 = S.setItem, remI0 = S.removeItem, getI0 = S.getItem;
+  const BELLEK = UYG === 'bayi' && !!window.EXIT_WEB, B = new Map();
+  // ham erişim (senkron katmanının kendisi için): iş verisi anahtarları bellek kipinde Map'e gider
+  const getI = function (k) { return BELLEK && this === localStorage && ORTAK(k) ? (B.has(k) ? B.get(k) : null) : getI0.call(this, k); };
+  const setI = function (k, v) { if (BELLEK && this === localStorage && ORTAK(k)) B.set(k, String(v)); else setI0.call(this, k, v); };
+  const remI = function (k) { if (BELLEK && this === localStorage && ORTAK(k)) B.delete(k); else remI0.call(this, k); };
+  const yerelAnahtarlar = () => { const L = BELLEK ? [...B.keys()] : []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (ORTAK(k)) L.push(k); } return L; };
+  if (BELLEK) {
+    // önceki sürümlerden (veya tek dosyalık portaldan) bu tarayıcıda kalmış iş verisi kopyaları silinir
+    try { yerelAnahtarlar().forEach(k => remI0.call(localStorage, k)); } catch (e) {}
+    S.getItem = function (k) { return getI.call(this, k); };
+    S.setItem = function (k, v) { setI.call(this, k, v); };
+    S.removeItem = function (k) { remI.call(this, k); };
+  }
   const istek = (yontem, yol, govde) => { const x = new XMLHttpRequest(); x.open(yontem, yol, false); x.setRequestHeader('X-Exit-Uyg', UYG); if (govde) x.setRequestHeader('Content-Type', 'application/json'); x.send(govde ? JSON.stringify(govde) : null); return x; };
   let son = 0, yuklu = false, oturum = null, kapandi = false;
   const eksik = new Set();
@@ -20,7 +37,7 @@
     // Giriş yapılmamışken yerel veriye dokunulmaz: eski sürümden kalan veri, yönetici girişinde sunucuya
     // aktarılabilsin. Çıkışta yerel kopyalar EXIT_YEREL_TEMIZLE ile silinir.
     if (!oturum) return;
-    const yerel = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (ORTAK(k)) yerel.push(k); }
+    const yerel = yerelAnahtarlar();
     // sunucuda olmayan veya bu kullanıcıya gösterilmeyen yerel kopyalar silinir (önceki kullanıcının verisi kalmasın)
     yerel.forEach(k => { if (!(k in j.veri)) remI.call(localStorage, k); });
     for (const [k, v] of Object.entries(j.veri)) {
@@ -34,7 +51,7 @@
       // İlk kurulum: sunucuda iş verisi yokken yönetici girişi yapılırsa, bu tarayıcıda (eski, dosyadan açılan
       // sürümde) biriken veriler sunucuya aktarılır.
       if (j.oturum && j.oturum.rol === 'yonetici' && !Object.keys(j.veri).some(k => !/kullanicilar$/.test(k))) {
-        const ilk = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (ORTAK(k) && !(k in j.veri)) ilk.push([k, getI.call(localStorage, k)]); }
+        const ilk = yerelAnahtarlar().filter(k => !(k in j.veri)).map(k => [k, getI.call(localStorage, k)]);
         if (ilk.length) { istek('POST', 'api/veri', { degisen: ilk }); yukle(JSON.parse(istek('GET', 'api/veri').responseText)); }
         else yukle(j);
       } else yukle(j);
@@ -42,11 +59,18 @@
       try { if (oturum) sessionStorage.setItem(OTURUM_ANAHTARI, oturum.kul); else sessionStorage.removeItem(OTURUM_ANAHTARI); } catch (e) {}
     }
   } catch (e) {}
-  window.EXIT_SUNUCU = yuklu; window.EXIT_OTURUM = oturum; window.EXIT_UYG = UYG;
-  if (!yuklu) return;
+  window.EXIT_SUNUCU = yuklu; window.EXIT_OTURUM = oturum; window.EXIT_UYG = UYG; window.EXIT_BELLEK = BELLEK;
+  if (!yuklu) {
+    if (!BELLEK) return;
+    // web sitesi sunucuya ulaşamadı: çevrimdışı mod. Bağlantı gelince (veya 15 sn'de bir denenerek) yenilenir.
+    window.EXIT_CEVRIMDISI = true;
+    const dene = () => fetch('api/oturum', { cache: 'no-store' }).then(r => { if (r.ok) location.reload(); }).catch(() => {});
+    addEventListener('online', dene); setInterval(dene, 15000);
+    return;
+  }
 
   // Çıkışta: bu tarayıcıdaki ortak veri kopyalarını sil (sunucuya silme isteği gitmez)
-  window.EXIT_YEREL_TEMIZLE = () => { const L = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (ORTAK(k)) L.push(k); } L.forEach(k => remI.call(localStorage, k)); };
+  window.EXIT_YEREL_TEMIZLE = () => { yerelAnahtarlar().forEach(k => remI.call(localStorage, k)); };
   window.sunucuNo = on => { if (!oturum) return null; try { const x = istek('POST', 'api/numara', { on }); return x.status === 200 ? JSON.parse(x.responseText).no : null; } catch (e) { return null; } };
   window.EXIT_API = (yol, govde) => fetch(yol, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify(govde || {}) })
     .then(r => r.json().catch(() => ({})).then(j => ({ durum: r.status, ...j })));
@@ -95,6 +119,16 @@
   };
   S.setItem = function (k, v) { setI.call(this, k, v); if (this === localStorage && ORTAK(k)) sira(k, String(v)); };
   S.removeItem = function (k) { remI.call(this, k); if (this === localStorage && ORTAK(k)) sira(k, null); };
+  // REST ile kaydedilen bir kaydı yerel kopyaya işler (sunucuya yeniden gönderilmez). a: kimlik alanı
+  window.EXIT_KAYIT_ISLE = (k, kayit, a = 'no') => {
+    let L; try { L = JSON.parse(getI.call(localStorage, k) || '[]'); } catch (e) { L = []; } if (!Array.isArray(L)) L = [];
+    const i = L.findIndex(x => x && x[a] === kayit[a]); if (i < 0) L.push(kayit); else L[i] = kayit;
+    try { setI.call(localStorage, k, JSON.stringify(L)); } catch (e) {}
+  };
+  // REST çağrısı (Faz 2b): {ok, durum, ...gövde}. Bağlantı yoksa {ok:false, cevrimdisi:true}.
+  window.EXIT_REST = (yontem, yol, govde) => fetch('api/v1/' + yol, { method: yontem, cache: 'no-store', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: govde ? JSON.stringify(govde) : undefined })
+    .then(r => r.json().catch(() => ({})).then(j => { if (r.status === 401) oturumKapandi(); durum(true); return { ...j, ok: r.ok, durum: r.status }; }),
+      () => { durum(false); return { ok: false, durum: 0, cevrimdisi: true, hata: 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip yeniden deneyin.' }; });
   const cek = () => fetch('api/degisen?son=' + son, { cache: 'no-store', headers: { 'X-Exit-Uyg': UYG } }).then(r => r.json()).then(j => {
     son = j.zaman; if (oturum && !j.oturum) return oturumKapandi(); durum(true);
     j.degisen.forEach(([k, v]) => { if (kuyruk.has(k)) return;

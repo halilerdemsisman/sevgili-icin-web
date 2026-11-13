@@ -2,7 +2,6 @@
 (function () {
   const sv = d => `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   const usd = n => (Math.round((n || 0) * 100) / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' $';
-  const no = (on, L) => (window.sunucuNo && sunucuNo(on)) || (() => { const y = new Date().getFullYear(), m = L.map(x => +(String(x.no).match(new RegExp('^' + on + '-' + y + '-(\\d+)$')) || [])[1] || 0); return `${on}-${y}-${String(Math.max(0, ...m) + 1).padStart(4, '0')}`; })();
   const sayi10 = v => parseFloat(String(v).replace(/\./g, '').replace(',', '.'));
   const ODZ = { bekliyor: 'Onay bekliyor', onaylandi: 'Onaylandı', reddedildi: 'Reddedildi' };
   // sayfa iskeletleri
@@ -29,9 +28,13 @@
       ${Od.length ? `<div class="of-kart"><h3 style="margin-top:0">Online ödemelerim</h3><table class="of-tablo"><tr><th>No</th><th>Tarih</th><th style="text-align:right">Tutar</th><th>Durum</th></tr>${Od.map(o => `<tr><td><b>${esc(o.no)}</b></td><td>${tarih(o.tarih)}</td><td style="text-align:right">${usd(o.tutar)}</td><td><span class="dz ${o.durum}">${{ bekliyor: 'Kontrol ediliyor', onaylandi: 'Tahsil edildi', reddedildi: 'Görülmedi' }[o.durum] || o.durum}</span></td></tr>`).join('')}</table></div>` : ''}</div>`;
     $('#odGeri').onclick = () => git('cari');
     const g = $('#odGit'); if (g) g.onclick = () => { const t = sayi10($('#odTut').value); if (!(t > 0)) return $('#odHata').textContent = 'Tutarı yazın.';
+      // pencere tıklamayla hemen açılır (açılır pencere engellenmesin); bildirim ardından kaydedilir
       const w = window.open(L, '_blank'); try { if (w) w.opener = null; } catch (e) {}
-      const O = oku('exb-odeme', []) || []; O.push({ no: no('OL', O), kul: ben.kul, firma: ben.firma, ad: ben.ad, tutar: t, tarih: new Date().toISOString().slice(0, 10), yontem: 'Online ödeme linki', ref: '', not: $('#odNot').value.trim(), dosya: null, durum: 'bekliyor', online: true, siparis: on ? on.no : '', zaman: Date.now() });
-      yaz('exb-odeme', O); toast(w ? 'Ödeme sayfası açıldı. Ödemeniz satış ekibine bildirildi.' : 'Açılır pencere engellendi; ödeme sayfası bu sekmede açılıyor.'); if (!w) location.href = L; else odemeSayfa(); };
+      bekleyerek(g, async () => {
+        try { await kayitEkle('odemeler', { tutar: t, tarih: new Date().toISOString().slice(0, 10), yontem: 'Online ödeme linki', ref: '', not: $('#odNot').value.trim(), dosya: null, durum: 'bekliyor', online: true, siparis: on ? on.no : '' }, 'OL'); }
+        catch (e) { toast('Ödeme bildiriminiz kaydedilemedi: ' + e.message + ' Ödemeyi yaptıysanız Cari hesabım › Ödeme bildir ile bildirin.'); }
+        toast(w ? 'Ödeme sayfası açıldı. Ödemeniz satış ekibine bildirildi.' : 'Açılır pencere engellendi; ödeme sayfası bu sekmede açılıyor.'); if (!w) location.href = L; else odemeSayfa();
+      }); };
   }
   const _cari10 = cariSayfa;
   cariSayfa = function () { _cari10(); const s = $('#s-cari'), ob = $('#obAc'); if (!s || !ob || $('#olAc')) return; ob.insertAdjacentHTML('beforebegin', '<button class="btn" id="olAc" style="float:right;margin-top:-40px;margin-right:130px;background:#16a34a;color:#fff">Online öde</button>'); $('#olAc').onclick = () => git('odeme'); };
@@ -68,16 +71,18 @@
     $('#tfGon').onclick = () => { const m = VERI.urunler.find(x => x.id == $('#tfM').value), s = VERI.urunler.find(x => x.id == $('#tfS').value), h = $('#tfHata');
       if (!s) return h.textContent = 'Sandalye ürününü seçin.'; if (!$('#tfSi').value || (m && !$('#tfMi').value)) return h.textContent = 'İskelet renklerini seçin.';
       const or = Math.round(sayi10($('#tfOr').value)), ad = Math.round(sayi10($('#tfAd').value)); if (!(or > 0) || !(ad > 0)) return h.textContent = 'Oran ve takım adedini girin.';
-      const L = oku('exb-teklif', []) || [], t = { no: no('OT', L), kul: ben.kul, firma: ben.firma, ad: ben.ad, zaman: Date.now(), oran: m ? or : 1, takim: m ? ad : ad * or, hedef: sayi10($('#tfHd').value) || null, termin: $('#tfTr').value || '', not: $('#tfNt').value.trim(), durum: 'bekliyor',
+      const t = { zaman: Date.now(), oran: m ? or : 1, takim: m ? ad : ad * or, hedef: sayi10($('#tfHd').value) || null, termin: $('#tfTr').value || '', not: $('#tfNt').value.trim(), durum: 'bekliyor',
         masa: m ? { id: m.id, ad: m.ad, kategori: m.kategori, secenek: $('#tfMs').value, iskelet: $('#tfMi').value } : null,
         sandalye: { id: s.id, ad: s.ad, kategori: s.kategori, secenek: $('#tfSs').value, iskelet: $('#tfSi').value, file: $('#tfSf').value, kumas: $('#tfSk').value } };
       if (!m) t.oran = 1;
-      L.push(t); yaz('exb-teklif', L); toast('Teklif talebiniz satış ekibine iletildi.'); onSec = null; teklifSayfa(); };
+      bekleyerek($('#tfGon'), async () => { try { await kayitEkle('teklifler', t); } catch (e) { return h.textContent = e.message; }
+        toast('Teklif talebiniz satış ekibine iletildi.'); onSec = null; teklifSayfa(); }); };
     $$('[data-tsep]').forEach(b => b.onclick = () => { const L = oku('exb-teklif', []), t = L.find(x => x.no === b.dataset.tsep); if (!t) return; const S = sepet();
       const ek = (p, adet, birim) => { const u = VERI.urunler.find(x => x.id === p.id) || {}, sc = (u.secenek || []).find(x => x.ad === p.secenek) || {};
         S.push({ id: p.id, ad: p.ad, kategori: p.kategori, secenek: p.secenek, sinif: sc.sinif || '', birim, liste: sc.liste || null, kampanya: 'Özel teklif ' + t.no, adet, iskelet: p.iskelet || '', file: p.file || '', kumas: (p.kumas || '').replace(/ \(.*/, ''), fitil: '', not: 'Özel teklif ' + t.no, teklif: t.no }); };
       if (t.masa) ek(t.masa, t.takim, t.fiyat.masa); ek(t.sandalye, t.takim * t.oran, t.fiyat.sandalye);
-      sepetKaydet(S); t.sepette = true; yaz('exb-teklif', L); toast('Teklif ürünleri özel fiyatla sepete eklendi.'); teklifSayfa(); });
+      sepetKaydet(S); kayitGuncelle('teklifler', t.no, { sepette: true }).catch(e => console.warn('teklif işaretlenemedi:', e.message)).then(teklifSayfa);
+      toast('Teklif ürünleri özel fiyatla sepete eklendi.'); });
   }
   // ürün penceresinden "Özel teklif iste"
   const _ua10 = urunAc;
