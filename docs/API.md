@@ -100,10 +100,30 @@ Bayi kendi özetini görür; satış `?bayi=kul` ile seçer.
 |---|---|
 | `GET /api/veri` | Oturuma göre süzülmüş tüm anahtarlar: `{zaman, veri, oturum}` |
 | `GET /api/degisen?son=ZAMAN` | `son`'dan sonra değişen anahtarlar |
-| `POST /api/veri` | `{degisen: [[anahtar, değer|null], …]}` → `{birlesen, reddedilen}`. Okuma/yazma kuralları `sunucu/lib/kurallar.js` dosyasında |
+| `POST /api/veri` | `{degisen: [[anahtar, değer|null], …], yama?: [[anahtar, yama], …], kosul?: […]}` → `{birlesen, reddedilen}`. Okuma/yazma kuralları `sunucu/lib/kurallar.js` dosyasında. Yama ve koşul aşağıda |
 | `POST /api/numara` | `{on: EXG|IAD|OL|OT|OB|NMN}` → `{no}` |
 | `GET /api/olaylar` | Anlık bildirim (Server-Sent Events). Her yazma turunda `data: <zaman>` gönderir; veri içermez, istemci `/api/degisen` ile çeker |
 | `GET /api/dosya/<kimlik>.<uzantı>` | Dekont, fotoğraf, logo. Sahibi olan bayi ve satış görür |
+
+### Kayıt düzeyinde yazma ve koşullu yazma (Faz 3b)
+Ekranlar bir anahtarın tamamını yazar (ör. bütün siparişler). Eşitleme katmanı (`kaynak/ortak/senkron.js`) bunun yerine yalnız değişen kayıtları **yama** olarak gönderir. Yama, ekranın son okuduğu ya da yazdığı değere göre çıkarılır. Sunucu yamayı kullanıcının o anki görünümüne uygular ve sonucu her zamanki kurallardan geçirir (`sunucu/lib/yama.js`).
+
+Böylece iki kullanıcı aynı anda farklı kayıtları değiştirirse ikisinin değişikliği de kalır. Ekran eski bir kopyadan yazsa bile başkasının değişikliği geri alınmaz. Aynı kaydı iki kişi değiştirirse sonra yazanınki kalır.
+
+| Yama | Kullanıldığı yer |
+|---|---|
+| `{s: {koy: {girdi: değer}, sil: [girdi]}}` | sözlükler (`exs-siparisler`, `exs-cari`, `exs-musteriler`…) |
+| `{l: 'no'\|'id', koy: [kayıt], sil: [kimlik]}` | kimlikli listeler (`exb-odeme`, `exb-siparisler`…); kayıt yerinde değişir, yenisi sona eklenir |
+| `{e: [öğe], n: sınır}` | sona eklenen listeler (`exs-islem`); `n > 0` ise son `n` öğe kalır |
+
+Yamalı anahtarlarda `birlesen` her zaman sunucudaki son hâli döner. Geçersiz yama `reddedilen` listesine `geçersiz yama` olarak düşer.
+
+**Koşullu yazma.** `kosul: [{k, a, id, yol, esit}]` verilirse istekteki değişiklikler yalnız bütün koşullar tutarsa yazılır. Örneğin `{k: 'exb-odeme', a: 'no', id: 'OB-2026-001', yol: 'durum', esit: 'bekliyor'}`.
+- `yol` iç içe olabilir (`talep.durum`).
+- `esit: null` "alan yok" anlamına gelir.
+- Kayıt bulunamazsa koşul tutmaz.
+
+Koşul tutmazsa hiçbir şey yazılmaz. Yanıt `409 {hata, kosul, birlesen}` olur; `birlesen` istekteki anahtarların son hâlini taşır. Satış panelinde ödeme bildirimini işleme/reddetme, değişiklik talebi kararı ve özel teklif kararı bu yolla yazılır (`window.kosullu`). Böylece iki kişi aynı kayda karar veremez; örneğin bir ödeme cariye iki kez düşmez.
 
 ## Yapay zekâ (satış)
 

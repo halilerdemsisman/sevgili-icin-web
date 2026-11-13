@@ -13,7 +13,7 @@
 // Ayarlar: <kullanıcı verisi>/ayarlar.json  { sunucu, tepsi, sonKlasor, pencere }
 // Ortam: EXIT_SUNUCU_ADRESI (kurulumda adres sorulmaz), EXIT_VERI_KLASORU (ayar/çerez klasörü; testler için)
 'use strict';
-const { app, BrowserWindow, Menu, Tray, Notification, ipcMain, shell, dialog, session, nativeImage, net } = require('electron');
+const { app, BrowserWindow, Menu, Tray, Notification, ipcMain, shell, dialog, session, nativeImage, net, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -243,7 +243,11 @@ function guncellemeKur() {
   guncelleyici.setFeedURL({ provider: 'generic', url: ayar.sunucu + '/masaustu/guncelleme/' });
   guncelleyici.autoDownload = true; guncelleyici.autoInstallOnAppQuit = true;
   guncelleyici.on('error', e => console.warn('güncelleme:', e && e.message));
+  guncelleyici.on('update-available', b => console.log('güncelleme: yeni sürüm', b && b.version));
   guncelleyici.on('update-downloaded', async bilgi => {
+    console.log('güncelleme: indirildi', bilgi.version);
+    // uçtan uca güncelleme denemesi (EXIT_TEST_GUNCELLE=1): "Şimdi yeniden başlat" seçilmiş gibi
+    if (TEST && process.env.EXIT_TEST_GUNCELLE === '1') { cikiyor = true; return guncelleyici.quitAndInstall(true, true); }
     const r = await dialog.showMessageBox(anaPen && !anaPen.isDestroyed() ? anaPen : undefined, { type: 'info', buttons: ['Şimdi yeniden başlat', 'Daha sonra'], defaultId: 0, cancelId: 1,
       title: 'Güncelleme hazır', message: `EXIT Satış ${bilgi.version} indirildi.`, detail: 'Uygulama yeniden başlatılınca yeni sürüm kurulur. "Daha sonra" derseniz kapattığınızda kurulur.' });
     if (r.response === 0) { cikiyor = true; guncelleyici.quitAndInstall(); }
@@ -257,6 +261,32 @@ async function guncellemeDenetle(elle) {
   catch (e) { if (elle) dialog.showMessageBox(odakli(), { type: 'warning', message: 'Güncelleme denetlenemedi.', detail: String(e && e.message || e) }); }
 }
 
+// ---------- çevrimdışı salt okunur görünüm (Faz 3b) ----------
+// Satış paneli son gördüğü listelerin özetini (siparişler, bayiler ve iletişim, bakiye, bekleyen işler) gönderir;
+// sunucuya ulaşılamazsa bağlantı hatası sayfası bunu salt okunur gösterir. Dosya işletim sisteminin kullanıcıya
+// özel şifrelemesiyle (Windows: DPAPI) saklanır; satış panelinden çıkış yapılınca silinir. Başka sunucunun özeti
+// gösterilmez.
+const ANLIK_DOSYASI = () => path.join(app.getPath('userData'), 'son-gorulen.bin');
+const sifreli = () => { try { return safeStorage.isEncryptionAvailable(); } catch (e) { return false; } };
+let anlikZaman = null;
+function anlikYaz(v) {
+  clearTimeout(anlikZaman);
+  if (v == null) { try { fs.unlinkSync(ANLIK_DOSYASI()); } catch (e) {} return; }
+  const metin = JSON.stringify({ ...v, sunucu: ayar.sunucu, kaydedildi: Date.now() });
+  if (metin.length > 8e6) return; // olağan dışı büyük: yazma
+  anlikZaman = setTimeout(() => {
+    try { fs.writeFileSync(ANLIK_DOSYASI(), sifreli() ? Buffer.concat([Buffer.from('E1'), safeStorage.encryptString(metin)]) : Buffer.from('D1' + metin)); }
+    catch (e) { console.error('son görülen veriler yazılamadı', e); }
+  }, 500);
+}
+function anlikOku() {
+  try {
+    const b = fs.readFileSync(ANLIK_DOSYASI()), tur = b.subarray(0, 2).toString();
+    const j = JSON.parse(tur === 'E1' ? safeStorage.decryptString(b.subarray(2)) : tur === 'D1' ? b.subarray(2).toString() : 'null');
+    return j && j.sunucu === ayar.sunucu ? j : null;
+  } catch (e) { return null; }
+}
+
 // ---------- sayfalarla iletişim ----------
 // Sayfadan gelen istek ya sunucunun kendi adresinden (satış paneli) ya da uygulamanın yerel sayfalarından olmalı.
 const kaynak = e => (e.senderFrame && e.senderFrame.url) || '';
@@ -268,6 +298,8 @@ function ipcKur() {
   ipcMain.on('bildir', (e, o) => { if (sunucuSayfasi(e) && o && typeof o === 'object') bildir({ baslik: o.baslik, metin: o.metin, hedef: typeof o.hedef === 'string' ? o.hedef.slice(0, 100) : '' }); });
   ipcMain.on('pencere', (e, hedef) => { if (sunucuSayfasi(e)) ayriPencere(String(hedef || '').slice(0, 100)); });
   ipcMain.handle('pdf', e => sunucuSayfasi(e) ? pdfKaydet(BrowserWindow.fromWebContents(e.sender)) : null);
+  ipcMain.on('anlik', (e, v) => { if (sunucuSayfasi(e) && (v === null || (v && typeof v === 'object'))) anlikYaz(v); });
+  ipcMain.handle('anlik-oku', e => yerelSayfa(e) ? anlikOku() : null);
   // kurulum ve hata sayfaları
   ipcMain.handle('sunucu-adresi', e => yerelSayfa(e) ? ayar.sunucu : null);
   ipcMain.handle('sunucu-kaydet', async (e, a) => {
@@ -293,6 +325,7 @@ else {
   app.on('second-instance', () => anaPencereyiGoster());
   app.setAppUserModelId(UYG_KIMLIGI);
   app.whenReady().then(() => {
+    if (TEST) console.log('EXIT Satış açıldı, sürüm', app.getVersion());
     ayarOku(); oturumKur(); ipcKur(); menuKur();
     if (ayar.tepsi) tepsiKur();
     anaPen = pencereOlustur({ ana: true });

@@ -34,6 +34,7 @@ const { Kurallar, KISISEL } = require('./lib/kurallar');
 const { Dosyalar, dosyaAlanlariniTemizle } = require('./lib/dosya');
 const { Fiyatlar } = require('./lib/fiyat');
 const K = require('./lib/kimlik');
+const { yamaUygula, kosulTutar } = require('./lib/yama');
 
 const ENV = process.env;
 const PORT = +ENV.PORT || 8080;
@@ -42,7 +43,7 @@ const zlib = require('zlib');
 const VERI_KLASORU = ENV.VERI_KLASORU ? path.resolve(ENV.VERI_KLASORU) : __dirname;
 const VEKIL = ENV.GUVENILIR_VEKIL === '1';
 const KAYIT_ACIK = ENV.KAYIT_ACIK !== '0';
-const SURUM = '3a';
+const SURUM = '3b';
 
 const depo = depoAc(VERI_KLASORU);
 const oturumlar = new K.Oturumlar(path.join(VERI_KLASORU, 'oturumlar.json'), +ENV.OTURUM_GUN || 7);
@@ -302,9 +303,28 @@ async function api(q, r, u, p, ip) {
     const ot = oturum(q, tur); if (!ot) return js(r, { hata: 'Oturum yok veya süresi doldu. Yeniden giriş yapın.' }, 401);
     if (ot.sifreDegistir) return js(r, { hata: 'Önce şifrenizi değiştirin.' }, 403);
     let b; try { b = await govde(q, 60e6); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
-    if (!Array.isArray(b.degisen)) return js(r, { hata: 'geçersiz istek' }, 400);
-    const { birlesen, reddedilen } = uygula(ot, b.degisen, ip);
-    return js(r, { ok: true, zaman: depo.zaman, birlesen, reddedilen });
+    if (!Array.isArray(b.degisen) || (b.yama != null && !Array.isArray(b.yama))) return js(r, { hata: 'geçersiz istek' }, 400);
+    const gorunum = k => kurallar.oku(k, depo.al(k) ?? null, ot);
+    // koşullu yazma: koşul tutmazsa hiçbir şey yazılmaz, istemci son hâli alıp ekranı yeniler
+    if (Array.isArray(b.kosul) && b.kosul.length) {
+      const tutmayan = b.kosul.find(K => !(K && typeof K.k === 'string' && /^ex[bs]-/.test(K.k)) || !kosulTutar(gorunum(K.k), K));
+      if (tutmayan) {
+        const anahtarlar = new Set([...b.degisen, ...(b.yama || [])].map(x => x && x[0]).filter(k => typeof k === 'string' && /^ex[bs]-/.test(k)));
+        return js(r, { hata: 'Bu kayıt bu arada başka bir kullanıcı tarafından değiştirildi.', kosul: tutmayan, birlesen: [...anahtarlar].map(k => [k, gorunum(k) ?? null]) }, 409);
+      }
+    }
+    // kayıt düzeyinde yazma (Faz 3b): yama kullanıcının şu anki görünümüne uygulanır, sonra aynı kurallardan geçer
+    const degisen = b.degisen.slice(), yamali = [], hatali = [];
+    for (const [k, Y] of b.yama || []) {
+      if (typeof k !== 'string' || !/^ex[bs]-/.test(k)) continue;
+      const v = yamaUygula(gorunum(k), Y);
+      if (v === undefined) { hatali.push([k, 'geçersiz yama']); continue; }
+      degisen.push([k, v]); yamali.push(k);
+    }
+    const { birlesen, reddedilen } = uygula(ot, degisen, ip);
+    // yamalı anahtarlarda istemcinin elindeki değer bilinmez: son hâl her zaman döner
+    for (const k of yamali) if (!birlesen.some(x => x[0] === k)) { const g = gorunum(k); if (g !== undefined) birlesen.push([k, g]); }
+    return js(r, { ok: true, zaman: depo.zaman, birlesen, reddedilen: reddedilen.concat(hatali) });
   }
 
   if (p === '/api/giris' && q.method === 'POST') {

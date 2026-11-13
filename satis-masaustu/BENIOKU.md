@@ -1,5 +1,7 @@
 # EXIT Satış · masaüstü uygulaması (Faz 3)
 
+Pilot ve dağıtım öncesi deneme listesi: [`PILOT.md`](PILOT.md).
+
 Satış ekibinin bilgisayarına kurulan Windows uygulaması (Electron 44). Satış panelini şirket sunucusundan
 (`<sunucu>/satis`) yükler; ekranlar sunucuyla birlikte güncellenir. Uygulama yalnız masaüstüne özel işleri yapar.
 
@@ -15,7 +17,7 @@ Satış ekibinin bilgisayarına kurulan Windows uygulaması (Electron 44). Satı
 | Kısayollar | Ctrl+K hızlı arama (sipariş no, firma, bayi, yetkili), Ctrl+1..9 menüdeki sayfalar, F5 yenile, Ctrl+P yazdır, Ctrl+Shift+S PDF olarak kaydet, Ctrl+artı/eksi yakınlaştır |
 | Dosyalar | Excel/CSV ve rapor dışa aktarımlarında "Kaydet" penceresi son kullanılan klasörle açılır; kaydedilince bildirim (tıklayınca klasör açılır). Görünen sayfa PDF olarak kaydedilebilir |
 | Güncelleme | Açılışta ve 4 saatte bir sunucunun `/masaustu/guncelleme/` klasörünü denetler; yeni sürüm arka planda iner, "Şimdi yeniden başlat" ya da kapatınca kurulur |
-| Bağlantı yoksa | "Sunucuya ulaşılamıyor" sayfası; bağlantı gelince kendiliğinden açılır |
+| Bağlantı yoksa | "Sunucuya ulaşılamıyor" sayfası, bağlantı gelince kendiliğinden açılır. Sayfanın altında **son görülen veriler** salt okunur görünür (Faz 3b): bekleyen işler, siparişler (durum, tutar, termin) ve bayiler (yetkili, telefon, e-posta, bakiye), aramayla. Bu özet uygulama açıkken dakikada bir ve her değişiklikte güncellenir. Bilgisayarda işletim sisteminin kullanıcıya özel şifrelemesiyle saklanır (Windows: DPAPI) ve çıkış yapılınca silinir. Temsilci yalnız kendi bayilerini görür |
 
 ## Güvenlik
 
@@ -25,6 +27,7 @@ Satış ekibinin bilgisayarına kurulan Windows uygulaması (Electron 44). Satı
 - Sunucu adresi `https://` olmalıdır; `http://` yalnız yerel ağ adreslerinde kabul edilir.
 - Kamera, mikrofon, konum gibi izinler kapalıdır.
 - Oturum çerezi uygulamanın kendi profilinde tutulur (7 gün hareketsizlikte kapanır).
+- Son görülen veriler dosyası (`son-gorulen.bin`) şifreli saklanır, çıkışta silinir; yalnız uygulamanın kendi bağlantı hatası sayfası okuyabilir (satış sayfası okuyamaz).
 
 ## Geliştirme
 
@@ -37,6 +40,8 @@ npm run baslat
 `EXIT_SUNUCU_ADRESI` ortam değişkeni verilirse adres sorulmaz (bilgi işlem toplu kurulumu için).
 
 Testler: kök klasörde `npm test` (`testler/masaustu.test.js`; Electron kurulu değilse atlanır, Linux'ta Xvfb gerekir).
+
+Güncelleme turu elle denemesi (Linux): `npm run paketle-appimage` ile iki sürüm üretin (`-c.extraMetadata.version=1.0.1`). Yeni sürümün `latest-linux.yml` ve `.AppImage` dosyalarını sunucunun güncelleme klasörüne koyun. Eski sürümü `EXIT_TEST=1 EXIT_TEST_GUNCELLE=1 APPIMAGE_EXTRACT_AND_RUN=1` ile çalıştırın. Uygulama yeni sürümü bulur, indirir ve kendi yerine kurar; günlükte "güncelleme: indirildi 1.0.1" görünür. Faz 3b'de bu tur baştan sona denendi.
 
 ## Paketleme
 

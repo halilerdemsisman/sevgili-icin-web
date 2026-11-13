@@ -9,7 +9,8 @@
   "scripts": {
     "baslat": "electron .",
     "paketle": "electron-builder --win nsis --x64",
-    "paketle-linux": "electron-builder --linux dir"
+    "paketle-linux": "electron-builder --linux dir",
+    "paketle-appimage": "electron-builder --linux AppImage --x64"
   },
   "dependencies": {
     "electron-updater": "6.8.11"
@@ -62,7 +63,8 @@
         "dir"
       ],
       "icon": "simge/simge.png",
-      "category": "Office"
+      "category": "Office",
+      "artifactName": "EXIT-Satis-${version}.${ext}"
     },
     "publish": [
       {

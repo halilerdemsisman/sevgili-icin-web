@@ -18,11 +18,19 @@
   }
   const talepler = () => (oku('exb-siparisler', []) || []).filter(p => p.talep && p.talep.durum === 'bekliyor' && SIP[p.no]);
   function talepRozet() { const n = talepler().length, b = document.querySelector('aside button.m[data-s=talepler] .say'); if (b) { b.textContent = n; b.classList.toggle('gizli', !n); } }
-  function karar(no, onay, yanit) {
+  // Faz 3b: karar yalnız talep hâlâ bekliyorsa yazılır (iki kişi aynı talebe karar veremez)
+  async function karar(no, onay, yanit) {
+    const p0 = (oku('exb-siparisler', []) || []).find(x => x.no === no), o0 = SIP[no]; if (!p0 || !o0 || !p0.talep || p0.talep.durum !== 'bekliyor') return;
+    if (onay && ['sevk', 'iptal'].includes(o0.durum)) return toast('Sipariş artık ' + o0.durum + ' durumunda; talep uygulanamaz.');
+    const r = await kosullu([{ k: 'exb-siparisler', a: 'no', id: no, yol: 'talep.durum', esit: 'bekliyor' }], () => kararYaz(no, onay, yanit));
+    if (r.ok) toast('Karar bayiye iletildi.');
+    else { const p = (oku('exb-siparisler', []) || []).find(x => x.no === no); toast(r.durum === 409 && p && p.talep && p.talep.durum !== 'bekliyor' ? `${no} talebi bu arada ${p.talep.kim || 'başka bir kullanıcı'} tarafından karara bağlandı.` : r.hata); }
+    if (aktif === 'talepler') S6.talepler(); talepRozet();
+  }
+  function kararYaz(no, onay, yanit) {
     const L = oku('exb-siparisler', []), p = L.find(x => x.no === no), o = SIP[no]; if (!p || !o || !p.talep) return;
     const t = p.talep;
     if (onay) {
-      if (['sevk', 'iptal'].includes(o.durum)) return toast('Sipariş artık ' + o.durum + ' durumunda; talep uygulanamaz.');
       if (t.tur === 'iptal') { durumYaz(no, 'iptal'); }
       else { (o.revizyon = o.revizyon || []).push({ zaman: Date.now(), eski: o.kalemler, not: t.not, kim: kimAd() }); o.kalemler = t.kalemler; o.toplam = t.kalemler.reduce((a, y) => a + (y.birim || 0) * y.adet, 0);
         yaz('exs-siparisler', SIP); p.kalemler = t.kalemler; p.toplam = o.toplam; p.net = Math.round(tutarlar(o).net * 100) / 100; }
@@ -32,7 +40,6 @@
     p2.talep = { ...t, durum: onay ? 'onaylandi' : 'reddedildi', yanit, karar: Date.now(), kim: kimAd() }; yaz('exb-siparisler', L2);
     bayiMesaj(o.kul, `${no} ${TUR[t.tur].toLocaleLowerCase('tr')} talebiniz ${onay ? 'onaylandı' : 'reddedildi'}${yanit ? ': ' + yanit : ''}`);
     log(`${TUR[t.tur]} talebi ${onay ? 'onaylandı' : 'reddedildi'}`, no + (yanit ? ' · ' + yanit : ''));
-    toast('Karar bayiye iletildi.'); S6.talepler();
   }
   S6.talepler = function () {
     $('#baslik').textContent = 'Bayi değişiklik talepleri';

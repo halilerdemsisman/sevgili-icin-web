@@ -31,6 +31,9 @@
   }
   const istek = (yontem, yol, govde) => { const x = new XMLHttpRequest(); x.open(yontem, yol, false); x.setRequestHeader('X-Exit-Uyg', UYG); if (govde) x.setRequestHeader('Content-Type', 'application/json'); x.send(govde ? JSON.stringify(govde) : null); return x; };
   let son = 0, yuklu = false, oturum = null, kapandi = false;
+  // yazma tabanı (aşağıda, kayıt düzeyinde yazma): sunucudan son alınan değerler
+  const taban = new Map(), tabanJ = new Map();
+  const tabanKoy = (k, v) => { if (v == null) taban.delete(k); else taban.set(k, v); tabanJ.delete(k); };
   const eksik = new Set();
   const yukle = j => {
     son = j.zaman || 0; oturum = j.oturum || null;
@@ -42,6 +45,7 @@
     yerel.forEach(k => { if (!(k in j.veri)) remI.call(localStorage, k); });
     for (const [k, v] of Object.entries(j.veri)) {
       try { setI.call(localStorage, k, v); eksik.delete(k); } catch (e) { eksik.add(k); try { remI.call(localStorage, k); } catch (e2) {} }
+      tabanKoy(k, v);
     }
   };
   try {
@@ -105,25 +109,102 @@
   if (oturum && oturum.sifreDegistir) { const ac = () => window.EXIT_SIFRE_DEGISTIR(true); document.readyState === 'loading' ? addEventListener('DOMContentLoaded', ac) : ac(); }
   try { if (sessionStorage.getItem('exit-sifre-degisti')) { sessionStorage.removeItem('exit-sifre-degisti'); addEventListener('load', () => setTimeout(() => { if (typeof toast === 'function') toast('Şifreniz değiştirildi.'); }, 300)); } } catch (x) {}
 
+  // Faz 3b: kayıt düzeyinde yazma. Ekranlar anahtarın tamamını yazar (ör. bütün siparişler); sunucuya ise yalnız
+  // değişen kayıtlar gider ("yama"). Böylece iki kullanıcı aynı anda farklı kayıtları değiştirdiğinde biri diğerinin
+  // değişikliğini ezmez (V3). Taban: sunucudan son alınan değer; yama bu tabana göre çıkarılır.
+  //   sözlük → {s:{koy, sil}}   kimlikli liste (no/id) → {l:'no', koy:[…], sil:[…]}   sona ekleme (işlem kaydı) → {e:[…], n}
+  const tabanCoz = k => { const t = taban.get(k); if (t == null) return undefined; const c = tabanJ.get(k); if (c && c.s === t) return c.j; let j; try { j = JSON.parse(t); } catch (e) { j = undefined; } tabanJ.set(k, { s: t, j }); return j; };
+  const LISTE_A = { 'exb-siparisler': 'no', 'exb-odeme': 'no', 'exb-numune': 'no', 'exb-teklif': 'no', 'exb-hatirlat': 'id', 'exb-iade': 'id' };
+  const duz = x => x && typeof x === 'object' && !Array.isArray(x), J = x => JSON.stringify(x);
+  const kimlikli = (L, a) => { const g = new Set(); return L.every(x => duz(x) && x[a] != null && !g.has(x[a]) && g.add(x[a])); };
+  // Ekranın son okuduğu/yazdığı değer: ekranlar veriyi açılışta belleğe alıp sonra bellekten yazabilir. Yama bu
+  // değere göre çıkarılırsa yalnız ekranın kendi değişikliği gider; bu arada başkasının yaptığı değişiklik geri alınmaz.
+  const gorulen = new Map(), kuyrukTaban = new Map();
+  const tabanBul = k => { const g = kuyrukTaban.has(k) ? kuyrukTaban.get(k) : gorulen.get(k); if (g == null) return tabanCoz(k); try { return JSON.parse(g); } catch (e) { return undefined; } };
+  function yamaYap(k, yerel) {
+    let t = tabanBul(k);
+    let y; try { y = JSON.parse(yerel); } catch (e) { return null; }
+    // sunucuda henüz olmayan anahtar (ör. ilk kez yazılan sözlük): iki kullanıcı aynı anda oluşturursa ikisinin girdileri de kalsın
+    if (t === undefined && !taban.has(k) && !eksik.has(k)) { if (duz(y)) t = {}; else if (Array.isArray(y) && (LISTE_A[k] || ['no', 'id'].find(a => y.length && kimlikli(y, a)))) t = []; }
+    if (t === undefined) return null;
+    if (duz(t) && duz(y)) {
+      const koy = {}, sil = []; for (const a in y) if (!(a in t) || J(y[a]) !== J(t[a])) koy[a] = y[a]; for (const a in t) if (!(a in y)) sil.push(a);
+      return { s: { koy, sil } };
+    }
+    if (!Array.isArray(t) || !Array.isArray(y)) return null;
+    const a = LISTE_A[k] || ['no', 'id'].find(a => (t.length || y.length) && kimlikli(t, a) && kimlikli(y, a));
+    if (a && kimlikli(y, a)) {
+      const T = new Map(t.filter(duz).map(x => [x[a], J(x)])), Y = new Set(y.map(x => x[a]));
+      return { l: a, koy: y.filter(x => T.get(x[a]) !== J(x)), sil: [...T.keys()].filter(i => !Y.has(i)) };
+    }
+    // sona ekleme: yerel listenin başı tabanın sonuyla aynıysa (baştan kırpılmış olabilir) yalnız yeni öğeler gider
+    if (!t.length) return { e: y, n: 0 };
+    const tj = t.map(J), yj = y.map(J), son = tj[tj.length - 1];
+    for (let i = yj.lastIndexOf(son); i >= 0; i = i > 0 ? yj.lastIndexOf(son, i - 1) : -1) {
+      const m = i + 1; if (m > tj.length) continue;
+      let ok = true; for (let j = 0; j < m && ok; j++) ok = yj[j] === tj[tj.length - m + j];
+      if (ok) { const e = y.slice(m); return { e, n: tj.length + e.length > y.length ? y.length : 0 }; }
+    }
+    return null;
+  }
+  const bosYama = Y => Y.s ? !Object.keys(Y.s.koy).length && !Y.s.sil.length : Y.l ? !Y.koy.length && !Y.sil.length : !Y.e.length && !Y.n;
+  const paket = L => { const degisen = [], yama = [];
+    for (const [k, v] of L) { const Y = v == null ? null : yamaYap(k, v); kuyrukTaban.delete(k); if (!Y) degisen.push([k, v]); else if (!bosYama(Y)) yama.push([k, Y]); }
+    return { degisen, yama }; };
+  // sunucunun döndürdüğü son hâli yerel kopyaya işler; yalnız gerçekten değişen (başkasının değişikliği karışan) anahtarlar döner
+  const birlesenIsle = B => { const D = []; B.forEach((v, k) => { if (kuyruk.has(k)) return; const y = getI.call(localStorage, k);
+    if (v == null ? y != null : y !== v) { D.push(k); if (v == null) remI.call(localStorage, k); else setI.call(localStorage, k, v); } tabanKoy(k, v); }); return D; };
+  const bildir = K => { if (K.length) setTimeout(() => dispatchEvent(new CustomEvent('exit-degisti', { detail: K })), 0); };
   const kuyruk = new Map(); let zam = null;
   const gonder = () => { zam = null; if (!oturum || !kuyruk.size) return; const L = [...kuyruk]; kuyruk.clear();
-    fetch('api/veri', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify({ degisen: L }) })
+    const P = paket(L); if (!P.degisen.length && !P.yama.length) return;
+    fetch('api/veri', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify(P) })
       .then(r => { if (r.status === 401) { oturumKapandi(); return null; } if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(j => { if (!j) return; (j.birlesen || []).forEach(([k, v]) => { if (v == null) remI.call(localStorage, k); else if (getI.call(localStorage, k) !== v) setI.call(localStorage, k, v); });
+      .then(j => { if (!j) return; const B = new Map(j.birlesen || []);
+        // bu arada yeniden değiştirilen anahtara dokunulmaz (taban da eski kalır: sonraki yama doğru çıkar)
+        P.degisen.forEach(([k, v]) => { if (!kuyruk.has(k) && !B.has(k)) tabanKoy(k, v); });
+        bildir(birlesenIsle(B));
         if ((j.reddedilen || []).length) console.warn('Sunucu bazı değişiklikleri kabul etmedi:', j.reddedilen); })
       .catch(() => { L.forEach(([k, v]) => kuyruk.has(k) || kuyruk.set(k, v)); zam = zam || setTimeout(gonder, 4000); durum(false); }); };
+  let islemK = null; // koşullu yazma sırasında yakalanan değişiklikler
   const sira = (k, v) => {
     if (!oturum) return;
+    if (!kuyrukTaban.has(k)) kuyrukTaban.set(k, gorulen.get(k) ?? taban.get(k) ?? null);
+    if (islemK) { islemK.set(k, v); kuyruk.delete(k); return; }
     if (eksik.has(k)) { console.warn(k + ' bu tarayıcıya tam yüklenemediği için değişiklik sunucuya gönderilmedi.'); durum(true); return; }
     kuyruk.set(k, v); clearTimeout(zam); zam = setTimeout(gonder, 250);
   };
-  S.setItem = function (k, v) { setI.call(this, k, v); if (this === localStorage && ORTAK(k)) sira(k, String(v)); };
-  S.removeItem = function (k) { remI.call(this, k); if (this === localStorage && ORTAK(k)) sira(k, null); };
+  S.setItem = function (k, v) { setI.call(this, k, v); if (this === localStorage && ORTAK(k)) { sira(k, String(v)); gorulen.set(k, String(v)); } };
+  S.removeItem = function (k) { remI.call(this, k); if (this === localStorage && ORTAK(k)) { sira(k, null); gorulen.delete(k); } };
+  S.getItem = function (k) { const v = getI.call(this, k); if (this === localStorage && ORTAK(k)) { if (v == null) gorulen.delete(k); else gorulen.set(k, v); } return v; };
+  // Koşullu yazma (Faz 3b): f() içindeki bütün değişiklikler tek istekte ve yalnız koşullar tutarsa yazılır
+  // (ör. ödeme hâlâ "bekliyor"). Koşul tutmazsa yerel kopyalar sunucudaki son hâle döner.
+  //   EXIT_KOSULLU([{k:'exb-odeme', a:'no', id, yol:'durum', esit:'bekliyor'}], () => { …yaz(…)… }) → Promise<{ok, hata?}>
+  window.EXIT_KOSULLU = (kosul, f) => {
+    if (!oturum) return Promise.resolve({ ok: false, hata: 'Oturum kapandı; yeniden giriş yapın.' });
+    const M = islemK = new Map();
+    try { f(); } finally { islemK = null; }
+    const L = [...M]; if (!L.length) return Promise.resolve({ ok: true });
+    // geri alınca ekranların bellekteki kopyası da tazelensin (exit-degisti)
+    const geriAl = B => { B.forEach(([k, v]) => { if (v == null) remI.call(localStorage, k); else setI.call(localStorage, k, v); tabanKoy(k, v); }); bildir(B.map(x => x[0])); };
+    return fetch('api/veri', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify({ ...paket(L), kosul }) })
+      .then(r => r.json().catch(() => ({})).then(j => {
+        if (r.status === 401) { oturumKapandi(); return { ok: false, hata: 'Oturum kapandı; yeniden giriş yapın.' }; }
+        durum(true);
+        if (r.status === 409) { geriAl(j.birlesen || []); return { ok: false, durum: 409, hata: j.hata }; }
+        if (!r.ok) { geriAl(L.map(([k]) => [k, taban.get(k) ?? null])); return { ok: false, hata: j.hata || 'Kaydedilemedi (' + r.status + ').' }; }
+        const B = new Map(j.birlesen || []);
+        L.forEach(([k, v]) => { if (!kuyruk.has(k) && !B.has(k)) tabanKoy(k, v); });
+        bildir(birlesenIsle(B));
+        return { ok: true, reddedilen: j.reddedilen || [] };
+      }), () => { durum(false); geriAl(L.map(([k]) => [k, taban.get(k) ?? null])); return { ok: false, cevrimdisi: true, hata: 'Sunucuya ulaşılamıyor; karar kaydedilmedi. Bağlantıyı kontrol edip yeniden deneyin.' }; });
+  };
   // REST ile kaydedilen bir kaydı yerel kopyaya işler (sunucuya yeniden gönderilmez). a: kimlik alanı
   window.EXIT_KAYIT_ISLE = (k, kayit, a = 'no') => {
-    let L; try { L = JSON.parse(getI.call(localStorage, k) || '[]'); } catch (e) { L = []; } if (!Array.isArray(L)) L = [];
-    const i = L.findIndex(x => x && x[a] === kayit[a]); if (i < 0) L.push(kayit); else L[i] = kayit;
-    try { setI.call(localStorage, k, JSON.stringify(L)); } catch (e) {}
+    const isle = s => { let L; try { L = JSON.parse(s || '[]'); } catch (e) { L = []; } if (!Array.isArray(L)) L = [];
+      const i = L.findIndex(x => x && x[a] === kayit[a]); if (i < 0) L.push(kayit); else L[i] = kayit; return JSON.stringify(L); };
+    try { setI.call(localStorage, k, isle(getI.call(localStorage, k))); } catch (e) {}
+    if (taban.has(k)) tabanKoy(k, isle(taban.get(k))); // sunucuda zaten var: yeniden gönderilmesin
   };
   // REST çağrısı (Faz 2b): {ok, durum, ...gövde}. Bağlantı yoksa {ok:false, cevrimdisi:true}.
   window.EXIT_REST = (yontem, yol, govde) => fetch('api/v1/' + yol, { method: yontem, cache: 'no-store', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: govde ? JSON.stringify(govde) : undefined })
@@ -132,9 +213,10 @@
   const cek = () => fetch('api/degisen?son=' + son, { cache: 'no-store', headers: { 'X-Exit-Uyg': UYG } }).then(r => r.json()).then(j => {
     son = j.zaman; if (oturum && !j.oturum) return oturumKapandi(); durum(true);
     // ekranlar sunucudan gelen değişikliği dinleyebilir (masaüstü bildirimleri): addEventListener('exit-degisti', e => e.detail)
-    if (j.degisen.length) setTimeout(() => dispatchEvent(new CustomEvent('exit-degisti', { detail: j.degisen.map(x => x[0]) })), 0);
-    j.degisen.forEach(([k, v]) => { if (kuyruk.has(k)) return;
-      try { v == null ? remI.call(localStorage, k) : getI.call(localStorage, k) !== v && setI.call(localStorage, k, v); eksik.delete(k); } catch (e) { eksik.add(k); try { remI.call(localStorage, k); } catch (e2) {} } }); }).catch(() => durum(false));
+    const D = [];
+    j.degisen.forEach(([k, v]) => { if (kuyruk.has(k)) return; tabanKoy(k, v);
+      try { const y = getI.call(localStorage, k); if (v == null ? y != null : y !== v) D.push(k); v == null ? remI.call(localStorage, k) : y !== v && setI.call(localStorage, k, v); eksik.delete(k); } catch (e) { eksik.add(k); try { remI.call(localStorage, k); } catch (e2) {} } });
+    bildir(D); }).catch(() => durum(false));
   // Anlık bildirim (SSE): sunucu her değişiklikte sinyal gönderir, istemci hemen çeker. Bağlantı açıkken
   // yoklama 30 sn'ye iner; bağlantı yoksa 4 sn'lik yoklama sürer.
   let sseAcik = false, sonCek = 0, sz = null;
@@ -146,7 +228,7 @@
     es.onerror = () => { sseAcik = false; };
     es.onmessage = () => { clearTimeout(sz); sz = setTimeout(cekSimdi, 150); };
   }
-  addEventListener('beforeunload', () => { if (kuyruk.size && oturum) navigator.sendBeacon('api/veri?uyg=' + UYG, new Blob([JSON.stringify({ degisen: [...kuyruk] })], { type: 'application/json' })); });
+  addEventListener('beforeunload', () => { if (kuyruk.size && oturum) navigator.sendBeacon('api/veri?uyg=' + UYG, new Blob([JSON.stringify(paket([...kuyruk]))], { type: 'application/json' })); });
   function oturumKapandi() { if (kapandi) return; kapandi = true; oturum = null; kuyruk.clear(); try { sessionStorage.removeItem(OTURUM_ANAHTARI); } catch (e) {} durum(true); }
 
   let rozet; function durum(ok) {

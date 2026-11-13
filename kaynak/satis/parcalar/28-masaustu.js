@@ -120,4 +120,30 @@
   let z = null; const sirala = () => { clearTimeout(z); z = setTimeout(denetle, 300); };
   addEventListener('exit-degisti', sirala);
   setInterval(denetle, 5000); setTimeout(denetle, 800);
+
+  // ---------- masaüstü: bağlantı yokken gösterilecek son görülen listeler (Faz 3b) ----------
+  // Uygulama bunu bilgisayarda şifreli saklar; sunucuya ulaşılamazsa bağlantı hatası sayfası salt okunur gösterir.
+  // Temsilci yalnız kendi bayilerini görür (SIP/MUS zaten süzülmüş). Çıkışta silinir.
+  if (M.anlik) {
+    const net = o => { try { return Math.round(tutarlar(o).net * 100) / 100; } catch (e) { return o.toplam || 0; } };
+    const durumAd = d => (typeof DURUM === 'object' && DURUM[d] ? DURUM[d][0] : d) || '';
+    function anlik() {
+      if (!ben || !window.EXIT_OTURUM) return;
+      try {
+        // satış listesine henüz alınmamış (portaldan yeni gelen) siparişler ve bayiler de dahil
+        const S = { ...Object.fromEntries(L('exb-siparisler').filter(o => o && o.no).map(o => [o.no, o])), ...Object.fromEntries(Object.values(SIP).filter(o => o && o.no).map(o => [o.no, o])) };
+        const BK = oku('exb-kullanicilar', {}) || {}, MS = { ...Object.fromEntries(Object.values(BK).filter(u => u && u.kul && u.rol === 'musteri').map(u => [u.kul, u])) };
+        Object.values(MUS).forEach(m => { if (m && m.kul) MS[m.kul] = { ...(MS[m.kul] || {}), ...m }; });
+        const siparisler = Object.values(S).sort((a, b) => (b.tarih || 0) - (a.tarih || 0)).slice(0, 3000)
+          .map(o => ({ no: o.no, firma: o.firma || (MS[o.kul] || {}).firma || o.kul, tarih: o.tarih || null, durum: durumAd(o.durum), adet: (o.kalemler || []).reduce((a, k) => a + (+k.adet || 0), 0), tutar: net(o), termin: o.termin || '' }));
+        const bayiler = Object.values(MS).map(m => { let c = {}; try { c = cariOzet(m.kul); } catch (e) {}
+          return { firma: m.firma || m.kul, ad: m.ad || '', tel: m.tel || '', mail: m.mail || '', sehir: m.sehir || '', bakiye: Math.round((c.bakiye || 0) * 100) / 100, gecmis: Math.round((c.gecmis || 0) * 100) / 100 }; })
+          .sort((a, b) => String(a.firma).localeCompare(String(b.firma), 'tr'));
+        M.anlik({ kul: ben.kul, ad: typeof kimAd === 'function' ? kimAd() : ben.kul, zaman: Date.now(), siparisler, bayiler, isler: isler().map(x => ({ baslik: x.baslik, metin: x.metin })) });
+      } catch (e) { console.warn('son görülen veriler hazırlanamadı', e); }
+    }
+    let za = null; addEventListener('exit-degisti', () => { clearTimeout(za); za = setTimeout(anlik, 3000); });
+    setInterval(anlik, 60000); setTimeout(anlik, 1500);
+    const c = $('#cikis'); if (c) c.addEventListener('click', () => M.anlik(null), true);
+  }
 })();

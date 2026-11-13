@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('exitMasaustu', {
   bildir: o => ipcRenderer.send('bildir', { baslik: String(o && o.baslik || ''), metin: String(o && o.metin || ''), hedef: String(o && o.hedef || '') }),
   pencere: hedef => ipcRenderer.send('pencere', String(hedef || '')),
   pdf: () => ipcRenderer.invoke('pdf'),
+  anlik: v => ipcRenderer.send('anlik', v === null ? null : v), // son görülen listeler (çevrimdışı salt okunur görünüm); null: sil
+  anlikOku: () => ipcRenderer.invoke('anlik-oku'),
   acildiginda: f => dinle('ac', f),        // bildirime tıklandı: f("siparis:EXG-2026-0012")
   kisayol: f => dinle('kisayol', f),       // menü kısayolu: f("ara") · f("git", 3)
   // yalnız uygulamanın kendi sayfaları (kurulum, bağlantı hatası) kullanabilir; ana süreç denetler

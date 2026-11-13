@@ -14,3 +14,27 @@ button:disabled{opacity:.6;cursor:default}
 .hata{color:#b91c1c;min-height:22px;margin-top:10px}
 .kucuk{font-size:13px;color:#64748b}
 .logo{width:56px;height:56px;margin-bottom:12px}
+/* bağlantı yokken son görülen veriler (Faz 3b) */
+body.veri-var{display:block;overflow:auto}
+body.veri-var .kutu{display:grid;grid-template-columns:56px 1fr auto;gap:4px 16px;align-items:center;padding:18px 22px;margin:0 auto 16px;max-width:1200px}
+body.veri-var .kutu .logo{grid-row:span 3;width:44px;height:44px;margin:0}
+body.veri-var .kutu h1{font-size:18px;margin:0}
+body.veri-var .kutu p{margin:0}
+body.veri-var .kutu .kucuk{grid-column:2}
+body.veri-var .kutu .dugmeler{grid-column:3;grid-row:1 / span 3;margin:0}
+.son-gorulen{background:#fff;border-radius:16px;padding:20px 22px;max-width:1200px;margin:0 auto;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.sg-bas{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.sg-bas h2{margin:0;font-size:18px}
+.sg-etiket{background:#fef3c7;color:#92400e;font:600 12px Inter,"Segoe UI",sans-serif;padding:5px 10px;border-radius:20px;white-space:nowrap}
+.sg-arac{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap}
+.sg-sekme{display:flex;gap:6px}
+.sg-sekme button{padding:8px 12px}
+.sg-sekme button[aria-selected=true]{background:#0b1f3a;border-color:#0b1f3a;color:#fff}
+.sg-sekme b{font-weight:600;opacity:.75;margin-left:4px}
+.sg-arac input{max-width:320px}
+.sg-tablo-kap{max-height:calc(100vh - 330px);min-height:200px;overflow:auto;border:1px solid #e2e8f0;border-radius:10px}
+.sg-tablo{width:100%;border-collapse:collapse;font-size:13.5px}
+.sg-tablo th{position:sticky;top:0;background:#f8fafc;text-align:left;font-weight:600;color:#475569;padding:8px 10px;border-bottom:1px solid #e2e8f0}
+.sg-tablo td{padding:7px 10px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+.sg-tablo .sag{text-align:right;white-space:nowrap}
+#sgAlt{margin-top:8px}

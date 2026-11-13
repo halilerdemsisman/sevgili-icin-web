@@ -1,4 +1,4 @@
-# EXIT Garden ortak sunucu kurulumu (sürüm 3a)
+# EXIT Garden ortak sunucu kurulumu (sürüm 3b)
 
 > **VPS'e kurulum ve şirket sunucusundan taşınma:** `dagitim/TASINMA.md` (adım adım, hazır betiklerle). Bu belge sunucunun genel ayarlarını anlatır.
 

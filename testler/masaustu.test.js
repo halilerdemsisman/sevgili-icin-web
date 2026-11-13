@@ -3,6 +3,7 @@
 //   • sayfa Node'a erişemez, başka siteye gidemez (dış bağlantı tarayıcıya devredilir)
 //   • bayi siparişi masaüstü bildirimi ve görev çubuğu sayacı olarak düşer; bildirime tıklayınca sipariş açılır
 //   • ayrı pencere, Ctrl+K hızlı arama, Ctrl+1..9, dışa aktarılan dosyanın kaydı, PDF
+//   • Faz 3b: bağlantı yokken son görülen listeler salt okunur; çıkışta silinir
 // Uygulama kurulu değilse (satis-masaustu/node_modules yok) atlanır: cd satis-masaustu && npm install
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert/strict');
@@ -51,7 +52,9 @@ describe('Satış masaüstü uygulaması (Faz 3)', { skip: ATLA }, () => {
     await w.waitForURL(s.url + '/satis'); await w.locator('#gKul').waitFor();
     const r = await w.evaluate(() => ({ require: typeof require, process: typeof process, M: Object.keys(window.exitMasaustu || {}).sort() }));
     assert.equal(r.require, 'undefined'); assert.equal(r.process, 'undefined');
-    assert.deepEqual(r.M, ['acildiginda', 'bildir', 'bilgi', 'kisayol', 'pdf', 'pencere', 'rozet', 'sunucuAdresi', 'sunucuKaydet', 'yenidenDene']);
+    assert.deepEqual(r.M, ['acildiginda', 'anlik', 'anlikOku', 'bildir', 'bilgi', 'kisayol', 'pdf', 'pencere', 'rozet', 'sunucuAdresi', 'sunucuKaydet', 'yenidenDene']);
+    // son görülen verileri yalnız uygulamanın kendi sayfası okuyabilir
+    assert.equal(await w.evaluate(() => window.exitMasaustu.anlikOku()), null);
     // satış sayfası sunucu adresini değiştiremez (yalnız uygulamanın kendi sayfaları)
     assert.equal(await w.evaluate(() => window.exitMasaustu.sunucuKaydet('https://kotu.ornek.com')).then(x => x.ok), false);
     await w.fill('#gKul', 'satis'); await w.fill('#gSif', YONETICI_SIFRE); await w.click('#fGiris button.btn.marka');
@@ -122,6 +125,19 @@ describe('Satış masaüstü uygulaması (Faz 3)', { skip: ATLA }, () => {
     assert.ok(pdf && fs.readFileSync(pdf).subarray(0, 4).toString() === '%PDF');
   });
 
+  test('son görülen veriler bilgisayarda saklanır, çıkışta silinir (Faz 3b)', async () => {
+    const dosya = path.join(veri, 'son-gorulen.bin');
+    await kosul(() => fs.existsSync(dosya), 8000, 'son görülen veriler dosyası');
+    const b = fs.readFileSync(dosya); assert.match(b.subarray(0, 2).toString(), /^(E1|D1)$/);
+    console.log('  son görülen veriler:', b.subarray(0, 2).toString() === 'E1' ? 'şifreli (safeStorage)' : 'şifresiz (bu sistemde anahtarlık yok)', b.length, 'bayt');
+    if (b.subarray(0, 2).toString() === 'E1') assert.ok(!b.includes(Buffer.from(no)), 'şifreli dosyada sipariş no düz metin olmamalı');
+    fs.copyFileSync(dosya, dosya + '.yedek');
+    await w.click('#cikis');
+    await kosul(() => !fs.existsSync(dosya), 5000, 'çıkışta silinme');
+    await w.locator('#gKul').waitFor();
+    fs.renameSync(dosya + '.yedek', dosya); // sonraki test için (bağlantı yokken görünüm)
+  });
+
   test('başka siteye gidilmez, dış bağlantı varsayılan tarayıcıya devredilir', async () => {
     await w.evaluate(() => { location.href = 'https://example.com/x'; });
     await bekle(500);
@@ -142,6 +158,25 @@ describe('Satış masaüstü uygulaması (Faz 3)', { skip: ATLA }, () => {
       await p.locator('h1', { hasText: 'Sunucuya ulaşılamıyor' }).waitFor();
       assert.equal(await p.locator('#adres').textContent(), 'http://127.0.0.1:1');
     } finally { await a2.close(); fs.rmSync(v2, { recursive: true, force: true }); }
+  });
+  test('sunucu kapanınca: bağlantı hatası sayfasında son görülen veriler salt okunur (Faz 3b)', async () => {
+    await app.close(); s.kapat();
+    app = await uygulamaAc(veri); const p = await app.firstWindow(); const H2 = hataTopla(p);
+    await p.locator('h1', { hasText: 'Sunucuya ulaşılamıyor' }).waitFor();
+    await p.locator('#sonGorulen').waitFor();
+    assert.match(await p.locator('#sgZaman').textContent(), /itibarıyla/);
+    assert.match(await p.locator('.sg-etiket').textContent(), /Salt okunur/);
+    // bekleyen işler: sipariş ve ödeme bildirimi
+    assert.match(await p.locator('#sgGovde').textContent(), new RegExp(no));
+    await p.click('[data-sekme=siparisler]'); await p.locator('#sgBas th', { hasText: 'Termin' }).waitFor();
+    assert.match(await p.locator('#sgGovde tr', { hasText: no }).textContent(), /masabayi Ltd\..*Yeni talep/);
+    await p.click('[data-sekme=bayiler]'); await p.locator('#sgBas th', { hasText: 'Telefon' }).waitFor();
+    await p.fill('#sgAra', '05550000000');
+    assert.equal(await p.locator('#sgGovde tr').count(), 1);
+    assert.match(await p.locator('#sgGovde tr').textContent(), /masabayi Ltd\./);
+    await p.screenshot({ path: path.join(os.tmpdir(), 'exit-cevrimdisi.png') });
+    await p.fill('#sgAra', 'olmayan-firma'); await p.locator('#sgAlt', { hasText: 'Aramaya uyan kayıt yok' }).waitFor();
+    assert.deepEqual(H2, []);
   });
 });
 

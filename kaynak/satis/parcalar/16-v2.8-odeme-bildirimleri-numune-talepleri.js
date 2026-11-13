@@ -33,12 +33,20 @@
     const bul = no => { const T = oku('exb-odeme', []); return [T, T.find(o => o.no === no)]; };
     $$('[data-dk]').forEach(b => b.onclick = () => { const [, o] = bul(b.dataset.dk); if (!o || !o.dosya) return; const d = o.dosya;
       pencere(`<h3 style="margin:0">${esc(o.no)} · dekont</h3><div class="kucuk">${esc(o.firma)} · ${usd(o.tutar)} · ${tarih(o.tarih)}</div>${/^image\//.test(d.tip) ? `<img class="dk-onizle" src="${d.veri}" alt="Dekont">` : `<object class="dk-onizle" data="${d.veri}" type="application/pdf" style="width:100%;height:70vh"></object>`}<a class="btn cizgi" href="${d.veri}" download="${esc(d.ad || o.no)}">Dosyayı indir</a>`, true); });
-    $$('[data-oi]').forEach(b => b.onclick = () => { const [T, o] = bul(b.dataset.oi); if (!o) return;
-      const th = 'TH-' + Date.now().toString(36).toUpperCase();
-      cariHesap(o.kul).hareket.push({ tip: 'odeme', no: th, tarih: Date.parse(o.tarih) || Date.now(), tutar: o.tutar, aciklama: o.yontem + ' · bayi bildirimi ' + o.no + (o.ref ? ' · ' + o.ref : '') }); cariYaz();
-      Object.assign(o, { durum: 'onaylandi', kim: kimAd(), karar: Date.now(), tahsilatNo: th }); yaz('exb-odeme', T); toast(o.firma + ' ödemesi cariye işlendi: ' + usd(o.tutar)); rozetler(); odemeler(); });
+    // Faz 3b: karar yalnız bildirim hâlâ bekliyorsa yazılır (iki kişi aynı ödemeyi işlerse cariye iki kez düşmesin)
+    const kararVer = async (no, f) => {
+      const r = await kosullu([{ k: 'exb-odeme', a: 'no', id: no, yol: 'durum', esit: 'bekliyor' }], () => { const [T, o] = bul(no); if (o && o.durum === 'bekliyor') { f(o); yaz('exb-odeme', T); } });
+      if (!r.ok) { const [, y] = bul(no); toast(r.durum === 409 && y && y.durum !== 'bekliyor' ? `${no} bu arada ${y.kim || 'başka bir kullanıcı'} tarafından işlendi (${ODZ[y.durum] || y.durum}).` : r.hata); }
+      rozetler(); if (aktif === 'odemeler') odemeler(); return r.ok;
+    };
+    $$('[data-oi]').forEach(b => b.onclick = async () => { b.disabled = true; let o;
+      const ok = await kararVer(b.dataset.oi, x => { o = x; const th = 'TH-' + Date.now().toString(36).toUpperCase();
+        cariHesap(x.kul).hareket.push({ tip: 'odeme', no: th, tarih: Date.parse(x.tarih) || Date.now(), tutar: x.tutar, aciklama: x.yontem + ' · bayi bildirimi ' + x.no + (x.ref ? ' · ' + x.ref : '') }); cariYaz();
+        Object.assign(x, { durum: 'onaylandi', kim: kimAd(), karar: Date.now(), tahsilatNo: th }); });
+      if (ok && o) toast(o.firma + ' ödemesi cariye işlendi: ' + usd(o.tutar)); });
     $$('[data-or]').forEach(b => b.onclick = () => { const p = pencere(`<h3>Bildirimi reddet</h3><div class="alan"><label>Neden (bayi görür)</label><input id="rNed" placeholder="Örn. dekont okunmuyor, tutar hesaba geçmedi"></div><button class="btn marka" id="rKay">Reddet</button>`);
-      p.querySelector('#rKay').onclick = () => { const [T, o] = bul(b.dataset.or); if (!o) return; Object.assign(o, { durum: 'reddedildi', kim: kimAd(), karar: Date.now(), redNot: p.querySelector('#rNed').value.trim() }); yaz('exb-odeme', T); p.remove(); toast('Bildirim reddedildi.'); rozetler(); odemeler(); }; });
+      p.querySelector('#rKay').onclick = async () => { const ned = p.querySelector('#rNed').value.trim(); p.querySelector('.kapat').click();
+        if (await kararVer(b.dataset.or, o => Object.assign(o, { durum: 'reddedildi', kim: kimAd(), karar: Date.now(), redNot: ned }))) toast('Bildirim reddedildi.'); }; });
   }
 
   // ---------- numune talepleri

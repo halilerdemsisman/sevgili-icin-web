@@ -35,13 +35,14 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 2b-2 | Bayi web sitesi: ekranlar | Ekranlar modüllere bölünür, sarmalama zincirleri birleşir, renk önizleme ortak modülde, TR/EN dosyaları |
 | 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
-| 3b | Satış masaüstü: pilot ve ekranlar | Kod imzalama, Windows'ta pilot, satış ekranlarının modüllere bölünüp REST'e geçmesi, çevrimdışı salt okunur listeler |
+| 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
+| 3b-2 | Satış masaüstü: pilot ve ekranlar | Kod imzalama, Windows'ta pilot, satış ekranlarının modüllere bölünmesi (2b-2 ile aynı yaklaşım) |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1 ve 3a tamamlandı; Faz 2b-2 ve 3b paralel yürüyebilir.
+Faz 1, 2a, 2b-1, 3a ve 3b-1 tamamlandı; Faz 2b-2 ve 3b-2 paralel yürüyebilir.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki geliştirme:** Faz 3b (Windows'ta pilot, kod imzalama) ve Faz 2b-2 (bayi ekranlarının modüllere bölünmesi).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve ekranların modüllere bölünmesi (2b-2 + 3b-2).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -111,7 +112,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 |---|---|---|---|
 | V1 | 🔴 | **Sipariş numarası çakışması.** Numara tarayıcıda `o yılki sipariş sayısı + 1` ile üretiliyor (`kaynak/bayi/parcalar/03-ana.js:294`). İki bayi 4 saniyelik senkron aralığında sipariş verirse ikisi de aynı numarayı alır. Sunucu `exb-siparisler`'i `no`'ya göre birleştirirken aynı no'lu kayıtta yeni geleni tutar; **ilk sipariş sessizce silinir**. Faz 0 testinde iki bayi aynı anda sipariş verdi, sunucuda tek sipariş kaldı. Aynı numaralandırma deseni iade (`IAD-`), online ödeme (`OL-`) ve teklif (`OT-`) numaralarında da var. | ✅ 1a (numara sunucudan; çakışan yeniden numaralanır) |
 | V2 | 🔴 | **Dosyalar localStorage'da.** Dekont (PDF ≤1,5 MB veya küçültülmüş fotoğraf), iade fotoğrafları, logo base64 olarak ortak anahtarlara yazılıyor. Her istemci tüm ortak veriyi `localStorage`'a yazar; Chromium'da ölçülen sınır ~8 milyon karakter. Sınır aşılınca senkron katmanındaki yükleme döngüsü ilk hatada durur: rozet "Sunucuya bağlı" der, ama o anahtar ve **sonrasındaki anahtarlar tarayıcıda yoktur** (Faz 0 testinde `exb-odeme` ve `exs-cari` yüklenmedi). Eksik veriyle çalışan kullanıcı birleştirme dışındaki bir anahtarı (ör. cari) güncellerse sunucudaki tam veriyi ezer. | ✅ 1a (dosyalar diske; tarayıcıya yalnız kendi verisi; eksik yükleme algılanır) · 2b-1: bayi sitesinde iş verisi tarayıcıya hiç yazılmaz |
-| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ◐ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir · 2b-1: bayinin bütün kayıt yazmaları REST'te, kayıt bazında; satış tarafındaki sözlük anahtarları Faz 3'te REST'e geçişle kalkar |
+| V3 | 🟠 | Birleştirme listesi dışındaki anahtarlarda (cari, kampanya, fiyat, müşteri, hedef…) son yazan kazanır; iki satışçı aynı anda düzenlerse biri kaybolur. | ✅ 1a: kullanıcı sözlükleri ve temsilci yazmaları birleştirilir · 2b-1: bayinin bütün kayıt yazmaları REST'te · 3b-1: bütün anahtarlarda kayıt düzeyinde yazma (yama), karar ekranlarında koşullu yazma; aynı kaydı iki kişi değiştirirse sonra yazanınki kalır |
 | V4 | 🟠 | Fiyat/iskonto/kredi limiti hesapları istemcide. Sunucu, bayinin gönderdiği tutara güveniyor. | ✅ 1b-1 + 1b-2 (birim fiyat denetimi; kredi limiti sunucuda; REST siparişinde fiyatı sunucu belirler) |
 | V5 | 🟡 | Her açılışta ve her değişiklikte tüm veri gidip geliyor; sipariş sayısı arttıkça yavaşlar (ilk yükleme senkron XHR ile sayfayı kilitliyor). | ✅ 1a + 1b-2 (herkes yalnız kendi verisini indirir; 4 sn'lik yoklama yerine anlık bildirim) |
 
@@ -121,7 +122,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ⏳ 2–3 |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 3a (116 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 3b-1 (129 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -212,7 +213,7 @@ uretim_planlama/
 ├── eski/              ✅ Orijinal paket (başvuru için, değiştirilmez)
 ├── docs/              ✅ Raporlar
 ├── bayi-web/          ⏳ Faz 2b-2: modüllere bölünmüş bayi ekranları (dist/web'in yerini alır)
-├── satis-masaustu/    ✅ Faz 3a: Electron uygulaması (satış panelini sunucudan yükler); ⏳ 3b: satış ekranları modüllere
+├── satis-masaustu/    ✅ Faz 3a: Electron uygulaması (satış panelini sunucudan yükler) · 3b-1: çevrimdışı görünüm, PILOT.md; ⏳ 3b-2: satış ekranları modüllere
 └── ortak/             ⏳ Faz 1–2: fiyat/iskonto hesabı, biçimler, durum adları, renk önizleme
                           motoru, API istemcisi, çeviriler (kaynak/ortak/ buraya taşınır)
 ```
@@ -385,16 +386,32 @@ Doğrulanamayanlar (Windows makinesi gerekir; 3b'de pilotla):
 
 Bu ortamda yalnız sunucu tarafı (güncelleme dosyalarının ve parçalarının verilmesi) test edildi.
 
-#### Faz 3b: Pilot ve satış ekranları (≈2–3 hafta)
+#### Faz 3b-1: Çok kullanıcılı satış ekibi ve pilot hazırlığı ✅ tamamlandı
+Neden ikiye bölündü: Plandaki "satış ekranlarını REST'e geçirme" işinin asıl amacı, birden çok satış kullanıcısının birbirinin işini ezmemesiydi (V3). İnceleme iki sorun gösterdi:
+- Satış paneli her yazmada anahtarın tamamını (bütün siparişler, bütün cari) gönderiyordu.
+- Ekranlar veriyi açılışta bir kez belleğe alıyordu. Başka kullanıcının değişikliği sayfa yenilenene kadar görünmüyordu. Sonraki yazmada da geri alınıyordu: bir temsilci sabah açtığı sayfadan öğleden sonra bir siparişi onaylarsa, arada başkasının yaptığı bütün değişiklikler siliniyordu.
+
+Bu sorunlar ekranlar yeniden yazılmadan, eşitleme katmanında ve sunucuda çözüldü. Ekranların modüllere bölünmesi (3b-2) bayi tarafındaki 2b-2 ile aynı yaklaşımla birlikte yapılacak. Kod imzalama ve Windows pilotu sertifika ve makine gerektiriyor.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Kayıt düzeyinde yazma | Eşitleme katmanı yalnız değişen kayıtları gönderir (sözlük girdisi, kimlikli liste kaydı, sona eklenen işlem kaydı satırı). Fark, ekranın son okuduğu/yazdığı değere göre çıkarılır. Böylece eski bir kopyadan yazan ekran başkasının değişikliğini geri almaz. Sunucu yamayı kullanıcının görünümüne uygular ve aynı kurallardan geçirir (`sunucu/lib/yama.js`). İki kullanıcı aynı anda farklı siparişleri değiştirirse ikisi de kalır. Sunucunun işlem kaydına eklediği "Yeni bayi kaydı" satırı da artık satışın yazmasıyla silinmez. Bayi sitesinin kişisel anahtarları da aynı yoldan yazılır |
+| Çifte karar engeli | Ödeme bildirimini tahsilat olarak işleme/reddetme, değişiklik talebi kararı ve özel teklif kararı **koşullu** yazılır: kayıt hâlâ bekliyorsa. İki kişi aynı ödemeye aynı anda basarsa tahsilat cariye bir kez düşer. Diğerine "… bu arada … tarafından işlendi" denir, ekranı ve bellekteki carisi sunucudaki hâle döner. Bağlantı yoksa karar kaydedilmez ve bu söylenir (önceden yerelde kalıp kaybolabiliyordu) |
+| Canlı veri | Başka kullanıcının değişikliği açık satış ekranına sayfa yenilenmeden gelir. Bellekteki siparişler, müşteriler, cari, kampanya, fiyat… yerinde güncellenir. Açık sayfa yazı yazılmıyorsa ve pencere açık değilse yenilenir, kaydırma konumu korunur. Fiyat geçmişi başkasının fiyat değişikliğini kendi değişikliği saymaz |
+| Çevrimdışı salt okunur | Masaüstü uygulaması son görülen bekleyen işleri, siparişleri (durum, tutar, termin) ve bayileri (yetkili, telefon, e-posta, bakiye) bilgisayarda şifreli saklar (Windows: DPAPI). Sunucuya ulaşılamazsa bağlantı hatası sayfasında aramayla, "Salt okunur" etiketiyle gösterilir. Çıkış yapılınca silinir. Yalnız uygulamanın kendi sayfası okuyabilir. Temsilci yalnız kendi bayilerini görür |
+| Güncelleme turu denendi | Linux'ta AppImage ile baştan sona: 1.0.0 sürümü sunucudaki 1.0.1'i buldu, indirdi (sha512 doğrulamasıyla), kendi yerine kurdu, yeniden açılışta 1.0.1 çalıştı ve yeniden güncelleme aramadı. Sunucu, `latest.yml` ve `electron-updater` zinciri böylece doğrulandı. Windows'ta yalnız kurulum biçimi (NSIS) farklı |
+| Pilot rehberi | `satis-masaustu/PILOT.md`: hazırlık, kurulum günü, bir haftalık deneme listesi (bildirim, sayaç, bildirim alanı, kısayollar, iki kişiyle eşzamanlı karar, internet kesilince son görülen veriler), güncelleme turu, sorun giderme |
+| Testler | 129 test (önceki 116 + `testler/eszamanli.test.js` 11 + masaüstü 2); SQLite ve JSON depoyla geçiyor |
+
+#### Faz 3b-2: Pilot ve satış ekranları (≈2 hafta, 2b-2 ile birlikte)
 1. Kod imzalama sertifikası (SmartScreen uyarısı kalksın); GitHub'a `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD` gizlileri.
-2. Pilot: satış yöneticisi + 1 temsilci, Windows'ta kurulum ve bir güncelleme turu; sonra tüm ekip.
-3. Satış ekranları modüllere bölünüp REST'e geçer (onay, tahsilat, talep kararları için REST yazma uçları); 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir. Bu, bayi tarafındaki 2b-2 ile aynı yaklaşımla yapılır.
-4. Çevrimdışıyken son görülen listelerin salt okunur gösterilmesi.
+2. Pilot (`satis-masaustu/PILOT.md`): satış yöneticisi + 1 temsilci, Windows'ta kurulum ve bir güncelleme turu; sonra tüm ekip.
+3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir. Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur. Okumalar sayfa sayfa REST'e geçer.
 
 Kabul (Faz 3 geneli):
 - Faz 0 testlerinin satış kısmı geçiyor ✅.
 - Yeni bayi siparişi 2 sn içinde masaüstü bildirimi olarak düşüyor ✅ (0,5 sn).
-- Yeni sürüm yayınlandığında uygulama kendini güncelliyor (⏳ pilotta Windows'ta doğrulanacak).
+- Yeni sürüm yayınlandığında uygulama kendini güncelliyor (✅ Linux'ta baştan sona denendi; ⏳ Windows'ta pilotta).
 
 ### Faz 4: Entegrasyonlar (≈3–6 hafta, seçilen sağlayıcıya göre)
 1. **Online ödeme:** iyzico veya PayTR ile ödeme sayfası + sunucuya geri bildirim (callback). Ödeme doğrulanınca otomatik "Ödeme alındı" ve cari hareketi; satışın manuel onayı yalnız havale/EFT için kalır.

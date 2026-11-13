@@ -83,11 +83,17 @@
     const hesap = no => { const t = TK().find(x => x.no === no), m = $(`[data-fm="${no}"]`), s = $(`[data-fs="${no}"]`), fm = m ? sayi8(m.value) || 0 : 0, fs = sayi8(s.value) || 0, lt = (t.masa ? listeF(t.masa) : 0) + listeF(t.sandalye) * t.oran, tk = fm + fs * t.oran;
       $(`[data-fo="${no}"]`).innerHTML = `Takım ${usd(tk)} · toplam ${usd(tk * t.takim)} · indirim %${lt ? Math.round((1 - tk / lt) * 100) : 0}${t.hedef ? ' · hedef ' + usd(t.hedef) : ''}`; return { fm, fs, tk }; };
     $$('[data-fs]').forEach(i => { const no = i.dataset.fs; hesap(no); i.oninput = () => hesap(no); const m = $(`[data-fm="${no}"]`); if (m) m.oninput = () => hesap(no); });
-    const karar = (no, onay) => { const L = TK(), t = L.find(x => x.no === no); if (!t || t.durum !== 'bekliyor') return; const y = ($(`[data-fy="${no}"]`) || {}).value || '';
-      if (onay) { const h = hesap(no); if (!(h.fs > 0) || (t.masa && !(h.fm > 0))) return toast('Birim fiyatları girin.'); t.fiyat = { masa: h.fm, sandalye: h.fs, takim: h.tk }; }
-      Object.assign(t, { durum: onay ? 'onaylandi' : 'reddedildi', yanit: y.trim(), kim: kimAd(), karar: Date.now() }); yaz('exb-teklif', L);
-      bayiMesaj(t.kul, `${t.no} özel teklif talebiniz ${onay ? 'onaylandı: takım ' + usd(t.fiyat.takim) : 'reddedildi'}${y ? ' · ' + y : ''}`);
-      log(`Özel teklif ${onay ? 'onaylandı' : 'reddedildi'}`, `${t.no} · ${firma(t.kul)}${onay ? ' · ' + usd(t.fiyat.takim) + '/takım' : ''}`); toast('Karar bayiye iletildi.'); rozet(); S6.teklifler(); };
+    // Faz 3b: karar yalnız talep hâlâ bekliyorsa yazılır
+    const karar = async (no, onay) => { const t0 = TK().find(x => x.no === no); if (!t0 || t0.durum !== 'bekliyor') return; const y = ($(`[data-fy="${no}"]`) || {}).value || '';
+      let h = null; if (onay) { h = hesap(no); if (!(h.fs > 0) || (t0.masa && !(h.fm > 0))) return toast('Birim fiyatları girin.'); }
+      const r = await kosullu([{ k: 'exb-teklif', a: 'no', id: no, yol: 'durum', esit: 'bekliyor' }], () => { const L = TK(), t = L.find(x => x.no === no); if (!t) return;
+        if (onay) t.fiyat = { masa: h.fm, sandalye: h.fs, takim: h.tk };
+        Object.assign(t, { durum: onay ? 'onaylandi' : 'reddedildi', yanit: y.trim(), kim: kimAd(), karar: Date.now() }); yaz('exb-teklif', L);
+        bayiMesaj(t.kul, `${t.no} özel teklif talebiniz ${onay ? 'onaylandı: takım ' + usd(t.fiyat.takim) : 'reddedildi'}${y ? ' · ' + y : ''}`);
+        log(`Özel teklif ${onay ? 'onaylandı' : 'reddedildi'}`, `${t.no} · ${firma(t.kul)}${onay ? ' · ' + usd(t.fiyat.takim) + '/takım' : ''}`); });
+      if (r.ok) toast('Karar bayiye iletildi.');
+      else { const t = TK().find(x => x.no === no); toast(r.durum === 409 && t && t.durum !== 'bekliyor' ? `${no} bu arada ${t.kim || 'başka bir kullanıcı'} tarafından karara bağlandı (${DZ[t.durum] || t.durum}).` : r.hata); }
+      rozet(); if (aktif === 'teklifler') S6.teklifler(); };
     $$('[data-fok]').forEach(b => b.onclick = () => karar(b.dataset.fok, true)); $$('[data-fred]').forEach(b => b.onclick = () => karar(b.dataset.fred, false));
   };
 

@@ -8,4 +8,21 @@
   <p id="aciklama">İnternet bağlantınızı kontrol edin. Bağlantı gelince sayfa kendiliğinden açılır.</p>
   <div class="kucuk">Sunucu: <span id="adres"></span><br>Hata: <span id="hata"></span></div>
   <div class="dugmeler"><button id="degistir">Sunucu adresini değiştir</button><button class="ana" id="dene">Yeniden dene</button></div>
-</div><script src="hata.js"></script></body></html>
+</div>
+<section id="sonGorulen" class="son-gorulen" hidden>
+  <div class="sg-bas">
+    <div><h2>Son görülen veriler</h2><div class="kucuk" id="sgZaman"></div></div>
+    <span class="sg-etiket">Salt okunur · değişiklik yapılamaz</span>
+  </div>
+  <div class="sg-arac">
+    <div class="sg-sekme" role="tablist">
+      <button data-sekme="isler" role="tab">Bekleyen işler <b id="sgN-isler"></b></button>
+      <button data-sekme="siparisler" role="tab">Siparişler <b id="sgN-siparisler"></b></button>
+      <button data-sekme="bayiler" role="tab">Bayiler <b id="sgN-bayiler"></b></button>
+    </div>
+    <input id="sgAra" type="search" placeholder="Ara: sipariş no, firma, telefon…" aria-label="Ara">
+  </div>
+  <div class="sg-tablo-kap"><table class="sg-tablo"><thead id="sgBas"></thead><tbody id="sgGovde"></tbody></table></div>
+  <div class="kucuk" id="sgAlt"></div>
+</section>
+<script src="hata.js"></script></body></html>
