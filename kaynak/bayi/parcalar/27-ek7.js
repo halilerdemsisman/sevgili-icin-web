@@ -35,9 +35,7 @@
         e => { siparislerim(); throw e; }));
     };
   }
-  const _sip7 = siparislerim;
-  siparislerim = function () {
-    _sip7.apply(this, arguments);
+  EK.siparislerTalep = function () {
     const L = oku('exb-siparisler', []).filter(o => ben && o.kul === ben.kul);
     $$('#s-siparisler [data-dosya]').forEach(b => { const o = L.find(x => x.no === b.dataset.dosya); if (!o || b.nextElementSibling && b.nextElementSibling.classList.contains('sd-btns')) return;
       const t = o.talep;

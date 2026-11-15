@@ -1,5 +1,12 @@
 
 const VERI = /*@katalog*/null;
+// Ekler (Faz 2b-2). Ekranlara sonradan eklenen özellikler (favoriler, projeler, karşılaştırma, online ödeme…)
+// kendi parçalarında EK.<ad> olarak tanımlıdır. Ekran fonksiyonu (git, katalog, urunAc…) bunları kendi
+// içinde, yazılı sırayla çağırır; böylece bir ekranda neyin hangi sırayla çalıştığı tek yerde görünür.
+// Çağrılar ?.() ile yapılır: web/ dosyalarındaki ekler tek dosyalık sürümde yoktur, oturum açılışı da
+// (girisYap) diğer parçalar yüklenmeden önce çalışabilir. Tanımsız ek kalmadığını
+// `node araclar/sarmalama.mjs` denetler.
+const EK = {};
 const ISKELET = [
   {kod:'Granit',ad:'Granit',ornek:'radial-gradient(circle at 20% 30%,#9a9a96 1px,transparent 1.5px) 0 0/6px 6px,radial-gradient(circle at 70% 60%,#4b4b48 1px,transparent 1.5px) 0 0/7px 7px,#76766f'},
   {kod:'Seramik',ad:'Seramik',ornek:'radial-gradient(circle at 30% 40%,#bdb5a5 1px,transparent 1.6px) 0 0/8px 8px,#d9d3c6'},
@@ -28,7 +35,7 @@ const yaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 // yanıt beklenir, hata bayiye gösterilir (bağlantı yoksa kayıt gönderilmez, yerelde de oluşmaz).
 // Sunucusuz (dosyadan açılan) sürümde kayıt yerelde oluşturulur. İkisi de Promise döner; hata Error.message'dadır.
 const KAYIT_TUR = { siparisler: ['exb-siparisler', 'no', 'EXG'], odemeler: ['exb-odeme', 'no', 'OB'], iadeler: ['exb-iade', 'id', 'IAD'], numuneler: ['exb-numune', 'no', 'NMN'], teklifler: ['exb-teklif', 'no', 'OT'] };
-const restKayit = r => { const { ok, durum, uyari, hata, kayit, alanlar, ...x } = r; return x; };
+const restKayit = r => { const { ok, http, cevrimdisi, uyari, hata, kayit, alanlar, ...x } = r; return x; };
 function yerelNo(on, L) { const y = new Date().getFullYear(), m = L.map(x => +(String(x.no || '').match(new RegExp('^' + on + '-' + y + '-(\\d+)$')) || [])[1] || 0); return on + '-' + y + '-' + String(Math.max(0, ...m) + 1).padStart(({ OB: 3, NMN: 3 })[on] || 4, '0'); } // hane sayısı sunucudakiyle aynı
 async function kayitEkle(tur, x, on) {
   const [k, a, on0] = KAYIT_TUR[tur];
@@ -122,25 +129,24 @@ $('#fKayit').onsubmit = async e => {
   yaz('exb-kullanicilar', KUL); toast('Kaydınız oluşturuldu, hoş geldiniz.'); girisYap(KUL[k]);
 };
 function girisYap(u) {
+  _kmpSon = ''; kampanyaKontrol();
   ben = u; try { sessionStorage.setItem('exb-oturum', u.kul); } catch (e) {}
   $('#giris').classList.add('gizli'); $('#uyg').classList.remove('gizli');
   $('#hKim').textContent = u.firma || u.ad; try { $('#hAv').textContent = String(u.firma || u.ad || '?').trim().split(/\s+/).map(x => x[0]).slice(0, 2).join('').toLocaleUpperCase('tr-TR'); } catch (e) {}
   try { $('#bTarih').textContent = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' }); } catch (e) {}
   sepetSay(); git('katalog');
+  setTimeout(bildirimKontrol, 800);
+  EK.girisDuyuru?.(); EK.girisHatirlatma?.(); EK.girisAdres?.();
 }
 $('#hCikis').onclick = () => { try { sessionStorage.removeItem('exb-oturum'); } catch (e) {} ben = null; $('#uyg').classList.add('gizli'); $('#giris').classList.remove('gizli'); $('#gSif').value = ''; $('.sekme button[data-s=giris]').click(); };
 
 // ---------- gezinme
-function git(s) {
-  ['katalog','siparisler'].forEach(x => $('#s-' + x).classList.toggle('gizli', x !== s));
-  if (s === 'katalog') katalog(); if (s === 'siparisler') siparislerim();
-  window.scrollTo(0, 0);
-}
 $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
 
 // ---------- katalog ve filtreler
 const F = { kat:'', sinif:new Set(), min:'', max:'', ara:'', sira:'ad', fiyatli:false, kmp:false };
 function uygun(u, haric) {
+  if (EK.favoriUygun && !EK.favoriUygun(u)) return false;
   if (haric !== 'kat' && F.kat && u.kategori !== F.kat) return false;
   if (haric !== 'sinif' && F.sinif.size && !u.secenek.some(s => F.sinif.has(s.sinif))) return false;
   const d = enDusuk(u);
@@ -200,6 +206,7 @@ function katalog() {
       <div class="fiyat">${d == null ? '<small>Fiyat sorunuz</small>' : (u.secenek.length > 1 ? '<small>başlayan </small>' : '') + (u.kmp ? `<s class="eski">${para(listeDusuk(u))}</s> <span class="yeni">${para(d)}</span>` : para(d))}</div>${u.kmp ? `<div class="kmp-ad">${esc(u.kmp.ad)}${u.kmp.bit ? ' · ' + tarih(u.kmp.bit) + '\'e kadar' : ''}</div>` : ''}</div></div>`; }).join('') || '<div class="bos-durum">Bu filtrelere uyan ürün yok.</div>';
   $$('#izgara .kart').forEach(k => k.onclick = () => urunAc(+k.dataset.id));
   $('#filtre').classList.remove('acik');
+  EK.katalogFavori?.(); EK.katalogDuyuru?.(); EK.katalogKarsilastirma?.(); EK.katalogAdres?.();
 }
 $('#ara').oninput = e => { F.ara = e.target.value.trim(); if ($('#s-katalog').classList.contains('gizli')) git('katalog'); else katalog(); };
 $('#katPdf').onclick = () => katalogIndir();
@@ -269,6 +276,9 @@ function urunAc(id) {
   }
   ciz();
   const esc_ = e => { if (e.key === 'Escape') { perde.remove(); document.removeEventListener('keydown', esc_); } }; document.addEventListener('keydown', esc_);
+  // ekler pencereye kendi düğmelerini/önizlemelerini ekler; pencere yeniden çizildikçe (MutationObserver) yenilerler
+  EK.urunFavoriStok?.(perde, u); EK.urunRenkOnizleme?.(perde, u); EK.urunKarsilastir?.(perde, u);
+  EK.urunParcaOnizleme?.(perde, u); EK.urunFoto?.(perde, u); EK.urunOzelTeklif?.(perde, u); EK.urunAdres?.(perde, u);
 }
 
 // ---------- 360° görüntüleyici
@@ -305,7 +315,7 @@ function goruntule360(u) {
 
 // ---------- sepet
 const sepet = () => oku('exb-sepet-' + ben.kul, []);
-function sepetKaydet(s) { yaz('exb-sepet-' + ben.kul, s); sepetSay(); }
+function sepetKaydet(s) { yaz('exb-sepet-' + ben.kul, s); sepetSay(); EK.hatirlatmaRozeti?.(); }
 function sepetSay() { const n = sepet().reduce((a, x) => a + x.adet, 0); $('#sepetSay').textContent = n; $('#sepetSay').classList.toggle('gizli', !n); }
 const detay = x => [x.secenek, x.iskelet && 'İskelet: ' + x.iskelet, x.file && 'File: ' + x.file, x.kumas && 'Kumaş: ' + x.kumas, x.fitil && 'Fitil: ' + x.fitil, x.not && 'Not: ' + x.not].filter(Boolean).map(esc).join('<br>');
 $('#hSepet').onclick = () => {
@@ -338,8 +348,11 @@ $('#hSepet').onclick = () => {
   ciz();
 };
 
-// Sipariş, satış ekibinin uygulamasına aktarılabilen bir dosya olarak da indirilir (sunucu kurulana kadar).
+// Yeni siparişe proje ve tahmini teslim eklenir. Sunucusuz kullanımda sipariş, satış ekibinin uygulamasına
+// aktarılabilen bir dosya olarak da indirilir; sunucuya bağlıyken dosya inmez, sipariş doğrudan satış ekibine gider.
 function siparisDosyasi(o) {
+  EK.siparisProje?.(o); EK.siparisTahminiTeslim?.(o);
+  if (window.EXIT_SUNUCU) return;
   const veri = { tur: 'exit-bayi-siparis', surum: 1, musteri: { kul: ben.kul, firma: ben.firma, ad: ben.ad, tel: ben.tel, mail: ben.mail, sehir: ben.sehir, vergi: ben.vergi }, siparis: o };
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(veri, null, 1)], { type: 'application/json' })); a.download = o.no + '.json'; a.click();
 }
@@ -353,11 +366,6 @@ function siparisTablo(L, yonetici) {
       <td>${o.kalemler.map(x => `<div style="margin-bottom:6px"><b>${x.adet} × ${esc(x.ad)}</b><div class="kucuk">${detay(x)}</div></div>`).join('')}${o.adres ? `<div class="kucuk">Adres/not: ${esc(o.adres)}</div>` : ''}</td>
       <td style="text-align:right;white-space:nowrap"><b>${para(o.toplam)}${o.teklif ? ' +' : ''}</b></td>
       <td>${yonetici ? `<select data-no="${o.no}">${Object.entries(DURUM).map(([k, v]) => `<option value="${k}" ${o.durum === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select>` : `<span class="durum ${DURUM[o.durum][1]}">${DURUM[o.durum][0]}</span>`}</td></tr>`).join('')}</table>`;
-}
-function siparislerim() {
-  const L = oku('exb-siparisler', []).filter(o => o.kul === ben.kul);
-  setTimeout(() => $$('[data-dosya]').forEach(b => b.onclick = () => siparisDosyasi(L.find(o => o.no === b.dataset.dosya))), 0);
-  $('#s-siparisler').innerHTML = `<h2>Siparişlerim</h2><p class="kucuk">Her sipariş talebi, satış ekibine iletilmek üzere ayrıca dosya olarak indirilir. İsterseniz aşağıdan tekrar indirebilirsiniz.</p>` + (L.length ? siparisTablo(L, false) : '<div class="bos-durum">Henüz sipariş talebiniz yok. <br><br><button class="btn marka" onclick="git(\'katalog\')">Kataloğa git</button></div>');
 }
 
 // ---------- başlangıç
@@ -377,7 +385,7 @@ const zamanYaz = t => new Date(t).toLocaleString('tr-TR', { dateStyle: 'short', 
 function siparisKarti(o) {
   const iptal = o.durum === 'iptal', idx = ADIM.findIndex(a => a[0] === o.durum), G = o.gecmis || [{ durum: 'yeni', zaman: o.tarih }];
   const zam = d => { const g = G.filter(x => x.durum === d).pop(); return g ? zamanYaz(g.zaman) : ''; };
-  return `<div class="sk"><div class="sk-ust"><div><b>${o.no}</b><div class="kucuk">${tarih(o.tarih)} · ${o.kalemler.reduce((a, x) => a + x.adet, 0)} adet · ${o.kalemler.length} kalem</div></div>
+  let h = `<div class="sk"><div class="sk-ust"><div><b>${o.no}</b><div class="kucuk">${tarih(o.tarih)} · ${o.kalemler.reduce((a, x) => a + x.adet, 0)} adet · ${o.kalemler.length} kalem</div></div>
       <div class="sk-tutar">${o.net != null ? `<b>${para(Math.round(o.net))}</b><div class="kucuk">iskontolu net · liste ${para(o.toplam)}</div>` : `<b>${para(o.toplam)}${o.teklif ? ' +' : ''}</b><div class="kucuk">liste fiyatı</div>`}</div>
       <span class="durum ${DURUM[o.durum][1]}">${DURUM[o.durum][0]}</span></div>
     ${iptal ? '<div class="sk-iptal">Bu sipariş iptal edildi. Bilgi için satış temsilcinizle görüşün.</div>' : `<div class="adimlar">${ADIM.map(([k, ad], i) => { const ok = i < idx || (o.durum === 'sevk' && i === idx); return `<div class="adim ${ok ? 'tamam' : i === idx ? 'simdi' : ''}"><i>${ok ? '✓' : i + 1}</i><b>${ad}</b><span>${zam(k)}</span></div>`; }).join('')}</div>`}
@@ -385,8 +393,12 @@ function siparisKarti(o) {
       <div><span>Nakliye</span><b>${esc(o.kargo || '—')}</b></div><div><span>Takip / irsaliye no</span><b>${esc(o.takip || '—')}</b></div>${o.satisNot ? `<div class="genis"><span>Satış ekibinin notu</span><b>${esc(o.satisNot)}</b></div>` : ''}</div>
     <details><summary>Kalemleri göster</summary>${o.kalemler.map(x => `<div style="margin:8px 0"><b>${x.adet} × ${esc(x.ad)}</b><div class="kucuk">${detay(x)}</div></div>`).join('')}${o.adres ? `<div class="kucuk">Adres/not: ${esc(o.adres)}</div>` : ''}</details>
     <button class="btn cizgi" style="padding:6px 10px;font-size:12px" data-dosya="${o.no}">Sipariş dosyasını indir</button></div>`;
+  if (EK.siparisKartiTahmin) h = EK.siparisKartiTahmin(o, h);
+  if (EK.siparisKartiProje) h = EK.siparisKartiProje(o, h);
+  if (EK.siparisKartiOdeme) h = EK.siparisKartiOdeme(o, h);
+  return h;
 }
-siparislerim = function () {
+function siparislerim() {
   const L = oku('exb-siparisler', []).filter(o => o.kul === ben.kul).slice().sort((a, b) => b.tarih - a.tarih);
   gorulduYap(L);
   const ac = L.filter(o => !['sevk', 'iptal'].includes(o.durum));
@@ -397,7 +409,8 @@ siparislerim = function () {
       : '<div class="bos-durum">Henüz sipariş talebiniz yok. <br><br><button class="btn marka" onclick="git(\'katalog\')">Kataloğa git</button></div>'}`;
   $$('[data-sf]').forEach(b => b.onclick = () => { window.SKF = b.dataset.sf; siparislerim(); });
   $$('[data-dosya]').forEach(b => b.onclick = () => siparisDosyasi(L.find(o => o.no === b.dataset.dosya)));
-};
+  EK.siparislerTekrar?.(); EK.siparislerNumune?.(); EK.siparislerSikAlinan?.(); EK.siparislerTalep?.();
+}
 // bildirim: durum veya takip bilgisi değişince
 const imza = o => [o.durum, o.termin || '', o.kargo || '', o.takip || ''].join('|');
 function gorulduYap(L) { const G = {}; L.forEach(o => G[o.no] = imza(o)); yaz('exb-gorulen-' + ben.kul, G); rozetSiparis(0); }
@@ -429,15 +442,19 @@ function cariSayfa() {
     <div class="kart-b"><h3>Hesap hareketleri</h3>${H.length ? `<table class="tablo"><tr><th>Tarih</th><th>Belge</th><th>Açıklama</th><th style="text-align:right">Borç</th><th style="text-align:right">Alacak</th><th style="text-align:right">Bakiye</th></tr>
       ${H.map(h => { b += h.tip === 'fatura' ? h.tutar : -h.tutar; return `<tr><td>${tarih(h.tarih)}</td><td>${esc(h.no)}</td><td class="kucuk">${esc(h.aciklama || '')}</td><td style="text-align:right">${h.tip === 'fatura' ? p2(h.tutar) : ''}</td><td style="text-align:right">${h.tip === 'odeme' ? p2(h.tutar) : ''}</td><td style="text-align:right"><b>${p2(b)}</b></td></tr>`; }).join('')}</table>` : '<div class="kucuk">Henüz hesap hareketi yok.</div>'}</div>
     <p class="kucuk">Tutarlar USD'dir. Hesap ekstresi için satış temsilcinizle iletişime geçebilirsiniz.</p>`;
+  EK.cariOdemeBildirimi?.(); EK.cariHedef?.(); EK.cariAdresler?.(); EK.cariLimit?.(); EK.cariOnlineOdeme?.();
 }
-git = function (s) {
-  ['katalog', 'siparisler', 'cari'].forEach(x => $('#s-' + x).classList.toggle('gizli', x !== s));
+// Menü sayfaları. Ana sayfalar burada çizilir; projeler, belgeler, online ödeme ve teklifler kendi parçalarında.
+const ANA_SAYFA = ['katalog', 'siparisler', 'cari'], EK_SAYFA = { projeler: 'projeler', belgeler: 'belgeler', odeme: 'odemeSayfa', teklifler: 'teklifSayfa' };
+function git(s) {
+  for (const x of [...ANA_SAYFA, ...Object.keys(EK_SAYFA)]) { const e = $('#s-' + x); if (e) e.classList.toggle('gizli', x !== s); }
   if (s === 'katalog') katalog(); if (s === 'siparisler') { window._bekleyen = 0; siparislerim(); } if (s === 'cari') cariSayfa();
+  if (EK_SAYFA[s]) EK[EK_SAYFA[s]]?.();
   $$('[data-git]').forEach(b => b.classList.toggle('aktif', b.dataset.git === s)); window.scrollTo(0, 0);
-};
+  if (!['belgeler', 'odeme', 'teklifler'].includes(s)) EK.karsilastirmaCubugu?.();
+  EK.gitAdres?.(s);
+}
 $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
-const _girisYap = girisYap;
-girisYap = function (u) { _kmpSon = ''; kampanyaKontrol(); _girisYap(u); setTimeout(bildirimKontrol, 800); };
 
 // ===== teknik bilgiler (exitgarden.com) ve katalog =====
 function teknikHtml(u) {
@@ -463,4 +480,5 @@ function katalogIndir() {
       <div class="f">${u.secenek.map(s => `${esc(s.ad)}: <b>${para(s.fiyat)}</b>`).join(' · ')}</div></div></div>`).join('')}`).join('')}
     <script>setTimeout(()=>print(),600)<\/script></body></html>`);
   w.document.close();
+  EK.katalogIndirDil?.(w);
 }

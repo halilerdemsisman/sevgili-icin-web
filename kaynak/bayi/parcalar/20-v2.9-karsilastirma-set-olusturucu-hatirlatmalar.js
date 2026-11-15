@@ -66,18 +66,16 @@
     };
     ciz();
   }
-  const _katalogK = katalog;
-  katalog = function () { _katalogK(); kartIsaret(); kBar(); };
-  const _urunAcK = urunAc;
-  urunAc = function (id) {
-    _urunAcK(id); const p = $$('.perde').pop(); if (!p) return; let mesgul = false;
+  EK.katalogKarsilastirma = function () { kartIsaret(); kBar(); };
+  EK.urunKarsilastir = function (p, u) {
+    const id = u.id; let mesgul = false;
     const ekle = () => { if (mesgul) return; const h = p.querySelector('.p-bilgi h2'); if (!h || h.querySelector('.kr-pbtn')) return; mesgul = true;
       const on = kOku().includes(id); h.insertAdjacentHTML('beforeend', `<button class="btn cizgi kr-pbtn">${on ? 'Karşılaştırmada ✓' : 'Karşılaştır'}</button>`);
       h.querySelector('.kr-pbtn').onclick = () => { kDegis(id); const b = h.querySelector('.kr-pbtn'); if (b) b.textContent = kOku().includes(id) ? 'Karşılaştırmada ✓' : 'Karşılaştır'; };
       mesgul = false; };
     ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true });
   };
-  const _gitK = git; git = function (s) { _gitK(s); kBar(); };
+  EK.karsilastirmaCubugu = () => kBar();
 
   // ================= 10. set oluşturucu =================
   const SETTIP = {
@@ -208,12 +206,11 @@
     ciz();
   }
   if ($('#hHat')) $('#hHat').onclick = hatirlatmalar;
-  const _girisH = girisYap;
-  girisYap = function (u) { _girisH(u); hRozet(); kBar(); setTimeout(() => { if (!ben) return; const n = hRozet(); if (n) toast(`${n} hatırlatmanız var.`); }, 4600); };
+  EK.girisHatirlatma = function () { hRozet(); kBar(); setTimeout(() => { if (!ben) return; const n = hRozet(); if (n) toast(`${n} hatırlatmanız var.`); }, 4600); };
   const _cikH = $('#hCikis').onclick; $('#hCikis').onclick = () => { const b = $('#krBar'); if (b) b.remove(); _cikH && _cikH(); };
   let _hSon = 0; setInterval(() => { if (!ben) return; const n = hRozet() || 0; if (n > _hSon && _hSon && oku('exb-hatirlat', []).some(m => m.kul === ben.kul && !m.okundu && Date.now() - m.zaman < 30000)) toast('Satış ekibinden yeni hatırlatma var.'); _hSon = n; }, 15000);
   setTimeout(() => { if (ben) { hRozet(); kBar(); } }, 1500);
-  const _sepetKH = sepetKaydet; sepetKaydet = function (s) { _sepetKH(s); hRozet(); };
+  EK.hatirlatmaRozeti = () => hRozet();
 
   // İngilizce karşılıklar
   if (window.dilEkle) window.dilEkle({

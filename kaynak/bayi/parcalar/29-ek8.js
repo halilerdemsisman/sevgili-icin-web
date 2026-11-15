@@ -68,9 +68,7 @@
   window.onizleParcalar = parcalar;
   // set oluşturucu ve diğer yerler: tek ürün çizimi
   window.onizleSvg = (kat, isk, fl, km, ft) => parca(katTip(kat), isk, fl, km, ft);
-  const _ua8 = urunAc;
-  urunAc = function (id) {
-    _ua8.apply(this, arguments); const p = $$('.perde').pop(), u = VERI.urunler.find(x => x.id === id); if (!p || !u) return;
+  EK.urunParcaOnizleme = function (p, u) {
     let mesgul = false;
     const yenile = () => { if (mesgul) return; const k = p.querySelector('.r-onizle'); if (!k) return;
       const s = a => (p.querySelector(`.renk.on[data-a=${a}]`) || {}).dataset?.k || '', oz = p.querySelector('.p-foto .ozet');

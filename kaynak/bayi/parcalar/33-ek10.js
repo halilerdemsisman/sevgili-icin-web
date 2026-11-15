@@ -14,6 +14,7 @@
   const link = () => ((oku('exb-odeme-link', {}) || {})[ben.kul] || '').trim();
   function bakiye() { const c = (oku('exb-cari', {}) || {})[ben.kul]; if (!c || !c.hareket) return null; return c.hareket.reduce((a, h) => a + (h.tip === 'fatura' ? h.tutar : h.tip === 'odeme' ? -h.tutar : 0), 0); }
   let odOn = null; window.siparisOde = (no, t) => { odOn = { no, t }; git('odeme'); };
+  EK.odemeSayfa = () => odemeSayfa(); EK.teklifSayfa = () => teklifSayfa();
   function odemeSayfa() {
     const on = odOn; odOn = null; const L = link(), b = on ? on.t : bakiye(), Od = (oku('exb-odeme', []) || []).filter(o => o.kul === ben.kul && o.online).sort((a, c) => c.zaman - a.zaman).slice(0, 8);
     $('#s-odeme').innerHTML = `<div class="od-sayfa"><div class="of-kart"><div class="kucuk">${esc(ben.firma || ben.ad || ben.kul)} · Bayiye özel ödeme</div><h2 style="margin:6px 0 2px">Online ödeme</h2>
@@ -36,8 +37,7 @@
         toast(w ? 'Ödeme sayfası açıldı. Ödemeniz satış ekibine bildirildi.' : 'Açılır pencere engellendi; ödeme sayfası bu sekmede açılıyor.'); if (!w) location.href = L; else odemeSayfa();
       }); };
   }
-  const _cari10 = cariSayfa;
-  cariSayfa = function () { _cari10(); const s = $('#s-cari'), ob = $('#obAc'); if (!s || !ob || $('#olAc')) return; ob.insertAdjacentHTML('beforebegin', '<button class="btn" id="olAc" style="float:right;margin-top:-40px;margin-right:130px;background:#16a34a;color:#fff">Online öde</button>'); $('#olAc').onclick = () => git('odeme'); };
+  EK.cariOnlineOdeme = function () { const s = $('#s-cari'), ob = $('#obAc'); if (!s || !ob || $('#olAc')) return; ob.insertAdjacentHTML('beforebegin', '<button class="btn" id="olAc" style="float:right;margin-top:-40px;margin-right:130px;background:#16a34a;color:#fff">Online öde</button>'); $('#olAc').onclick = () => git('odeme'); };
 
   // ================= özel teklif: masa + sandalye takımı =================
   const MASA = VERI.urunler.filter(u => /Masa/i.test(u.kategori) && u.secenek.length), SAND = VERI.urunler.filter(u => /Sandalye|Oturma|Koltuk|Bank/i.test(u.kategori) && u.secenek.length);
@@ -85,21 +85,12 @@
       toast('Teklif ürünleri özel fiyatla sepete eklendi.'); });
   }
   // ürün penceresinden "Özel teklif iste"
-  const _ua10 = urunAc;
-  urunAc = function (id) { _ua10.apply(this, arguments); const p = $$('.perde').pop(), u = VERI.urunler.find(x => x.id === id); if (!p || !u || !(MASA.includes(u) || SAND.includes(u))) return;
+  EK.urunOzelTeklif = function (p, u) { const id = u.id; if (!(MASA.includes(u) || SAND.includes(u))) return;
     const ekle = () => { if (p.querySelector('.of-iste')) return; const k = p.querySelector('.kapat'); if (!k) return; k.insertAdjacentHTML('afterend', '<button class="btn cizgi of-iste" style="position:absolute;right:56px;top:12px;z-index:3;font-size:13px">Özel teklif iste</button>'); p.querySelector('.of-iste').onclick = () => { onSec = id; p.remove(); git('teklifler'); }; };
     ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true }); };
 
   // ================= gezinme =================
-  const _git10 = git;
-  git = function (s) {
-    const yeni = { odeme: ['#s-odeme', odemeSayfa], teklifler: ['#s-teklifler', teklifSayfa] }[s];
-    $('#s-odeme').classList.add('gizli'); $('#s-teklifler').classList.add('gizli');
-    if (!yeni) return _git10(s);
-    $$('section.sayfa').forEach(x => x.classList.add('gizli')); const k = $('#s-katalog'); k && k.classList.add('gizli');
-    $(yeni[0]).classList.remove('gizli'); $$('[data-git]').forEach(b => b.classList.toggle('aktif', b.dataset.git === s)); yeni[1](); window.scrollTo(0, 0);
-  };
-  // karar bildirimi: teklif durumu değişince bayiye haber ver
+    // karar bildirimi: teklif durumu değişince bayiye haber ver
   let eski = null;
   setInterval(() => { if (!ben) return; const T = TL(), y = JSON.stringify(T.map(t => [t.no, t.durum])); if (eski === null) eski = y; if (y === eski) return;
     const once = new Map(JSON.parse(eski)); eski = y; T.forEach(t => { if (once.has(t.no) && once.get(t.no) !== t.durum && t.durum !== 'bekliyor') toast(`${t.no} özel teklifiniz ${ODZ[t.durum].toLocaleLowerCase('tr')}.`); });

@@ -17,6 +17,7 @@
   const hs = $('#hSepet');
   if (hs && !$('[data-git=projeler]')) hs.insertAdjacentHTML('beforebegin', `<button class="h-btn" data-git="projeler"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="y">Projeler</span></button>`);
   if (!$('#s-projeler')) $('#s-cari').insertAdjacentHTML('afterend', '<section id="s-projeler" class="sayfa gizli"></section>');
+  EK.projeler = () => projeler();
   function projeler() {
     const L = prOku().slice().sort((a, b) => b.guncel - a.guncel), ak = aktifPr();
     $('#s-projeler').innerHTML = `<h2>Proje sepetleri</h2><p class="kucuk">Her müşteriniz veya işiniz için ayrı sepet hazırlayın. Hazır olduğunda sepete aktarıp sipariş verin; sipariş hangi projeden verildiyse Siparişlerim'de o adla görünür.</p>
@@ -64,15 +65,12 @@
     ekle(); new MutationObserver(ekle).observe(c, { childList: true, subtree: true });
   };
   // sipariş verilince projeyi işaretle
-  const _sdP = siparisDosyasi;
-  siparisDosyasi = function (o) {
+  EK.siparisProje = function (o) {
     const ak = aktifPr(), L = prOku(), p = L.find(x => x.id === ak);
     if (p && !o.proje) { o.proje = p.ad; p.siparisler = [...(p.siparisler || []), o.no]; p.guncel = Date.now(); prYaz(L); aktifPrAyarla('');
       kayitGuncelle('siparisler', o.no, { proje: p.ad }).catch(e => console.warn('proje kaydedilemedi:', e.message)); }
-    return _sdP(o);
   };
-  const _skP = siparisKarti;
-  siparisKarti = function (o) { let h = _skP(o); if (o.proje) h = h.replace(`<b>${o.no}</b>`, `<b>${o.no}</b> <span class="pr-etiket">${esc(o.proje)}</span>`); return h; };
+  EK.siparisKartiProje = function (o, h) { if (o.proje) h = h.replace(`<b>${o.no}</b>`, `<b>${o.no}</b> <span class="pr-etiket">${esc(o.proje)}</span>`); return h; };
 
   // ================= 5. canlı renk önizleme =================
   const RENKHEX = { Granit: '#76766f', Seramik: '#d9d3c6', 'RAL 1013': '#EAE6CA', 'RAL 9016': '#F6F6F2', 'RAL 7006': '#75695C', 'RAL 7016': '#383E42', 'RAL 9005': '#0E0E10' };
@@ -98,9 +96,7 @@
       <rect x="70" y="${92 - b}" width="100" height="16" rx="6" fill="${dolgu}" stroke="${o}" stroke-width="7"/><rect x="70" y="${92 - b}" width="100" height="16" rx="6" fill="${dolgu}" stroke="${km ? fitil : fr}" stroke-width="4"/>${b ? `<path d="M78 122 H162" stroke="${o}" stroke-width="7"/><path d="M78 122 H162" stroke="${fr}" stroke-width="4"/>` : ''}</g>`; }
     return `<svg viewBox="0 0 240 160" role="img" aria-label="Renk önizleme" style="filter:drop-shadow(0 0 .6px rgba(15,23,42,.55))">${defs}${z}${g}</svg>`;
   }
-  const _uaP = urunAc;
-  urunAc = function (id) {
-    _uaP(id); const p = $$('.perde').pop(), u = VERI.urunler.find(x => x.id === id); if (!p || !u) return;
+  EK.urunRenkOnizleme = function (p, u) {
     let m = false;
     const ciz = () => {
       if (m) return; m = true;
@@ -130,9 +126,8 @@
     const L = dyListe(); pencere(`<h3>Duyurular</h3><div class="dy-bant" style="margin-top:12px">${L.map(d => dyKart(d, false)).join('') || '<div class="kucuk">Yayında duyuru yok.</div>'}</div>`);
     if (ben) yaz('exb-duyuru-okundu-' + ben.kul, [...new Set([...dyOkundu(), ...L.map(d => d.id)])]); katalog();
   }
-  const _kP = katalog;
-  katalog = function () {
-    _kP(); if (!ben) return;
+  EK.katalogDuyuru = function () {
+    if (!ben) return;
     const L = dyListe(), ok = dyOkundu(), Y = L.filter(d => !ok.includes(d.id)), ust = $('#s-katalog .ust-satir');
     let b = $('#dyBant'); if (!b && ust) { ust.insertAdjacentHTML('afterend', '<div id="dyBant"></div>'); b = $('#dyBant'); }
     if (b) { b.innerHTML = L.length ? `<div class="dy-bant">${Y.slice(0, 3).map(d => dyKart(d, true)).join('')}<button class="dy-hepsi" id="dyHepsi">${Y.length ? 'Tüm duyurular' : 'Duyurular'} (${L.length})</button></div>` : '';
@@ -140,8 +135,7 @@
       if ($('#dyHepsi')) $('#dyHepsi').onclick = tumDuyurular; }
     const kp = $('#katPdf'); if (kp && !$('#numuneBtn')) { kp.insertAdjacentHTML('afterend', '<button class="btn cizgi" id="numuneBtn" style="padding:8px 12px;font-size:13px">Numune / katalog iste</button>'); $('#numuneBtn').onclick = () => numuneForm(''); }
   };
-  const _gyP = girisYap;
-  girisYap = function (u) { _gyP(u); setTimeout(() => { const n = dyListe().filter(d => !dyOkundu().includes(d.id)).length; if (n) toast(n + ' yeni duyuru var.'); }, 2900); };
+  EK.girisDuyuru = function () { setTimeout(() => { const n = dyListe().filter(d => !dyOkundu().includes(d.id)).length; if (n) toast(n + ' yeni duyuru var.'); }, 2900); };
   let _dySon = localStorage.getItem('exb-duyuru');
   setInterval(() => { const y = localStorage.getItem('exb-duyuru'); if (y !== _dySon) { _dySon = y; try { if (ben && !$('#s-katalog').classList.contains('gizli')) katalog(); } catch (e) {} } }, 15000);
 
@@ -176,9 +170,8 @@
       });
     };
   }
-  const _cariP = cariSayfa;
-  cariSayfa = function () {
-    _cariP(); const s = $('#s-cari'); if (!s || !ben) return;
+  EK.cariOdemeBildirimi = function () {
+    const s = $('#s-cari'); if (!s || !ben) return;
     const h = s.querySelector('h2'); if (h && !s.querySelector('#obAc')) { h.insertAdjacentHTML('afterend', '<button class="btn marka" id="obAc" style="float:right;margin-top:-40px">Ödeme bildir</button>'); $('#obAc').onclick = odemeForm; }
     const L = oku('exb-odeme', []).filter(o => o.kul === ben.kul).sort((a, b) => b.zaman - a.zaman);
     const oz = s.querySelector('.sk-ozet');
@@ -210,9 +203,8 @@
       });
     };
   }
-  const _spP = siparislerim;
-  siparislerim = function () {
-    _spP(); if (!ben) return;
+  EK.siparislerNumune = function () {
+    if (!ben) return;
     const L = oku('exb-numune', []).filter(o => o.kul === ben.kul).sort((a, b) => b.zaman - a.zaman), s = $('#s-siparisler');
     s.insertAdjacentHTML('beforeend', `<div class="kart-b" style="margin-top:18px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h3 style="margin:0">Numune ve katalog talepleri</h3><button class="btn cizgi" id="nmYeni" style="padding:6px 10px;font-size:12px">Yeni talep</button></div>
       ${L.length ? `<table class="tl-tablo" style="margin-top:10px"><tr><th>No</th><th>Tarih</th><th>Talep</th><th>Durum</th><th>Kargo</th></tr>${L.map(o => `<tr><td><b>${esc(o.no)}</b></td><td>${tarih(o.zaman)}</td><td>${esc(o.tur.join(', '))}${o.urun ? `<div class="kucuk">${esc(o.urun)}${o.kod ? ' · ' + esc(o.kod) : ''} · ${o.adet} adet</div>` : ''}</td><td><span class="dz ${o.durum}">${NDZ[o.durum]}</span></td><td class="kucuk">${esc([o.kargo, o.takip].filter(Boolean).join(' · ') || '—')}</td></tr>`).join('')}</table>` : '<p class="kucuk">Henüz talebiniz yok. Kumaş kartelası, renk kartelası, numune veya basılı katalog isteyebilirsiniz.</p>'}</div>`);
@@ -220,12 +212,7 @@
   };
 
   // gezinme
-  const _gitP = git;
-  git = function (s) {
-    if (s === 'projeler') { ['katalog', 'siparisler', 'cari'].forEach(x => $('#s-' + x).classList.add('gizli')); $('#s-projeler').classList.remove('gizli'); projeler(); $$('[data-git]').forEach(b => b.classList.toggle('aktif', b.dataset.git === s)); window.scrollTo(0, 0); }
-    else { $('#s-projeler').classList.add('gizli'); _gitP(s); }
-  };
-  $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
+    $$('[data-git]').forEach(b => b.onclick = () => git(b.dataset.git));
   const _cikP = $('#hCikis').onclick; $('#hCikis').onclick = () => { aktifPrAyarla(''); _cikP && _cikP(); };
 
   // İngilizce karşılıklar

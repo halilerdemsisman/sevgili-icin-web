@@ -20,8 +20,7 @@
       <div class="hd-cubuk"><i style="width:${x(h.oran)}%"></i>${h.B.map((b, i) => `<span class="${h.oran >= b.oran ? 'ok' : ''} ${i % 2 ? 'alt' : ''}" style="left:${x(b.oran)}%">%${b.oran} → %${b.prim} prim</span>`).join('')}</div>
       <div class="hd-not">${h.kaz ? `Şu an <b>%${h.kaz.prim} prim</b> basamağındasınız: tahmini prim <b>${para(Math.round(h.prim))}</b>. ` : 'Henüz prim basamağına ulaşmadınız. '}${h.sonraki ? `Bir sonraki basamak (%${h.sonraki.prim} prim) için <b>${para(Math.max(0, Math.ceil(h.hedef * h.sonraki.oran / 100 - h.ger)))}</b> daha sipariş gerekiyor.` : 'En üst basamaktasınız, tebrikler!'}</div></div>`;
   }
-  const _cariH = cariSayfa;
-  cariSayfa = function () { _cariH(); const k = hedefKart(); if (k && !$('#hdKart')) { const h = $('#s-cari h2'); h && h.nextElementSibling ? h.nextElementSibling.insertAdjacentHTML('afterend', k) : $('#s-cari').insertAdjacentHTML('afterbegin', k); } };
+  EK.cariHedef = function () { const k = hedefKart(); if (k && !$('#hdKart')) { const h = $('#s-cari h2'); h && h.nextElementSibling ? h.nextElementSibling.insertAdjacentHTML('afterend', k) : $('#s-cari').insertAdjacentHTML('afterbegin', k); } };
 
   // ================= 11. teslimat adres defteri =================
   const aKey = () => 'exb-adres-' + ben.kul, aOku = () => oku(aKey(), []) || [], aYaz = L => yaz(aKey(), L);
@@ -61,8 +60,7 @@
     ekle(); new MutationObserver(ekle).observe(c, { childList: true, subtree: true });
   };
   // cari sayfasında adres defteri kısayolu
-  const _cariA = cariSayfa;
-  cariSayfa = function () { _cariA(); if ($('#adKisa')) return; const n = aOku().length; $('#s-cari').insertAdjacentHTML('beforeend', `<div class="hd-kart" id="adKisa"><div class="hd-ust"><div><h3>Teslimat adreslerim</h3><div class="kucuk">${n ? n + ' kayıtlı adres' : 'Henüz kayıtlı adres yok'} · sepette tek tıkla seçilir</div></div><button class="btn cizgi" id="adAc">Adresleri yönet</button></div></div>`); $('#adAc').onclick = () => adresler(() => git('cari')); };
+  EK.cariAdresler = function () { if ($('#adKisa')) return; const n = aOku().length; $('#s-cari').insertAdjacentHTML('beforeend', `<div class="hd-kart" id="adKisa"><div class="hd-ust"><div><h3>Teslimat adreslerim</h3><div class="kucuk">${n ? n + ' kayıtlı adres' : 'Henüz kayıtlı adres yok'} · sepette tek tıkla seçilir</div></div><button class="btn cizgi" id="adAc">Adresleri yönet</button></div></div>`); $('#adAc').onclick = () => adresler(() => git('cari')); };
 
   // ================= 20. kendi müşterisine katalog =================
   const kKey = () => 'exb-mkat-' + ben.kul;

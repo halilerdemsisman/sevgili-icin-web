@@ -208,8 +208,8 @@
   };
   // REST çağrısı (Faz 2b): {ok, durum, ...gövde}. Bağlantı yoksa {ok:false, cevrimdisi:true}.
   window.EXIT_REST = (yontem, yol, govde) => fetch('api/v1/' + yol, { method: yontem, cache: 'no-store', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: govde ? JSON.stringify(govde) : undefined })
-    .then(r => r.json().catch(() => ({})).then(j => { if (r.status === 401) oturumKapandi(); durum(true); return { ...j, ok: r.ok, durum: r.status }; }),
-      () => { durum(false); return { ok: false, durum: 0, cevrimdisi: true, hata: 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip yeniden deneyin.' }; });
+    .then(r => r.json().catch(() => ({})).then(j => { if (r.status === 401) oturumKapandi(); durum(true); return { ...j, ok: r.ok, http: r.status }; }), // http: yanıt kodu (kaydın kendi 'durum' alanı ezilmesin)
+      () => { durum(false); return { ok: false, http: 0, cevrimdisi: true, hata: 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip yeniden deneyin.' }; });
   const cek = () => fetch('api/degisen?son=' + son, { cache: 'no-store', headers: { 'X-Exit-Uyg': UYG } }).then(r => r.json()).then(j => {
     son = j.zaman; if (oturum && !j.oturum) return oturumKapandi(); durum(true);
     // ekranlar sunucudan gelen değişikliği dinleyebilir (masaüstü bildirimleri): addEventListener('exit-degisti', e => e.detail)

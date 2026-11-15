@@ -24,9 +24,8 @@
   async function ciz(cv, id, fr, fb) { const o = await hazirla(id), out = new ImageData(new Uint8ClampedArray(o.d.data), o.w, o.h), hd = { 1: fr && hex(fr), 2: fb && hex(fb) };
     for (let p = 0; p < o.w * o.h; p++) { const k = o.lb[p], t = hd[k]; if (!t) continue; const c = rgb(Math.max(0, Math.min(100, t[0] + (o.L[p] - o.med[k]) * .85)), t[1], t[2]); out.data[p * 4] = c[0]; out.data[p * 4 + 1] = c[1]; out.data[p * 4 + 2] = c[2]; }
     cv.width = o.w; cv.height = o.h; cv.getContext('2d').putImageData(out, 0, 0); }
-  const _ua9 = urunAc;
-  urunAc = function (id) {
-    _ua9.apply(this, arguments); if (!ASIL[id]) return; const p = $$('.perde').pop(); if (!p) return;
+  EK.urunFoto = function (p, u) {
+    const id = u.id; if (!ASIL[id]) return;
     const s = a => (p.querySelector(`.renk.on[data-a=${a}]`) || {}).dataset?.k || '';
     let son = '', sira = 0;
     const yenile = async () => { const k = p.querySelector('.r-onizle'); if (!k) return; const isk = s('iskelet'), fl = s('file'), km = s('kumas'), v = [isk, fl, km].join('|');

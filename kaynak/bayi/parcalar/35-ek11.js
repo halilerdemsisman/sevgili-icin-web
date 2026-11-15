@@ -8,9 +8,8 @@
     const O = odemeler(o.no), ok = O.filter(x => x.durum === 'onaylandi').reduce((a, x) => a + x.tutar, 0), bek = O.filter(x => x.durum === 'bekliyor').reduce((a, x) => a + x.tutar, 0), kalan = Math.max(0, o.net - ok);
     return { net: o.net, ok, bek, kalan, durum: kalan < 0.01 ? 'odendi' : bek >= kalan - 0.01 ? 'kontrol' : ok > 0 ? 'kismi' : 'bekleniyor' };
   };
-  const _sk = siparisKarti;
-  siparisKarti = function (o) {
-    const h = _sk(o), d = siparisOdeme(o); if (!d) return h;
+  EK.siparisKartiOdeme = function (o, h) {
+    const d = siparisOdeme(o); if (!d) return h;
     const blok = d.durum === 'odendi' ? `<div class="sk-ode ok">✓ <span>Ödeme alındı · <b>${usd(d.ok)}</b></span></div>`
       : `<div class="sk-ode"><span>${d.durum === 'kontrol' ? 'Ödemeniz kontrol ediliyor' : d.durum === 'kismi' ? 'Kalan ödeme bekleniyor' : 'Sipariş onaylandı · <b>Ödeme bekleniyor</b>'}<br>İskontolu net tutar <b>${usd(d.net)}</b>${d.ok ? ` · ödenen ${usd(d.ok)}` : ''}${d.bek ? ` · kontrolde ${usd(d.bek)}` : ''}</span>${d.durum === 'kontrol' ? '' : `<button class="btn marka" onclick="siparisOde('${o.no}', ${Math.round(d.kalan * 100) / 100})">${usd(d.kalan)} öde</button>`}</div>`;
     return h.replace('<div class="adimlar">', blok + '<div class="adimlar">').replace('<div class="sk-iptal">', blok + '<div class="sk-iptal">');

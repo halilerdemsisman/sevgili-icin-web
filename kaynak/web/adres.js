@@ -2,7 +2,7 @@
    Her sayfanın kendi adresi var; geri/ileri tuşu, yer imi ve bağlantı paylaşımı çalışır:
      /katalog  /katalog/<kategori>  /urun/<id>-<ad>  /sepet
      /siparisler  /siparisler/<sipariş no>  /cari  /belgeler  /odeme  /ozel-teklif  /projeler
-   Mevcut sayfa geçişi (git) ve ürün penceresi (urunAc) sarılarak adres güncellenir. Sunucu bu
+   Sayfa geçişi (git), katalog ve ürün penceresi (urunAc) adresi EK.gitAdres / EK.katalogAdres / EK.urunAdres ile günceller. Sunucu bu
    adreslerin hepsine aynı index.html'i döner (sunucu.js: SITE_ADRESI). */
 (function () {
   if (!window.EXIT_WEB || !/^https?:$/.test(location.protocol) || !history.pushState) return;
@@ -22,41 +22,28 @@
   const baslikYaz = ek => { document.title = (ek ? ek + ' · ' : '') + 'EXIT Garden Bayi'; };
 
   // ---- sayfa geçişi
-  const _git = git;
-  git = function (s) {
-    const r = _git.apply(this, arguments);
+  EK.gitAdres = function (s) {
     if (YOL[s]) {
       sayfa = s;
       const yol = s === 'katalog' && F.kat ? YOL.katalog + '/' + kisa(F.kat) : YOL[s];
       adresYaz(yol);
       baslikYaz(BASLIK[s]);
     }
-    return r;
   };
   // katalogda kategori değişince adres de değişsin (geçmişe yeni kayıt açmadan)
-  const _katalog = katalog;
-  katalog = function () {
-    const r = _katalog.apply(this, arguments);
+  EK.katalogAdres = function () {
     if (sayfa === 'katalog' && !sessiz && /^\/katalog(\/|$)/.test(location.pathname)) {
       const yol = YOL.katalog + (F.kat ? '/' + kisa(F.kat) : '');
       if (location.pathname !== yol) history.replaceState({ s: 'katalog' }, '', yol);
       baslikYaz(F.kat || BASLIK.katalog);
     }
-    return r;
   };
 
   // ---- ürün penceresi: /urun/21-neo; pencere kapanınca önceki adrese dönülür
-  const _urunAc = urunAc;
-  urunAc = function (id) {
-    const once = new Set($$('.perde'));
-    const r = _urunAc.apply(this, arguments);
-    const u = VERI.urunler.find(x => x.id === id), p = $$('.perde').find(x => !once.has(x));
-    if (u && p) {
-      p.dataset.adres = 'urun';
-      if (!sessiz) history.pushState({ s: sayfa, urun: id }, '', '/urun/' + id + '-' + kisa(u.ad));
-      baslikYaz(u.ad);
-    }
-    return r;
+  EK.urunAdres = function (p, u) {
+    p.dataset.adres = 'urun';
+    if (!sessiz) history.pushState({ s: sayfa, urun: u.id }, '', '/urun/' + u.id + '-' + kisa(u.ad));
+    baslikYaz(u.ad);
   };
   // sepet penceresi: /sepet
   const hs = $('#hSepet');
@@ -132,8 +119,7 @@
   });
 
   // ---- girişten sonra istenen adrese git (giriş ekranından önce açılan bağlantı kaybolmasın)
-  const _girisYap = girisYap;
-  girisYap = function () { const r = _girisYap.apply(this, arguments); adresiAc(location.pathname, true); return r; };
+  EK.girisAdres = () => adresiAc(location.pathname, true);
   if (ben) adresiAc(location.pathname, true);
 
   // sipariş kartı vurgusu

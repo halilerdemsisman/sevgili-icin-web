@@ -194,10 +194,7 @@
   const tb = document.querySelector('header .tema-btn'); if (tb && !document.querySelector('header .dil-btn')) tb.insertAdjacentElement('beforebegin', dugme('h-btn'));
   dugmeCiz(); if (DIL === 'en') uygula();
   // yazdırılabilir katalog da seçili dilde açılsın
-  const _katalogIndir = katalogIndir;
-  katalogIndir = function () {
-    const ac = window.open; let w = null; window.open = function () { w = ac.apply(window, arguments); return w; };
-    try { _katalogIndir(); } finally { window.open = ac; }
+  EK.katalogIndirDil = function (w) {
     if (w && DIL === 'en') try { agac(w.document.body); w.document.title = 'EXIT Garden Catalogue ' + new Date().getFullYear(); } catch (e) {}
   };
 })();

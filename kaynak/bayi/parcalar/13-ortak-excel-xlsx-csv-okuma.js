@@ -89,13 +89,10 @@ const gunSonra = g => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate
 
   // ---------- favoriler: filtre
   F.fav = false;
-  const _uygun = uygun;
-  uygun = function (u, haric) { if (F.fav && !favler().includes(u.id)) return false; return _uygun(u, haric); };
+  EK.favoriUygun = u => !(F.fav && !favler().includes(u.id));
 
   // ---------- katalog: kalp, favori sekmesi, stok rozeti
-  const _katalog = katalog;
-  katalog = function () {
-    _katalog();
+  EK.katalogFavori = function () {
     const FV = favler(), D = stokD();
     const nav = $('#katNav');
     if (nav) {
@@ -121,9 +118,8 @@ const gunSonra = g => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate
   };
 
   // ---------- ürün penceresi: kalp + tahmini teslim
-  const _urunAc = urunAc;
-  urunAc = function (id) {
-    _urunAc(id); const p = $$('.perde').pop(), u = VERI.urunler.find(x => x.id === id); if (!p || !u) return;
+  EK.urunFavoriStok = function (p, u) {
+    const id = u.id;
     let mesgul = false;
     const ekle = () => {
       if (mesgul) return; mesgul = true;
@@ -165,16 +161,12 @@ const gunSonra = g => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate
     p.innerHTML = `<div class="pencere" style="position:relative"><button class="kapat" aria-label="Kapat">×</button><h3 style="margin:0 0 8px">${esc(bas)}</h3>${html}<div style="text-align:right;margin-top:16px"><button class="btn marka">Tamam</button></div></div>`;
     document.body.appendChild(p); p.querySelector('.kapat').onclick = p.querySelector('.btn.marka').onclick = () => p.remove();
   }
-  const _siparislerim = siparislerim;
-  siparislerim = function () {
-    _siparislerim();
+  EK.siparislerTekrar = function () {
     $$('#s-siparisler .sk [data-dosya]').forEach(b => { if (b.nextElementSibling && b.nextElementSibling.classList.contains('sk-tekrar')) return;
       b.insertAdjacentHTML('afterend', `<button class="btn marka sk-tekrar" style="padding:6px 10px;font-size:12px" data-tekrar="${esc(b.dataset.dosya)}">Tekrar sipariş ver</button>`); });
     $$('[data-tekrar]').forEach(b => b.onclick = () => tekrarSiparis(b.dataset.tekrar));
   };
-  const _siparisKarti = siparisKarti;
-  siparisKarti = function (o) {
-    let h = _siparisKarti(o);
+  EK.siparisKartiTahmin = function (o, h) {
     if (!o.termin && o.tahminiTeslim && !['sevk', 'iptal'].includes(o.durum)) h = h.replace('<b class="soluk">Onaydan sonra bildirilecek</b>', `<b class="soluk">~${tarih(o.tahminiTeslim)} · ön tahmin</b>`);
     return h;
   };
@@ -241,13 +233,11 @@ const gunSonra = g => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate
     c.addEventListener('click', e => { if (e.target.closest('#sGonder')) { const t = sepetTahmin(); window._sepetTermin = t ? gunSonra(t.gun) : null; } }, true);
     ekle(); new MutationObserver(ekle).observe(c, { childList: true, subtree: true });
   };
-  const _siparisDosyasi = siparisDosyasi;
-  siparisDosyasi = function (o) {
+  EK.siparisTahminiTeslim = function (o) {
     if (window._sepetTermin && !o.tahminiTeslim) {
       o.tahminiTeslim = window._sepetTermin; window._sepetTermin = null;
       kayitGuncelle('siparisler', o.no, { tahminiTeslim: o.tahminiTeslim }).catch(e => console.warn('tahmini teslim kaydedilemedi:', e.message));
     }
-    return _siparisDosyasi(o);
   };
   // stok bilgisi değişince katalog yenilensin
   let _stkSon = JSON.stringify(stokD());

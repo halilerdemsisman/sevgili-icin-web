@@ -69,6 +69,7 @@
   if (!$('#s-belgeler')) $('#s-cari').insertAdjacentHTML('afterend', '<section id="s-belgeler" class="sayfa gizli"></section>');
   let SEK = 'fatura';
   function belgeSek(s) { SEK = s; belgeler(); }
+  EK.belgeler = () => belgeler();
   function belgeler() {
     const c = (oku('exb-cari', {}) || {})[ben.kul] || { vade: 60, hareket: [] }, F = c.hareket.filter(h => h.tip === 'fatura').sort((a, b) => b.tarih - a.tarih);
     const S = benim().filter(o => o.durum === 'sevk').sort((a, b) => b.tarih - a.tarih), I = iadeler().sort((a, b) => b.zaman - a.zaman);
@@ -143,30 +144,23 @@
     const sc = x.secenek ? u.secenek.find(y => y.ad === x.secenek) : null; if (x.secenek && !sc) return toast('Bu seçenek artık satılmıyor.');
     const s = sepet(); s.push({ ...x, adet, id: u.id, ad: u.ad, kategori: u.kategori, birim: sc ? sc.fiyat : null, liste: sc ? sc.liste : null, kampanya: u.kmp ? u.kmp.ad + ' (%' + u.kmp.oran + ')' : '' }); sepetKaydet(s); toast(`${u.ad} × ${adet} sepete eklendi.`);
   }
-  const _sip = siparislerim;
-  siparislerim = function () {
-    _sip.apply(this, arguments); const L = sikAlinan(); if (!L.length) return; const h = $('#s-siparisler h2'); if (!h || $('#saBlok')) return;
+  EK.siparislerSikAlinan = function () {
+    const L = sikAlinan(); if (!L.length) return; const h = $('#s-siparisler h2'); if (!h || $('#saBlok')) return;
     (h.nextElementSibling || h).insertAdjacentHTML('afterend', `<div id="saBlok"><h3 style="margin:14px 0 0;font-size:15px;color:inherit">Sık aldıklarım</h3><div class="sa-izgara">${L.map((c, i) => { const u = VERI.urunler.find(y => y.id === c.x.id) || VERI.urunler.find(y => y.ad === c.x.ad), sc = u && c.x.secenek ? u.secenek.find(y => y.ad === c.x.secenek) : null, f = sc ? sc.fiyat : null;
       return `<div class="sa-k"><b>${esc(c.x.ad)}</b><span class="kucuk">${esc(c.x.secenek || '')}</span><span class="kucuk">${c.sip} siparişte · toplam ${c.adet} adet${f != null ? ' · ' + para(f) : ''}</span><div class="sa-alt"><input type="number" min="1" value="${Math.max(1, Math.round(c.adet / c.sip))}" data-saa="${i}"><button class="btn marka" data-sa="${i}" style="padding:7px 12px;font-size:12.5px" ${u ? '' : 'disabled title="Katalogda yok"'}>Sepete ekle</button></div></div>`; }).join('')}</div></div>`);
     $$('[data-sa]').forEach(b => b.onclick = () => sikEkle(L[+b.dataset.sa], Math.max(1, parseInt($(`[data-saa="${b.dataset.sa}"]`).value) || 1)));
   };
 
   // ================= 9. Kredi limiti (bayi görünümü) =================
-  const _cariL = cariSayfa;
-  cariSayfa = function () {
-    _cariL.apply(this, arguments); const c = (oku('exb-cari', {}) || {})[ben.kul]; if (!c || !(+c.limit > 0) || $('#lmKart')) return;
+  EK.cariLimit = function () {
+    const c = (oku('exb-cari', {}) || {})[ben.kul]; if (!c || !(+c.limit > 0) || $('#lmKart')) return;
     const z = cariOzet(c), acik = benim().filter(o => !['iptal', 'sevk'].includes(o.durum)).reduce((a, o) => a + (o.net != null ? o.net : o.toplam || 0), 0), risk = z.bakiye + acik, kul = Math.max(0, c.limit - risk), oran = Math.min(100, risk / c.limit * 100);
     const h = $('#s-cari h2'); (h && h.nextElementSibling ? h.nextElementSibling : h).insertAdjacentHTML('afterend', `<div class="lm-kart" id="lmKart"><div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px"><b>Kredi limitiniz: ${p2(c.limit)}</b><span>Kullanılabilir: <b style="color:${kul > 0 ? '#047857' : '#b91c1c'}">${p2(kul)}</b></span></div>
       <div class="lm-bar"><i style="width:${oran}%;background:${oran >= 100 ? '#dc2626' : oran > 80 ? '#d97706' : '#16a34a'}"></i></div><div class="kucuk">Bakiye ${p2(z.bakiye)} + açık siparişler ${p2(acik)} = ${p2(risk)}${oran >= 100 ? ' · Limit doldu; yeni siparişler satış yöneticisinin onayından sonra işleme alınır.' : ''}</div></div>`);
   };
 
   // ================= gezinme =================
-  const _gitB = git;
-  git = function (s) {
-    if (s === 'belgeler') { $$('section.sayfa').forEach(x => x.classList.toggle('gizli', x.id !== 's-belgeler')); const k = $('#s-katalog'); k && k.classList.add('gizli'); $$('[data-git]').forEach(b => b.classList.toggle('aktif', b.dataset.git === s)); belgeler(); window.scrollTo(0, 0); }
-    else { $('#s-belgeler').classList.add('gizli'); _gitB(s); }
-  };
-  $$('[data-git=belgeler]').forEach(b => b.onclick = () => git('belgeler'));
+    $$('[data-git=belgeler]').forEach(b => b.onclick = () => git('belgeler'));
   window.belgeSek = belgeSek;
   setInterval(bnKontrol, 8000); setTimeout(bnKontrol, 1500);
   const rz = setInterval(() => { if (ben) { bnRozet(); clearInterval(rz); } }, 700);
