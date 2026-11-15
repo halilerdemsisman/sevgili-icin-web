@@ -18,10 +18,8 @@
   // Yönetici: "Temsilciler ve işlem kaydı" ekranına şifre sıfırlama kartı
   const S6 = window.S6;
   if (S6 && S6.kullanicilar6) {
-    const _k6 = S6.kullanicilar6;
-    S6.kullanicilar6 = function () {
-      const sonuc = _k6.apply(this, arguments);
-      if (!window.EXIT_OTURUM || EXIT_OTURUM.rol !== 'yonetici') return sonuc;
+    EK.kullanicilarSifre = function () {
+      if (!window.EXIT_OTURUM || EXIT_OTURUM.rol !== 'yonetici') return;
       const SK = oku('exs-kullanicilar', {}) || {}, BK = oku('exb-kullanicilar', {}) || {};
       const L = [...Object.values(SK).filter(u => u && u.kul && u.kul !== EXIT_OTURUM.kul).map(u => ['satis', u.kul, (u.ad || u.kul) + ' · satış']),
         ...Object.values(BK).filter(u => u && u.kul).sort((a, b) => (a.firma || a.kul).localeCompare(b.firma || b.kul, 'tr')).map(u => ['bayi', u.kul, (u.firma || u.kul) + ' · bayi (' + u.kul + ')'])];
@@ -34,26 +32,20 @@
         $('#ssSonuc').innerHTML = r.ok ? `<div>Geçici şifre: <b id="ssGecici" style="font-family:ui-monospace,monospace;font-size:16px;letter-spacing:.5px">${esc(r.gecici)}</b></div><div class="kucuk">Şifreyi kullanıcıya telefonla veya güvenli bir kanaldan iletin; bir daha gösterilmez.</div>`
           : `<span style="color:#b91c1c">${esc(r.hata || 'Şifre sıfırlanamadı.')}</span>`;
       };
-      return sonuc;
     };
   }
 
   // Sunucu fiyat denetiminde düzeltilen siparişte uyarı göster
-  const _sa = siparisAc;
-  siparisAc = function (no) {
-    const sonuc = _sa.apply(this, arguments);
+  EK.siparisFiyatUyarisi = function (no) {
     const o = (oku('exb-siparisler', []) || []).find(x => x.no === no), p = [...document.querySelectorAll('.perde .pencere h2')].pop();
     if (o && o.fiyatKontrol && p && !p.parentNode.querySelector('.fk-uyari')) p.insertAdjacentHTML('afterend', `<div class="fk-uyari" style="margin:10px 0;padding:10px 12px;border-radius:10px;background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;font-size:13px"><b>Fiyat düzeltildi:</b> Bayinin gönderdiği birim fiyat güncel bayi fiyatının altındaydı; sunucu güncel fiyatı yazdı. ${o.fiyatKontrol.duzeltme.map(d => `${esc(d.ad)} ${esc(d.secenek || '')}: ${d.gelen} → ${d.beklenen == null ? 'teklif' : d.beklenen} $`).join(' · ')}</div>`);
-    return sonuc;
   };
 
   // Tarayıcıda kalmış eski Claude API anahtarını sil (anahtar artık sunucuda tutulur)
   try { localStorage.removeItem('exs-ai-anahtar'); } catch (x) {}
 
   // Ayarlar: Claude API anahtarı ve satış kullanıcıları kartları sunucu üzerinden çalışır
-  const _ay = ayarlar;
-  ayarlar = function () {
-    const sonuc = _ay.apply(this, arguments);
+  EK.ayarlarSunucu = function () {
     const yon = window.EXIT_OTURUM && EXIT_OTURUM.rol === 'yonetici';
     const aiKart = $('#aKey') && $('#aKey').closest('.kart');
     if (aiKart) {
@@ -92,7 +84,6 @@
       };
       ciz();
     }
-    return sonuc;
   };
 
   $('#cikis').onclick = async () => {

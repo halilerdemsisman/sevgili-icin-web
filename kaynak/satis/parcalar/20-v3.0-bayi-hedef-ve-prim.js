@@ -34,10 +34,9 @@
     $('#bhCsv').onclick = () => { const R2 = [['Bayi', 'Şehir', 'Yıl', 'Hedef $', 'Gerçekleşen $', 'İlerleme %', 'Prim %', 'Tahmini prim $']].concat(R.filter(r => r.h).map(r => [r.m.firma || r.m.kul, r.m.sehir || '', y, r.h.hedef, Math.round(r.g), Math.round(r.o * 10) / 10, r.k ? r.k.prim : 0, Math.round(r.prim)]));
       const csv = '﻿' + R2.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'exit_bayi_hedef_prim_' + y + '.csv'; a.click(); };
   }
-  const _gitBH = git;
-  git = function (s) { if (s === 'bayihedef') { try { $('#yol').textContent = 'Satış Yönetimi  /  Bayi hedef ve prim'; } catch (e) {} aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; bayihedef(); window.scrollTo(0, 0); } else _gitBH(s); };
-  $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
+  EK.sayfalar.bayihedef = ['Bayi hedef ve prim', () => bayihedef()];
+    $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
   // gerçekleşen tutar sipariş durumu değiştikçe portala yansısın
-  const _durumBH = durumYaz; durumYaz = function (no, d) { _durumBH(no, d); try { yayinla(); } catch (e) {} };
+  EK.durumYayinla = () => { try { yayinla(); } catch (e) {} };
   setTimeout(() => { try { yayinla(); } catch (e) {} }, 1500);
 })();

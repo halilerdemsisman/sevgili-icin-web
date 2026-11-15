@@ -96,10 +96,10 @@
     $$('[data-ds]').forEach(b => b.onclick = () => { if (!b.dataset.emin) { b.dataset.emin = 1; b.textContent = 'Silinsin mi?'; return; } DY = DY.filter(x => x.id !== b.dataset.ds); dyYaz(); toast('Duyuru silindi.'); duyurular(); });
   }
 
+  EK.rozetler = () => rozetler();
   const SAY = { odemeler: ['Ödeme bildirimleri', odemeler], numuneler: ['Numune talepleri', numuneler], duyurular: ['Duyurular', duyurular] };
-  const _gitE = git;
-  git = function (s) { const S = SAY[s]; if (S) { try { $('#yol').textContent = 'Satış Yönetimi  /  ' + S[0]; } catch (e) {} aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; S[1](); window.scrollTo(0, 0); } else _gitE(s); rozetler(); };
-  $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
+  Object.assign(EK.sayfalar, SAY);
+    $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
   const adet = () => oku('exb-odeme', []).length + oku('exb-numune', []).length; let son = adet();
   setInterval(() => { const y = adet(); if (y > son) { rozetler(); if (aktif === 'odemeler' && !$('.perde')) odemeler(); if (aktif === 'numuneler' && !$('.perde') && !document.activeElement.closest('#icerik')) numuneler(); toast('Bayiden yeni bildirim geldi.'); } son = y; }, 20000);
   rozetler();

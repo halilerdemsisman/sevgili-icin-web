@@ -120,6 +120,9 @@
   let z = null; const sirala = () => { clearTimeout(z); z = setTimeout(denetle, 300); };
   addEventListener('exit-degisti', sirala);
   setInterval(denetle, 5000); setTimeout(denetle, 800);
+  // oturum açıldığı anda bekleyenler "görüldü" sayılır (ac'ın sonunda). Önceden bu ilk denetim zamanlayıcıya kalıyordu:
+  // oturum zamanlayıcıdan sonra açılırsa, girişten hemen sonra gelen sipariş görülmüş sayılıp bildirimi çıkmıyordu.
+  EK.masaustuIsler = () => { gorulen = null; denetle(); };
 
   // ---------- masaüstü: bağlantı yokken gösterilecek son görülen listeler (Faz 3b) ----------
   // Uygulama bunu bilgisayarda şifreli saklar; sunucuya ulaşılamazsa bağlantı hatası sayfası salt okunur gösterir.

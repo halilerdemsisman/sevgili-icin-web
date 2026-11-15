@@ -51,9 +51,10 @@ for (const [uyg, baslik] of Object.entries(UYG)) {
   // 1) kalan sarmalamalar: const _x = ad;  …  ad = function / ad = (…) =>
   const sarma = [];
   for (const [p, metin] of Object.entries(metinler)) {
-    for (const m of metin.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*([A-Za-z_$][\w$]*)\s*;/g)) {
+    for (const m of metin.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*((?:window\.)?[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)?)\s*;/g)) {
       const [, sakli, ad] = m;
-      const yeniden = new RegExp(`(?:^|[\\s;(])(?:window\\.)?${ad.replace(/\$/g, '\\$')}\\s*=\\s*(?:async\\s+)?(?:function\\b|\\(|[A-Za-z_$][\\w$]*\\s*=>)`, 'm');
+      if (/\.on[a-z]+$/.test(ad)) continue; // DOM olay işleyicisini zincirleme (o = b.onclick; b.onclick = …) ekran fonksiyonu değil
+      const yeniden = new RegExp(`(?:^|[\\s;(])(?:window\\.)?${ad.replace(/^window\./, '').replace(/[$.]/g, '\\$&')}\\s*=\\s*(?:async\\s+)?(?:function\\b|\\(|[A-Za-z_$][\\w$]*\\s*=>)`, 'm');
       if (!yeniden.test(metin.slice(m.index + m[0].length))) continue;
       sarma.push(`\`${ad}\` ${kisa(p)}:${metin.slice(0, m.index).split('\n').length} (\`${sakli}\`)`);
     }
@@ -63,6 +64,7 @@ for (const [uyg, baslik] of Object.entries(UYG)) {
   const tanim = {}, cagri = {};
   for (const [p, metin] of Object.entries(metinler)) {
     for (const m of metin.matchAll(/\bEK\.([A-Za-z_$][\w$]*)\s*=(?!=)/g)) tanim[m[1]] = `${kisa(p)}:${metin.slice(0, m.index).split('\n').length}`;
+    for (const t of metin.matchAll(/\bconst EK = \{(.*)\};/g)) for (const m of t[1].matchAll(/([A-Za-z_$][\w$]*)\s*:/g)) tanim[m[1]] = `${kisa(p)}:${metin.slice(0, t.index).split('\n').length}`;
     for (const m of metin.matchAll(/\bEK\.([A-Za-z_$][\w$]*)(?![\w$])(?!\s*=(?!=))/g)) (cagri[m[1]] ||= []).push(p);
     // EK_SAYFA gibi tablolarda ad dizgi olarak geçer: { projeler: 'projeler', … }
     for (const t of metin.matchAll(/\bEK_[A-Z]+ = \{([^}]*)\}/g)) for (const m of t[1].matchAll(/:\s*'([\w$]+)'/g)) (cagri[m[1]] ||= []).push(p);
@@ -73,7 +75,10 @@ for (const [uyg, baslik] of Object.entries(UYG)) {
   // 3) ekran fonksiyonları: gövdesinde EK çağıran, en üst düzeyde tanımlı fonksiyonlar
   const ekran = [];
   for (const [p, metin] of Object.entries(metinler)) {
-    for (const m of metin.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)) {
+    for (const m of metin.matchAll(/^\s*(?:(?:async\s+)?function\s+([A-Za-z_$][\w$]*)|(S6\.[A-Za-z_$][\w$]*)\s*=\s*function)\s*\(/gm)) {
+      if (!m[1] && !m[2]) continue; m[1] = m[1] || m[2];
+      if (/^\s+function/.test(m[0])) continue; // iç içe fonksiyonlar değil, en üst düzey
+
       const bas = metin.indexOf('{', m.index + m[0].length), son = blokSonu(metin, bas), govde = metin.slice(bas, son);
       const yerler = [...govde.matchAll(/\bEK\.([A-Za-z_$][\w$]*)(?=\?\.\(|\(|\s*&&|\))/g)].map(x => [x.index, x[1]]);
       for (const t of govde.matchAll(/EK\[EK_([A-Z]+)\[/g)) { const tb = metin.match(new RegExp(`\\bEK_${t[1]} = \\{([^}]*)\\}`)); if (tb) yerler.push(...[...tb[1].matchAll(/:\s*'([\w$]+)'/g)].map((x, i) => [t.index + i / 100, x[1]])); }

@@ -1,3 +1,8 @@
+// Ekler (Faz 3b-2). Sonradan eklenen özellikler (ödeme bildirimleri, karne, limit, işlem kaydı…) kendi
+// parçalarında EK.<ad> olarak tanımlıdır; ekran fonksiyonu (git, ac, durumYaz, siparisAc…) bunları kendi içinde,
+// yazılı sırayla çağırır. Ek parçaların menü sayfaları EK.sayfalar'dadır. Tanımsız ek kalmadığını
+// `node araclar/sarmalama.mjs` denetler.
+const EK = { sayfalar: {} };
 
 const VERI = /*@katalog*/null;
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
@@ -30,10 +35,26 @@ function birlestir() {
   Object.values(SIP).forEach(o => { if (!MUS[o.kul]) MUS[o.kul] = { kul: o.kul, firma: o.firma, ad: o.ad, tarih: o.tarih }; });
   yaz('exs-siparisler', SIP); yaz('exs-musteriler', MUS); return yeni;
 }
+// Sipariş durumunu değiştirir. Sıra: kredi limiti (EK.durumLimit: aşılıyorsa temsilci durur, yöneticiye onay
+// penceresi) -> onay kuralı -> durum ve geçmiş -> sevkte fatura -> bayi portalına yansıtma -> ekler.
 function durumYaz(no, d) {
-  SIP[no].durum = d; SIP[no].satisDurum = true; yaz('exs-siparisler', SIP);
+  if (EK.durumLimit && !EK.durumLimit(no, d)) return;
+  const o = SIP[no], eski = o ? o.durum : '';
+  const N = onayGerekli(o), ileri = ['onay', 'uretim', 'sevk'].includes(d);
+  if (ileri && N.length && !(o.onay && o.onay.durum === 'onaylandi' && o.onay.imza === onayImza(o))) {
+    if (yonetici()) { o.onay = { durum: 'onaylandi', neden: N, kim: kimAd(), zaman: Date.now(), imza: onayImza(o), otomatik: true }; }
+    else { o.onay = { durum: 'bekliyor', neden: N, isteyen: kimAd(), zaman: Date.now(), hedefDurum: d }; yaz('exs-siparisler', SIP); onaySay(); toast('Bu sipariş yönetici onayı gerektiriyor: ' + N.join(', ') + '. Onaya gönderildi.'); return; }
+  }
+  o.gecmis = o.gecmis || [{ durum: 'yeni', zaman: o.tarih }];
+  if (o.durum !== d || !o.gecmis.length) o.gecmis.push({ durum: d, zaman: Date.now() });
+  o.durum = d; o.satisDurum = true;
   // aynı tarayıcıdaki müşteri portalına da yansıt
-  const P = oku('exb-siparisler', null); if (P) { const x = P.find(o => o.no === no); if (x) { x.durum = d; yaz('exb-siparisler', P); } }
+  const P = oku('exb-siparisler', null); if (P) { const x = P.find(y => y.no === no); if (x) { x.durum = d; yaz('exb-siparisler', P); } }
+  if (d === 'sevk') faturaKes(o);
+  yaz('exs-siparisler', SIP); portalaYansit(o); onaySay();
+  EK.durumYayinla?.();
+  if (eski !== d) EK.durumIslem?.(no, eski, d);
+  EK.durumNet?.(no, d);
 }
 // İskonto: müşteri (firma) iskontosu + siparişe özel ek iskonto, art arda uygulanır.
 const musIsk = kul => (ISK[kul] && +ISK[kul].oran) || 0;
@@ -79,19 +100,31 @@ $('#fGiris').onsubmit = async e => {
 };
 $('#cikis').onclick = () => { try { sessionStorage.removeItem('exs-oturum'); } catch (e) {} location.reload(); };
 function ac() {
+  EK.acOnce?.(); // temsilci yalnız kendi bayilerini görür
   $('#giris').classList.add('gizli'); $('#uyg').classList.remove('gizli');
   const y = birlestir(); if (y) toast(y + ' yeni sipariş portaldan alındı.');
   kurCiz(); kurGuncelle(true); setInterval(() => kurGuncelle(true), 30 * 60 * 1000);
   setInterval(() => { if (birlestir()) { yeniSay(); if (aktif === 'siparisler') git('siparisler'); toast('Yeni sipariş geldi.'); } }, 20000);
   try { const ad = ben.ad || ben.kul || 'Satış'; $('#kim').innerHTML = `<div class="av">${ad.split(/\s+/).map(x => x[0]).slice(0, 2).join('').toLocaleUpperCase('tr-TR')}</div><div><b>${ad}</b><span>Satış ekibi · ${new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>`; } catch (e) {}
   yeniSay(); git('siparisler');
+  onaySay(); try { $('#kim span').textContent = ROL_AD[rolu(ben)] + ' · ' + new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) {}
+  EK.acHatirlatma?.(); EK.acSonra?.(); EK.masaustuIsler?.();
 }
 function yeniSay() { const n = Object.values(SIP).filter(o => o.durum === 'yeni').length; $('#sYeni').textContent = n; $('#sYeni').classList.toggle('gizli', !n); }
 let aktif = '';
+// Menü sayfaları: ad -> [başlık (null: menüdeki yazı), çizen]. Ek parçaların sayfaları önce aranır (aynı ad
+// varsa ekinki geçerli): ek6 sayfaları (EK.sayfa6), sonra EK.sayfalar. Her geçişten sonra menü sayaçları yenilenir.
+const SAYFALAR = {
+  siparisler: [null, () => siparisler()], musteriler: [null, () => musteriler()], analiz: [null, () => analiz()], ai: [null, () => ai()], ayarlar: [null, () => ayarlar()],
+  raporlar: ['Raporlar', () => raporlar()], kampanyalar: ['Kampanyalar', () => kampanyalar()], urunler: ['Ürünler ve fiyatlar', () => urunler()],
+  onaylar: ['Onay bekleyenler', () => onaylar()], hedefler: ['Hedefler', () => hedefler()],
+};
 function git(s) {
-  try { const b = $(`aside button.m[data-s=${s}]`); $('#yol').textContent = 'Satış Yönetimi  /  ' + (b ? [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() : ''); } catch (e) {}
+  const S = EK.sayfa6?.(s) || EK.sayfalar[s] || SAYFALAR[s]; if (!S) return;
+  try { const b = $(`aside button.m[data-s=${s}]`); $('#yol').textContent = 'Satış Yönetimi  /  ' + (S[0] || (b ? [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() : '')); } catch (e) {}
   aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = '';
-  ({ siparisler, musteriler, analiz, ai, ayarlar })[s](); window.scrollTo(0, 0);
+  S[1](); window.scrollTo(0, 0);
+  onaySay(); EK.rozetler?.(); EK.hatirlatmaRozeti?.();
 }
 $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
 $('#mMenu').onclick = () => $('#menu').classList.add('acik');
@@ -174,6 +207,8 @@ function siparisAc(no) {
     p.querySelector('#pTeklif').onclick = () => teklifYazdir(o);
   }
   ciz();
+  siparisTakip(p, o); siparisOnayBandi(p, o); siparisBildirBandi(p, o);
+  EK.siparisFiyatUyarisi?.(no);
 }
 function teklifYazdir(o) {
   const t = tutarlar(o), w = window.open('', '_blank'); if (!w) return toast('Açılır pencere engellendi.');
@@ -204,6 +239,14 @@ function musteriler() {
       <td><input data-not="${esc(m.kul)}" value="${esc((ISK[m.kul] || {}).not || '')}" placeholder="ör. bayi, proje" style="width:140px;padding:7px;border:1px solid var(--cizgi);border-radius:8px"></td></tr>`).join('')}</table>` : '<div class="bos">Henüz müşteri yok.</div>'}</div>`;
   const kaydet = kul => { const o = $(`[data-isk="${CSS.escape(kul)}"]`).value, n = $(`[data-not="${CSS.escape(kul)}"]`).value; const v = Math.min(100, Math.max(0, parseFloat(o.replace(',', '.')) || 0)); ISK[kul] = { oran: v, not: n }; yaz('exs-iskonto', ISK); toast('İskonto kaydedildi: ' + yuzde(v)); };
   $$('[data-isk]').forEach(i => i.onchange = () => kaydet(i.dataset.isk)); $$('[data-not]').forEach(i => i.onchange = () => kaydet(i.dataset.not));
+  { // cari bakiye, uyarı ve müşteri kartı sütunları
+  $('#baslik').textContent = 'Müşteriler, iskonto ve cari';
+  const tb = $('#icerik table.tablo'); if (!tb) return;
+  tb.querySelector('tr').insertAdjacentHTML('beforeend', '<th>Cari / uyarı</th><th></th>');
+  [...tb.querySelectorAll('tr')].slice(1).forEach(r => { const kul = r.querySelector('[data-isk]').dataset.isk, c = cariOzet(kul);
+    r.insertAdjacentHTML('beforeend', `<td><b>${usd(c.bakiye)}</b><div>${uyariRozet(musUyari(MUS[kul] || { kul }))}</div></td><td><button class="btn cizgi" data-kart="${esc(kul)}">Müşteri kartı</button></td>`); });
+  $$('[data-kart]').forEach(b => b.onclick = () => musteriKarti(b.dataset.kart));
+  }
 }
 
 // ---------- analiz
@@ -334,6 +377,14 @@ function ai() {
     catch (e) { toast('Claude analizi yapılamadı: ' + e.message); }
     b.disabled = false; b.textContent = 'Claude ile derin analiz';
   };
+  { // satış tahmini ve ürün önerileri
+  $('#baslik').textContent = 'Yapay zekâ: tahmin ve SWOT'; const s = istatistik(); if (!s.siparis) return; const T = tahmin(s), O = urunOnerileri(), max = Math.max(1, ...T.map(t => t.ust), ...s.aylar.slice(-6).map(a => a.net));
+  $('#icerik').insertAdjacentHTML('afterbegin', `<div class="kart"><h3>Satış tahmini: gelecek 3 ay</h3><div class="alt">Son 12 ayın eğilimi ve son 3 ayın ortalamasıyla hesaplanır. Aralık, geçmiş dalgalanmaya göre olası alt ve üst değerdir.</div>
+    <div class="tahmin">${s.aylar.slice(-6).map(a => `<div class="tc"><span class="tv">${usd(a.net)}</span><i style="height:${a.net / max * 140}px"></i><span>${a.ad}</span></div>`).join('')}
+    ${T.map(t => `<div class="tc tah"><span class="tv">${usd(t.t)}</span><i style="height:${t.t / max * 140}px"><em style="bottom:${t.alt / max * 140}px;height:${(t.ust - t.alt) / max * 140}px"></em></i><span>${t.ad.split(' ')[0].slice(0, 3)}</span></div>`).join('')}</div>
+    <div class="kucuk">Tahmin toplamı: <b>${usd(T.reduce((a, t) => a + t.t, 0))}</b> (${usd(T.reduce((a, t) => a + t.alt, 0))} – ${usd(T.reduce((a, t) => a + t.ust, 0))}) · ${tlYap(T.reduce((a, t) => a + t.t, 0))}</div></div>
+    ${O.length ? `<div class="kart"><h3>Bayiye ürün önerileri</h3><div class="alt">Benzer ürünleri alan bayilerin satın alımlarına göre; o bayinin henüz almadığı ürünler.</div><table class="tablo"><tr><th>Bayi</th><th>Önerilen ürünler</th></tr>${O.map(o => `<tr><td><b>${esc(o.firma)}</b></td><td>${o.L.map(esc).join(', ')}</td></tr>`).join('')}</table></div>` : ''}`);
+  }
 }
 
 // ---------- ayarlar
@@ -362,6 +413,8 @@ function ayarlar() {
   $('#kSifK').onclick = async () => { if ($('#kSif').value.length < 6) return toast('Şifre en az 6 karakter olmalı.'); KUL[ben.kul].sifre = await ozet($('#kSif').value); yaz('exs-kullanicilar', KUL); toast('Şifreniz değişti.'); $('#kSif').value = ''; };
   $('#ornekOl').onclick = () => { ornekVeri(); ayarlar(); toast('Örnek veri oluşturuldu.'); };
   $('#ornekSil').onclick = () => { Object.keys(CARI).forEach(k => { if (k.startsWith('ornek-')) delete CARI[k]; }); cariYaz(); Object.keys(CRM).forEach(k => { if (k.startsWith('ornek-')) delete CRM[k]; }); yaz('exs-crm', CRM); Object.keys(SIP).forEach(k => { if (SIP[k].ornek) delete SIP[k]; }); Object.keys(MUS).forEach(k => { if (MUS[k].ornek) delete MUS[k]; }); yaz('exs-siparisler', SIP); yaz('exs-musteriler', MUS); yeniSay(); ayarlar(); toast('Örnek veri silindi.'); };
+  ayarlarRoller();
+  EK.ayarlarSunucu?.();
 }
 function ornekVeri() {
   let t = 7; const r = () => (t = (t * 9301 + 49297) % 233280) / 233280;
@@ -381,6 +434,20 @@ function ornekVeri() {
     SIP[no] = { no, kul: fm[0], firma: fm[1], ad: 'Örnek Yetkili', tarih: d.getTime(), kalemler, toplam: kalemler.reduce((a, x) => a + x.birim * x.adet, 0), adres: fm[2], durum: ay > 1 ? (r() < .08 ? 'iptal' : 'sevk') : ['yeni', 'onay', 'uretim'][Math.floor(r() * 3)], ekIskonto: r() < .2 ? 3 : 0, ornek: true, kaynak: 'ornek' };
   }
   yaz('exs-siparisler', SIP); yaz('exs-musteriler', MUS); yaz('exs-iskonto', ISK); yeniSay();
+  { // örnek siparişlere geçmiş, termin, fatura/tahsilat ve CRM notu
+  let tohum = 7; const r = () => (tohum = (tohum * 9301 + 49297) % 233280) / 233280;
+  Object.values(SIP).filter(o => o.ornek).sort((a, b) => a.tarih - b.tarih).forEach(o => {
+    o.gecmis = [{ durum: 'yeni', zaman: o.tarih }]; if (o.durum !== 'yeni') o.gecmis.push({ durum: o.durum, zaman: o.tarih + 3 * GUN });
+    if (o.durum === 'onay' || o.durum === 'uretim') o.termin = new Date(Date.now() + (10 + Math.floor(r() * 30)) * GUN).toISOString().slice(0, 10);
+    if (o.durum !== 'sevk') return; o.kargo = 'Kendi aracımız'; o.takip = 'IRS-' + o.no.slice(-4);
+    const c = cariHesap(o.kul), t = o.tarih + 5 * GUN, n = Math.round(tutarlar(o).net * 100) / 100;
+    if (!c.hareket.some(h => h.sip === o.no)) { c.hareket.push({ tip: 'fatura', no: 'FT-' + o.no, sip: o.no, tarih: t, vade: t + c.vade * GUN, tutar: n, aciklama: o.no + ' sevkiyatı', ornek: true });
+      if (r() < (o.kul === 'ornek-bodrum' ? .3 : .85)) c.hareket.push({ tip: 'odeme', no: 'TH-' + o.no.slice(-4), tarih: t + (40 + r() * 40) * GUN, tutar: n, aciklama: 'Havale', ornek: true }); }
+  });
+  Object.values(CARI).forEach(c => c.hareket = c.hareket.filter(h => h.tip !== 'odeme' || h.tarih < Date.now()));
+  ['ornek-ege', 'ornek-akdeniz', 'ornek-bosfor'].forEach((k, i) => { CRM[k] = CRM[k] || []; if (!CRM[k].length) CRM[k].push({ tarih: Date.now() - (5 + i * 20) * GUN, tur: ['Telefon', 'Ziyaret', 'E-posta'][i], yazi: ['Yeni sezon kataloğu iletildi.', 'Showroom ziyareti, teras projesi konuşuldu.', 'Fiyat listesi gönderildi.'][i], kim: 'Örnek', ornek: true }); });
+  yaz('exs-siparisler', SIP); cariYaz(); yaz('exs-crm', CRM);
+  }
 }
 
 // ---------- başlangıç
@@ -407,6 +474,7 @@ function cariOzet(kul) {
 function faturaKes(o) {
   const c = cariHesap(o.kul); if (c.hareket.some(h => h.tip === 'fatura' && h.sip === o.no)) return;
   const t = Date.now(); c.hareket.push({ tip: 'fatura', no: 'FT-' + o.no, sip: o.no, tarih: t, vade: t + (c.vade || VADE_VARS) * GUN, tutar: Math.round(tutarlar(o).net * 100) / 100, aciklama: o.no + ' sevkiyatı' });
+  EK.faturaIslem?.(o);
   cariYaz();
 }
 // Siparişin müşterinin göreceği alanlarını aynı tarayıcıdaki bayi portalına yansıt
@@ -415,16 +483,9 @@ function portalaYansit(o) {
   Object.assign(x, { durum: o.durum, termin: o.termin || '', kargo: o.kargo || '', takip: o.takip || '', gecmis: o.gecmis || [], net: Math.round(tutarlar(o).net * 100) / 100, satisNot: o.satisNot || '' });
   yaz('exb-siparisler', P);
 }
-const _durumYaz = durumYaz;
-durumYaz = function (no, d) {
-  const o = SIP[no]; o.gecmis = o.gecmis || [{ durum: 'yeni', zaman: o.tarih }];
-  if (o.durum !== d || !o.gecmis.length) o.gecmis.push({ durum: d, zaman: Date.now() });
-  _durumYaz(no, d); if (d === 'sevk') faturaKes(o); yaz('exs-siparisler', SIP); portalaYansit(o);
-};
 // sipariş penceresine takip alanları
-const _siparisAc = siparisAc;
-siparisAc = function (no) {
-  _siparisAc(no); const p = $$('.perde').pop(), o = SIP[no]; if (!p) return;
+// sipariş penceresi: takip bilgisi (termin, kargo, takip no, bayiye not)
+function siparisTakip(p, o) {
   const ekle = () => {
     if (p.querySelector('#pTakip')) return; const k = p.querySelector('#pTeklif'); if (!k) return;
     k.insertAdjacentHTML('beforebegin', `<div id="pTakip" class="kart" style="margin:14px 0;background:var(--yuzey2)"><h3>Sipariş takibi</h3><div class="alt">Bu bilgiler bayinin “Siparişlerim” ekranında görünür.</div>
@@ -438,7 +499,7 @@ siparisAc = function (no) {
     p.querySelector('#tKay').onclick = () => { o.termin = p.querySelector('#tTer').value; o.kargo = p.querySelector('#tKar').value.trim(); o.takip = p.querySelector('#tTak').value.trim(); o.satisNot = p.querySelector('#tNot').value.trim(); yaz('exs-siparisler', SIP); portalaYansit(o); toast('Takip bilgisi kaydedildi.'); };
   };
   ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true });
-};
+}
 
 // ---------- müşteri kartı (CRM + cari)
 const SESSIZ_GUN = 60;
@@ -482,16 +543,14 @@ function musteriKarti(kul) {
     p.querySelectorAll('tr.tik').forEach(r => r.onclick = () => siparisAc(r.dataset.no));
   }
   ciz();
+  { // temsilci ataması ve bölge
+  const p = $$('.perde').pop(); if (!p) return;
+  const ekle = () => { if (p.querySelector('#mTem')) return; const h = p.querySelector('h2'); if (!h) return; const m = MUS[kul] || {};
+    h.insertAdjacentHTML('afterend', `<div id="mTem" class="kucuk" style="margin:4px 0">Temsilci: <select id="mTemS" ${yonetici() ? '' : 'disabled'} style="padding:4px 6px;border:1px solid var(--cizgi);border-radius:6px"><option value="">— atanmadı —</option>${Object.values(KUL).map(u => `<option value="${esc(u.kul)}" ${m.temsilci === u.kul ? 'selected' : ''}>${esc(u.ad || u.kul)}</option>`).join('')}</select> · Bölge: <b>${bolgeBul(m.sehir)}</b></div>`);
+    p.querySelector('#mTemS').onchange = e => { MUS[kul] = { ...(MUS[kul] || { kul }), temsilci: e.target.value }; yaz('exs-musteriler', MUS); toast('Temsilci atandı.'); }; };
+  ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true });
+  }
 }
-const _musteriler = musteriler;
-musteriler = function () {
-  _musteriler(); $('#baslik').textContent = 'Müşteriler, iskonto ve cari';
-  const tb = $('#icerik table.tablo'); if (!tb) return;
-  tb.querySelector('tr').insertAdjacentHTML('beforeend', '<th>Cari / uyarı</th><th></th>');
-  [...tb.querySelectorAll('tr')].slice(1).forEach(r => { const kul = r.querySelector('[data-isk]').dataset.isk, c = cariOzet(kul);
-    r.insertAdjacentHTML('beforeend', `<td><b>${usd(c.bakiye)}</b><div>${uyariRozet(musUyari(MUS[kul] || { kul }))}</div></td><td><button class="btn cizgi" data-kart="${esc(kul)}">Müşteri kartı</button></td>`); });
-  $$('[data-kart]').forEach(b => b.onclick = () => musteriKarti(b.dataset.kart));
-};
 
 // ---------- satış tahmini ve ürün önerisi
 function tahmin(s) {
@@ -508,15 +567,6 @@ function urunOnerileri() {
     const L = Object.entries(skor).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0]);
     return { kul, firma: (MUS[kul] || {}).firma || kul, L, neden: L.length ? 'Benzer ürünleri alan bayiler bunları da aldı.' : '' }; }).filter(x => x.L.length);
 }
-const _ai = ai;
-ai = function () {
-  _ai(); $('#baslik').textContent = 'Yapay zekâ: tahmin ve SWOT'; const s = istatistik(); if (!s.siparis) return; const T = tahmin(s), O = urunOnerileri(), max = Math.max(1, ...T.map(t => t.ust), ...s.aylar.slice(-6).map(a => a.net));
-  $('#icerik').insertAdjacentHTML('afterbegin', `<div class="kart"><h3>Satış tahmini: gelecek 3 ay</h3><div class="alt">Son 12 ayın eğilimi ve son 3 ayın ortalamasıyla hesaplanır. Aralık, geçmiş dalgalanmaya göre olası alt ve üst değerdir.</div>
-    <div class="tahmin">${s.aylar.slice(-6).map(a => `<div class="tc"><span class="tv">${usd(a.net)}</span><i style="height:${a.net / max * 140}px"></i><span>${a.ad}</span></div>`).join('')}
-    ${T.map(t => `<div class="tc tah"><span class="tv">${usd(t.t)}</span><i style="height:${t.t / max * 140}px"><em style="bottom:${t.alt / max * 140}px;height:${(t.ust - t.alt) / max * 140}px"></em></i><span>${t.ad.split(' ')[0].slice(0, 3)}</span></div>`).join('')}</div>
-    <div class="kucuk">Tahmin toplamı: <b>${usd(T.reduce((a, t) => a + t.t, 0))}</b> (${usd(T.reduce((a, t) => a + t.alt, 0))} – ${usd(T.reduce((a, t) => a + t.ust, 0))}) · ${tlYap(T.reduce((a, t) => a + t.t, 0))}</div></div>
-    ${O.length ? `<div class="kart"><h3>Bayiye ürün önerileri</h3><div class="alt">Benzer ürünleri alan bayilerin satın alımlarına göre; o bayinin henüz almadığı ürünler.</div><table class="tablo"><tr><th>Bayi</th><th>Önerilen ürünler</th></tr>${O.map(o => `<tr><td><b>${esc(o.firma)}</b></td><td>${o.L.map(esc).join(', ')}</td></tr>`).join('')}</table></div>` : ''}`);
-};
 
 // ---------- raporlar
 function raporlar() {
@@ -542,27 +592,10 @@ function raporlar() {
     location.href = 'mailto:?subject=' + encodeURIComponent(`EXIT Garden ${R.ad.toLocaleLowerCase('tr')} satış raporu`) + '&body=' + encodeURIComponent(t); };
   $('#rCsv').onclick = () => { const rows = [['Sipariş No', 'Tarih', 'Müşteri', 'Net $', 'Durum'], ...S.map(o => [o.no, tarih(o.tarih), o.firma, Math.round(tutarlar(o).net), DURUM[o.durum][0]])]; const csv = '﻿' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `satis_raporu_${RF.donem}.csv`; a.click(); };
 }
-const _git = git;
-git = function (s) { if (s === 'raporlar') { try { $('#yol').textContent = 'Satış Yönetimi  /  Raporlar'; } catch (e) {} aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; raporlar(); window.scrollTo(0, 0); } else _git(s); };
 $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
 // haftanın ilk açılışında rapor hatırlatması
 (function () { const hafta = (() => { const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toDateString(); })(); if (oku('exs-rapor-hafta', '') !== hafta) { setTimeout(() => { if (ben) { toast('Geçen haftanın satış raporu hazır: Raporlar › Geçen hafta.'); yaz('exs-rapor-hafta', hafta); } }, 2500); } })();
 // örnek veri: sevk edilen siparişlere fatura, bir kısmına tahsilat, birkaç görüşme notu
-const _ornekVeri = ornekVeri;
-ornekVeri = function () {
-  _ornekVeri(); let tohum = 7; const r = () => (tohum = (tohum * 9301 + 49297) % 233280) / 233280;
-  Object.values(SIP).filter(o => o.ornek).sort((a, b) => a.tarih - b.tarih).forEach(o => {
-    o.gecmis = [{ durum: 'yeni', zaman: o.tarih }]; if (o.durum !== 'yeni') o.gecmis.push({ durum: o.durum, zaman: o.tarih + 3 * GUN });
-    if (o.durum === 'onay' || o.durum === 'uretim') o.termin = new Date(Date.now() + (10 + Math.floor(r() * 30)) * GUN).toISOString().slice(0, 10);
-    if (o.durum !== 'sevk') return; o.kargo = 'Kendi aracımız'; o.takip = 'IRS-' + o.no.slice(-4);
-    const c = cariHesap(o.kul), t = o.tarih + 5 * GUN, n = Math.round(tutarlar(o).net * 100) / 100;
-    if (!c.hareket.some(h => h.sip === o.no)) { c.hareket.push({ tip: 'fatura', no: 'FT-' + o.no, sip: o.no, tarih: t, vade: t + c.vade * GUN, tutar: n, aciklama: o.no + ' sevkiyatı', ornek: true });
-      if (r() < (o.kul === 'ornek-bodrum' ? .3 : .85)) c.hareket.push({ tip: 'odeme', no: 'TH-' + o.no.slice(-4), tarih: t + (40 + r() * 40) * GUN, tutar: n, aciklama: 'Havale', ornek: true }); }
-  });
-  Object.values(CARI).forEach(c => c.hareket = c.hareket.filter(h => h.tip !== 'odeme' || h.tarih < Date.now()));
-  ['ornek-ege', 'ornek-akdeniz', 'ornek-bosfor'].forEach((k, i) => { CRM[k] = CRM[k] || []; if (!CRM[k].length) CRM[k].push({ tarih: Date.now() - (5 + i * 20) * GUN, tur: ['Telefon', 'Ziyaret', 'E-posta'][i], yazi: ['Yeni sezon kataloğu iletildi.', 'Showroom ziyareti, teras projesi konuşuldu.', 'Fiyat listesi gönderildi.'][i], kim: 'Örnek', ornek: true }); });
-  yaz('exs-siparisler', SIP); cariYaz(); yaz('exs-crm', CRM);
-};
 
 // ===== kampanya ve sezon indirimleri =====
 let KMP = oku('exs-kampanya', []);
@@ -588,8 +621,11 @@ function kampanyalar() {
   $$('[data-kd]').forEach(b => b.onclick = () => kmpForm(+b.dataset.kd));
   $$('[data-ka]').forEach(b => b.onclick = () => { const k = KMP[+b.dataset.ka]; k.aktif = k.aktif === false; kmpYaz(); toast(k.aktif ? 'Kampanya başlatıldı.' : 'Kampanya durduruldu.'); kampanyalar(); });
   $$('[data-ks]').forEach(b => b.onclick = () => { if (!confirm('Kampanya silinsin mi?')) return; KMP.splice(+b.dataset.ks, 1); kmpYaz(); kampanyalar(); });
+  { // kampanyanın geçerli olduğu bayiler
+  $$('#icerik table.tablo tr').slice(1).forEach((r, i) => { const k = KMP[i]; if (!k) return; r.children[1].insertAdjacentHTML('beforeend', `<div class="kucuk"><b>${(k.bayiler || []).length ? 'Bayiler: ' + esc(k.bayiler.map(b => (MUS[b] || {}).firma || b).join(', ')) : 'Tüm bayiler'}</b></div>`); }); 
+  }
 }
-function kmpForm(i) {
+function kmpForm(i, on) {
   const k = i == null ? { ad: '', oran: 10, kapsam: 'kategori', hedef: [], bayiler: [], bas: bugun(), bit: '', aktif: true, not: '' } : { ...KMP[i], hedef: [...(KMP[i].hedef || [])], bayiler: [...(KMP[i].bayiler || [])] };
   let bayiSec = k.bayiler.length > 0;
   const p = document.createElement('div'); p.className = 'perde'; p.onclick = e => { if (e.target === p) p.remove(); }; document.body.appendChild(p);
@@ -619,15 +655,19 @@ function kmpForm(i) {
       if (h) { p.querySelector('#kHata').textContent = h; return; } if (i == null) KMP.push(k); else KMP[i] = k; kmpYaz(); p.remove(); toast('Kampanya kaydedildi; bayi portalında görünüyor.'); kampanyalar(); };
   }
   ciz();
+  { // ürünler ekranından seçilenlerle açıldıysa kapsam ve hedefler işaretlenir
+  const p = $$('.perde').pop(); if (!p) return;
+  if (on && i == null) { const r = p.querySelector(`[name=kKap][value=${on.kapsam}]`); if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
+    on.hedef.forEach(h => { const c = [...p.querySelectorAll('.hedefler input')].find(x => x.value === h); if (c && !c.checked) { c.checked = true; c.dispatchEvent(new Event('change')); } }); }
+  }
 }
-const _git2 = git;
-git = function (s) { if (s === 'kampanyalar') { try { $('#yol').textContent = 'Satış Yönetimi  /  Kampanyalar'; } catch (e) {} aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; kampanyalar(); window.scrollTo(0, 0); } else _git2(s); };
 $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
 
 // ===== ürün ve fiyat yönetimi (bayi portalını yönetir) =====
 let FIYAT = oku('exs-fiyat', {}), GIZLI = oku('exs-gizli', []);
-let urunYaz = () => { yaz('exs-fiyat', FIYAT); yaz('exb-fiyat', FIYAT); yaz('exs-gizli', GIZLI); yaz('exb-gizli', GIZLI); };
-urunYaz();
+// fiyat ve görünürlüğü kaydeder, bayi portalına yayınlar (değişikliği geçmişe yazan: urunYaz)
+const fiyatYayinla = () => { yaz('exs-fiyat', FIYAT); yaz('exb-fiyat', FIYAT); yaz('exs-gizli', GIZLI); yaz('exb-gizli', GIZLI); };
+fiyatYayinla();
 const fiyatAl = (u, s) => { const f = (FIYAT[u.ad] || {})[s.ad]; return f != null && f !== '' ? +f : s.fiyat; };
 const aktifKmp = u => KMP.filter(k => kmpDurum(k)[0] === 'Yayında' && (k.kapsam === 'tumu' || (k.hedef || []).includes(k.kapsam === 'kategori' ? u.kategori : u.ad))).sort((a, b) => b.oran - a.oran);
 const PF = { ara: '', kat: '', sinif: '', durum: '' }, SEC = new Set();
@@ -676,19 +716,11 @@ function urunler() {
   $('#tKmp').onclick = () => { const S = secili(); if (!S) return; kmpForm(null, { kapsam: 'urun', hedef: S.map(u => u.ad) }); };
   $('#uCsv').onclick = () => { const R = [['Ürün', 'Kategori', 'Seçenek', 'Ürün tipi', 'Liste $', 'Güncel $', 'Kampanya', 'Kampanyalı $', 'Portal']]; VERI.urunler.forEach(u => { const K = aktifKmp(u)[0]; u.secenek.forEach(s => { const f = fiyatAl(u, s); R.push([u.ad, u.kategori, s.ad, s.sinif, s.fiyat ?? '', f ?? '', K ? K.ad + ' %' + K.oran : '', K && f != null ? Math.round(f * (1 - K.oran / 100)) : '', GIZLI.includes(u.ad) ? 'gizli' : 'görünür']); }); });
     const csv = '﻿' + R.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n'); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'exit_fiyat_listesi.csv'; a.click(); };
+  urunlerYonetim();
+  EK.urunlerExcel?.();
 }
 // kampanya formu: ön seçim + bayi hedefleme
-const _kmpForm = kmpForm;
-kmpForm = function (i, on) {
-  _kmpForm(i); const p = $$('.perde').pop(); if (!p) return;
-  if (on && i == null) { const r = p.querySelector(`[name=kKap][value=${on.kapsam}]`); if (r) { r.checked = true; r.dispatchEvent(new Event('change')); }
-    on.hedef.forEach(h => { const c = [...p.querySelectorAll('.hedefler input')].find(x => x.value === h); if (c && !c.checked) { c.checked = true; c.dispatchEvent(new Event('change')); } }); }
-};
 // kampanya listesinde bayi kapsamı
-const _kampanyalar = kampanyalar;
-kampanyalar = function () { _kampanyalar(); $$('#icerik table.tablo tr').slice(1).forEach((r, i) => { const k = KMP[i]; if (!k) return; r.children[1].insertAdjacentHTML('beforeend', `<div class="kucuk"><b>${(k.bayiler || []).length ? 'Bayiler: ' + esc(k.bayiler.map(b => (MUS[b] || {}).firma || b).join(', ')) : 'Tüm bayiler'}</b></div>`); }); };
-const _git3 = git;
-git = function (s) { if (s === 'urunler') { try { $('#yol').textContent = 'Satış Yönetimi  /  Ürünler ve fiyatlar'; } catch (e) {} aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; urunler(); window.scrollTo(0, 0); } else _git3(s); };
 $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
 
 // ===== v2.2: roller, onay akışı, fiyat geçmişi, bayiye bildirim, hedef takibi =====
@@ -699,18 +731,11 @@ const kimAd = () => (ben && (ben.ad || ben.kul)) || '';
 
 // ---------- 9. onay akışı
 let ONAY = oku('exs-onay-ayar', { iskonto: 15, tutar: 25000 });
-function onayGerekli(o) { const t = tutarlar(o), N = []; if (t.oran > ONAY.iskonto) N.push(`iskonto ${yuzde(t.oran)} > ${yuzde(ONAY.iskonto)}`); if (t.net > ONAY.tutar) N.push(`tutar ${usd(t.net)} > ${usd(ONAY.tutar)}`); return N; }
+// Onay kuralı v2.7'de kaldırıldı (sadeleştirme): hiçbir sipariş yönetici onayına takılmaz. Kural ayarı (ONAY) ve
+// eski kayıtlar için "Onay bekleyenler" ekranı korunur.
+function onayGerekli() { return []; }
 const onayBekleyen = () => Object.values(SIP).filter(o => o.onay && o.onay.durum === 'bekliyor');
 function onaySay() { const n = onayBekleyen().length, b = $('aside button.m[data-s=onaylar]'); if (!b) return; let r = b.querySelector('.say'); if (!r) { b.insertAdjacentHTML('beforeend', '<span class="say gizli"></span>'); r = b.querySelector('.say'); } r.textContent = n; r.classList.toggle('gizli', !n); }
-const _durumYaz2 = durumYaz;
-durumYaz = function (no, d) {
-  const o = SIP[no], N = onayGerekli(o), ileri = ['onay', 'uretim', 'sevk'].includes(d);
-  if (ileri && N.length && !(o.onay && o.onay.durum === 'onaylandi' && o.onay.imza === onayImza(o))) {
-    if (yonetici()) { o.onay = { durum: 'onaylandi', neden: N, kim: kimAd(), zaman: Date.now(), imza: onayImza(o), otomatik: true }; }
-    else { o.onay = { durum: 'bekliyor', neden: N, isteyen: kimAd(), zaman: Date.now(), hedefDurum: d }; yaz('exs-siparisler', SIP); onaySay(); toast('Bu sipariş yönetici onayı gerektiriyor: ' + N.join(', ') + '. Onaya gönderildi.'); return; }
-  }
-  _durumYaz2(no, d); onaySay();
-};
 const onayImza = o => { const t = tutarlar(o); return Math.round(t.net) + '|' + Math.round(t.oran * 10); };
 function onaylar() {
   $('#baslik').textContent = 'Onay bekleyenler';
@@ -725,9 +750,8 @@ function onaylar() {
   $$('[data-red]').forEach(b => b.onclick = () => { const o = SIP[b.dataset.red]; const n = prompt('Ret nedeni (temsilci görür):', '') || ''; o.onay = { ...o.onay, durum: 'reddedildi', kim: kimAd(), karar: Date.now(), not: n }; yaz('exs-siparisler', SIP); onaySay(); toast(o.no + ' reddedildi.'); onaylar(); });
 }
 // sipariş penceresinde onay durumu
-const _siparisAc2 = siparisAc;
-siparisAc = function (no) {
-  _siparisAc2(no); const p = $$('.perde').pop(), o = SIP[no]; if (!p) return;
+// sipariş penceresi: yönetici onayı bandı
+function siparisOnayBandi(p, o) {
   const ekle = () => { if (p.querySelector('#pOnay')) return; const h = p.querySelector('h2'); if (!h) return; const N = onayGerekli(o);
     let m = ''; if (o.onay && o.onay.durum === 'bekliyor') m = `<div class="onay-b bekliyor">Yönetici onayı bekleniyor (${esc(o.onay.neden.join(', '))}) · isteyen ${esc(o.onay.isteyen)}</div>`;
     else if (o.onay && o.onay.durum === 'reddedildi') m = `<div class="onay-b red">Yönetici reddetti${o.onay.not ? ': ' + esc(o.onay.not) : ''} · ${esc(o.onay.kim)}</div>`;
@@ -735,7 +759,7 @@ siparisAc = function (no) {
     else if (N.length) m = `<div class="onay-b bilgi">Onay kuralına takılıyor: ${esc(N.join(', '))}. ${yonetici() ? 'Yönetici olarak doğrudan onaylayabilirsiniz.' : 'Durumu ilerlettiğinizde yönetici onayına gider.'}</div>`;
     if (m) h.insertAdjacentHTML('afterend', `<div id="pOnay">${m}</div>`); };
   ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true });
-};
+}
 
 // ---------- 11. fiyat geçmişi
 let FGEC = oku('exs-fiyat-gecmis', []), FSUR = oku('exs-fiyat-surum', []);
@@ -743,14 +767,14 @@ const fgYaz = () => { yaz('exs-fiyat-gecmis', FGEC.slice(-2000)); yaz('exs-fiyat
 function surumKaydet(ad, oto) { FSUR.push({ ad, zaman: Date.now(), kim: kimAd(), fiyat: JSON.parse(JSON.stringify(FIYAT)), gizli: GIZLI.slice(), oto: !!oto }); fgYaz(); }
 // FIYAT/GIZLI her yazıldığında farkı kaydet
 let _fOnce = JSON.stringify(FIYAT), _gOnce = JSON.stringify(GIZLI);
-const _urunYaz = urunYaz;
-urunYaz = function (aciklama) {
+// fiyat/görünürlük değişikliği: önce fiyat geçmişine yazılır, sonra yayınlanır
+function urunYaz(aciklama) {
   const eF = JSON.parse(_fOnce), eG = JSON.parse(_gOnce), z = Date.now(), kim = kimAd();
   VERI.urunler.forEach(u => u.secenek.forEach(s => { const a = (eF[u.ad] || {})[s.ad], b = (FIYAT[u.ad] || {})[s.ad], fa = a !== undefined ? a : s.fiyat, fb = b !== undefined ? b : s.fiyat; if (fa !== fb) FGEC.push({ z, kim, urun: u.ad, sec: s.ad, eski: fa, yeni: fb, not: aciklama || window._fNot || '' }); }));
   GIZLI.filter(a => !eG.includes(a)).forEach(a => FGEC.push({ z, kim, urun: a, sec: '', tip: 'gizle', not: 'Portalda gizlendi' }));
   eG.filter(a => !GIZLI.includes(a)).forEach(a => FGEC.push({ z, kim, urun: a, sec: '', tip: 'goster', not: 'Portalda gösterildi' }));
-  _fOnce = JSON.stringify(FIYAT); _gOnce = JSON.stringify(GIZLI); window._fNot = ''; fgYaz(); _urunYaz();
-};
+  _fOnce = JSON.stringify(FIYAT); _gOnce = JSON.stringify(GIZLI); window._fNot = ''; fgYaz(); fiyatYayinla();
+}
 function fiyatGecmisi() {
   const p = document.createElement('div'); p.className = 'perde'; p.onclick = e => { if (e.target === p) p.remove(); }; document.body.appendChild(p);
   const ciz = () => { const L = FGEC.slice().reverse().slice(0, 300);
@@ -765,14 +789,13 @@ function fiyatGecmisi() {
   };
   ciz();
 }
-const _urunler2 = urunler;
-urunler = function () {
-  _urunler2();
+// ürünler: fiyat geçmişi, yetki, toplu işlemden önce otomatik sürüm
+function urunlerYonetim() {
   $('#ustSag').insertAdjacentHTML('afterbegin', '<button class="btn cizgi" id="uGec">Fiyat geçmişi</button>'); $('#uGec').onclick = fiyatGecmisi;
   if (!yonetici()) { $$('.u-fiyat input,#tOran,#tArt,#tAzl,#tSif,[data-gz],#tGiz,#tGos').forEach(x => x.disabled = true); $('#icerik').insertAdjacentHTML('afterbegin', '<div class="onay-b bilgi" style="margin-bottom:12px">Fiyat ve görünürlük değişikliklerini yalnız yöneticiler yapabilir.</div>'); }
   // toplu işlemlerden önce otomatik sürüm + açıklama
   ['tArt', 'tAzl', 'tSif'].forEach(id => { const b = $('#' + id); if (!b) return; const f = b.onclick; b.onclick = () => { if (!SEC.size) return f(); surumKaydet('Toplu değişiklik öncesi', true); window._fNot = 'Toplu: ' + b.textContent + ($('#tOran').value ? ' %' + $('#tOran').value : ''); f(); }; });
-};
+}
 
 // ---------- 12. bayiye bildirim (WhatsApp / e-posta)
 let BLD = oku('exs-bildirim', []);
@@ -787,16 +810,15 @@ function bildirimGonder(o, kanal) {
   else { if (!m.mail) return toast('Müşterinin e-posta adresi yok.'); location.href = 'mailto:' + encodeURIComponent(m.mail) + '?subject=' + encodeURIComponent(`EXIT Garden · ${o.no} sipariş durumu: ${DURUM[o.durum][0]}`) + '&body=' + encodeURIComponent(metin.replace(/\*/g, '')); }
   BLD.push({ no: o.no, kul: o.kul, kanal, durum: o.durum, zaman: Date.now(), kim: kimAd() }); yaz('exs-bildirim', BLD.slice(-1000)); o.sonBildirim = o.durum; yaz('exs-siparisler', SIP);
 }
-const _siparisAc3 = siparisAc;
-siparisAc = function (no) {
-  _siparisAc3(no); const p = $$('.perde').pop(), o = SIP[no]; if (!p) return;
+// sipariş penceresi: bayiye bildir (WhatsApp / e-posta)
+function siparisBildirBandi(p, o) {
   const ekle = () => { if (p.querySelector('#pBild')) return; const k = p.querySelector('#pTeklif'); if (!k) return; const m = MUS[o.kul] || {}, son = BLD.filter(b => b.no === o.no).pop(), bekl = o.sonBildirim !== o.durum && o.durum !== 'yeni';
     k.insertAdjacentHTML('afterend', `<div id="pBild" class="bild ${bekl ? 'bekl' : ''}"><div><b>Bayiye bildir</b><div class="kucuk">${bekl ? 'Durum değişti; bayiye henüz bildirilmedi.' : son ? `Son bildirim: ${son.kanal === 'wa' ? 'WhatsApp' : 'E-posta'} · ${new Date(son.zaman).toLocaleString('tr-TR', { dateStyle: 'short', timeStyle: 'short' })} · ${esc(son.kim)}` : 'Hazır mesaj sipariş durumu, termin ve nakliye bilgisini içerir.'}</div></div>
       <button class="btn wa" id="bWa" ${m.tel ? '' : 'disabled title="Telefon yok"'}>WhatsApp</button><button class="btn cizgi" id="bMail" ${m.mail ? '' : 'disabled title="E-posta yok"'}>E-posta</button></div>`);
     p.querySelector('#bWa').onclick = () => { bildirimGonder(o, 'wa'); p.querySelector('#pBild').remove(); ekle(); };
     p.querySelector('#bMail').onclick = () => { bildirimGonder(o, 'mail'); p.querySelector('#pBild').remove(); ekle(); }; };
   ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true });
-};
+}
 
 // ---------- 10. hedef takibi
 const BOLGE = { 'Marmara': ['istanbul', 'kocaeli', 'bursa', 'tekirdağ', 'edirne', 'kırklareli', 'sakarya', 'yalova', 'bilecik', 'balıkesir', 'çanakkale'], 'Ege': ['izmir', 'aydın', 'muğla', 'manisa', 'denizli', 'uşak', 'kütahya', 'afyonkarahisar', 'afyon'], 'Akdeniz': ['antalya', 'mersin', 'adana', 'hatay', 'isparta', 'burdur', 'kahramanmaraş', 'osmaniye'], 'İç Anadolu': ['ankara', 'konya', 'kayseri', 'eskişehir', 'sivas', 'nevşehir', 'aksaray', 'niğde', 'kırşehir', 'kırıkkale', 'karaman', 'yozgat', 'çankırı'], 'Karadeniz': ['samsun', 'trabzon', 'ordu', 'rize', 'giresun', 'zonguldak', 'düzce', 'bolu', 'kastamonu', 'sinop', 'amasya', 'tokat', 'çorum', 'artvin', 'bartın', 'karabük', 'gümüşhane', 'bayburt'], 'Doğu Anadolu': ['erzurum', 'van', 'malatya', 'elazığ', 'erzincan', 'kars', 'ağrı', 'iğdır', 'ardahan', 'bingöl', 'muş', 'bitlis', 'tunceli', 'hakkari'], 'Güneydoğu Anadolu': ['gaziantep', 'şanlıurfa', 'diyarbakır', 'mardin', 'batman', 'siirt', 'şırnak', 'adıyaman', 'kilis'] };
@@ -826,32 +848,16 @@ function hedefler() {
   $$('[data-hb]').forEach(i => i.onchange = () => { H.bolge[i.dataset.hb] = Math.max(0, parseFloat(i.value.replace(/\./g, '')) || 0); kaydet(); });
 }
 // müşteri kartına temsilci atama
-const _musteriKarti = musteriKarti;
-musteriKarti = function (kul) {
-  _musteriKarti(kul); const p = $$('.perde').pop(); if (!p) return;
-  const ekle = () => { if (p.querySelector('#mTem')) return; const h = p.querySelector('h2'); if (!h) return; const m = MUS[kul] || {};
-    h.insertAdjacentHTML('afterend', `<div id="mTem" class="kucuk" style="margin:4px 0">Temsilci: <select id="mTemS" ${yonetici() ? '' : 'disabled'} style="padding:4px 6px;border:1px solid var(--cizgi);border-radius:6px"><option value="">— atanmadı —</option>${Object.values(KUL).map(u => `<option value="${esc(u.kul)}" ${m.temsilci === u.kul ? 'selected' : ''}>${esc(u.ad || u.kul)}</option>`).join('')}</select> · Bölge: <b>${bolgeBul(m.sehir)}</b></div>`);
-    p.querySelector('#mTemS').onchange = e => { MUS[kul] = { ...(MUS[kul] || { kul }), temsilci: e.target.value }; yaz('exs-musteriler', MUS); toast('Temsilci atandı.'); }; };
-  ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true });
-};
 
 // ---------- ayarlar: roller ve onay kuralı
-const _ayarlar2 = ayarlar;
-ayarlar = function () {
-  _ayarlar2();
+// ayarlar: kullanıcı rolleri
+function ayarlarRoller() {
   $$('[data-sil]').forEach(b => { if (!yonetici()) b.disabled = true; });
   const tb = $$('#icerik .kart').find(k => k.textContent.includes('Satış ekibi kullanıcıları'));
   if (tb) tb.querySelectorAll('table tr').forEach(r => { const kul = (r.querySelector('td b') || {}).textContent; if (!kul || !KUL[kul]) return; r.children[0].insertAdjacentHTML('beforeend', yonetici() && kul !== ben.kul ? ` <select data-rol="${esc(kul)}" style="padding:3px 6px;border:1px solid var(--cizgi);border-radius:6px;font-size:12px">${Object.entries(ROL_AD).map(([k, a]) => `<option value="${k}" ${rolu(KUL[kul]) === k ? 'selected' : ''}>${a}</option>`).join('')}</select>` : ` <span class="rozet">${ROL_AD[rolu(KUL[kul])]}</span>`); });
   $$('[data-rol]').forEach(s => s.onchange = () => { KUL[s.dataset.rol].rol = s.value; yaz('exs-kullanicilar', KUL); toast('Rol güncellendi.'); });
-  $('#icerik .izgara2').insertAdjacentHTML('afterbegin', `<div class="kart"><h3>Onay kuralı</h3><div class="alt">Bu sınırları aşan siparişleri temsilci ilerletmek istediğinde yönetici onayı gerekir. Yöneticiler kendi işlemlerinde doğrudan onaylar.</div>
-    <div style="display:flex;gap:8px;align-items:end"><div class="alan" style="flex:1"><label>Toplam iskonto % üstü</label><input id="oIsk" value="${ONAY.iskonto}" inputmode="decimal" ${yonetici() ? '' : 'disabled'}></div><div class="alan" style="flex:1"><label>Net tutar $ üstü</label><input id="oTut" value="${ONAY.tutar}" inputmode="numeric" ${yonetici() ? '' : 'disabled'}></div>
-    ${yonetici() ? '<div class="alan"><button class="btn marka" id="oKay">Kaydet</button></div>' : ''}</div></div>`);
-  if ($('#oKay')) $('#oKay').onclick = () => { ONAY = { iskonto: Math.max(0, parseFloat($('#oIsk').value.replace(',', '.')) || 0), tutar: Math.max(0, parseFloat($('#oTut').value.replace(/\./g, '')) || 0) }; yaz('exs-onay-ayar', ONAY); toast('Onay kuralı kaydedildi.'); };
-};
+}
 // yeni kullanıcıya rol ataması: varsayılan temsilci (rolu() bunu çözer)
 
 // ---------- menü
-const _git4 = git;
-git = function (s) { const S = { onaylar: ['Onay bekleyenler', onaylar], hedefler: ['Hedefler', hedefler] }[s]; if (S) { try { $('#yol').textContent = 'Satış Yönetimi  /  ' + S[0]; } catch (e) {} aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; S[1](); window.scrollTo(0, 0); } else _git4(s); onaySay(); };
 $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
-const _ac2 = ac; ac = function () { _ac2(); onaySay(); try { $('#kim span').textContent = ROL_AD[rolu(ben)] + ' · ' + new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) {} };

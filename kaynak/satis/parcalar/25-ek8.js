@@ -27,7 +27,8 @@
         <td class="sag-hiza"><b>${usd(r.tah)}</b></td><td class="sag-hiza">${usd(r.fat)}</td><td class="sag-hiza">${r.bekN ? usd(r.bek) + `<div class="kucuk">${r.bekN} bildirim</div>` : '—'}</td><td class="sag-hiza">${usd(r.bakiye)}${r.gecmis > 0 ? `<div class="kucuk" style="color:#b91c1c">${usd(r.gecmis)} vadesi geçmiş</div>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" class="kucuk">Bayi yok.</td></tr>'}</table></div>`;
     $$('[data-ln]').forEach(i => i.onchange = () => { const v = i.value.trim(); if (v && !/^https:\/\//i.test(v)) { toast('Link https:// ile başlamalı.'); i.value = (oku('exb-odeme-link', {}) || {})[i.dataset.ln] || ''; return; }
       const L = oku('exb-odeme-link', {}) || {}; if (v) L[i.dataset.ln] = v; else delete L[i.dataset.ln]; yaz('exb-odeme-link', L); log('Ödeme linki', `${firma(i.dataset.ln)}: ${v || 'kaldırıldı'}`); toast('Ödeme linki kaydedildi.'); });
-  };
+      EK.tahsilatSiparisler?.();
+};
 
   // ================= 2. ürün ve renk analizi, stok planı =================
   const temiz = s => String(s || '').replace(/\s*\(.*\)\s*$/, '').trim();

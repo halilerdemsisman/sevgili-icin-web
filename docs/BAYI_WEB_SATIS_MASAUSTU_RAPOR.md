@@ -32,17 +32,17 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda, anlık bildirim, yapay zekâ anahtarı sunucuda, REST v1; Faz 2–3'ün temeli |
 | 2a | Bayi web sitesi: temel | Ayrı dosyalar + WebP, sayfa adresleri, yeni menü ve telefon düzeni, XSS denetimi |
 | 2b-1 | Bayi web sitesi: veri | Kayıtlar REST ile (numara, fiyat sunucuda, sonuç beklenir), iş verisi tarayıcıda saklanmaz, çevrimdışı sipariş engeli |
-| 2b-2 | Bayi web sitesi: ekranlar | Ekranlar modüllere bölünür, sarmalama zincirleri birleşir, renk önizleme ortak modülde, TR/EN dosyaları |
+| 2b-2 | Bayi web sitesi: ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · kalan: okumalar REST'e, renk önizleme ortak modülde, TR/EN dosyaları |
 | 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
 | 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
-| 3b-2 | Satış masaüstü: pilot ve ekranlar | Kod imzalama, Windows'ta pilot, satış ekranlarının modüllere bölünmesi (2b-2 ile aynı yaklaşım) |
+| 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · kalan: kod imzalama, Windows'ta pilot, tek veri modülü ve okumalar REST'e |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1, 3a ve 3b-1 tamamlandı; Faz 2b-2 ve 3b-2 paralel yürüyebilir.
+Faz 1, 2a, 2b-1, 3a ve 3b-1 tamamlandı; 2b-2 ve 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) bitti.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve ekranların modüllere bölünmesi (2b-2 + 3b-2).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · 2b-2/3b-2 adım 1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve ekranların kalan adımları (okumalar REST'e, tek veri modülü, renk önizleme, TR/EN; 2b-2 + 3b-2).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -120,9 +120,9 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | # | Önem | Sorun | Durum |
 |---|---|---|---|
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
-| K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ⏳ 2–3 |
+| K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ✅ 2b-2/3b-2 adım 1: sarmalama kalmadı; her ekran fonksiyonu eklerini kendi içinde çağırıyor, `araclar/sarmalama.mjs --denetle` testlerde |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 3b-1 (129 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-2/3b-2 adım 1 (135 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -347,8 +347,22 @@ Neden ikiye bölündü: Kabul ölçütünün asıl kısmı (bayi tarayıcısınd
 
 Bilinçli olarak bırakılanlar: Okumalar hâlâ eşitleme ucuyla (`/api/veri` + anlık bildirim) gelir; sepet, favori, proje gibi kişisel anahtarlar ve satış mesajlarının "okundu" işareti de eşitleme ucuyla yazılır. Bunlar tek bayinin kendi anahtarları olduğu için eşzamanlı yazma (V3) sorunu yaratmaz. Okumaların REST'e geçmesi ekranlar modüllere bölünürken (2b-2) sayfa sayfa yapılacak.
 
+#### Faz 2b-2 / 3b-2 adım 1: Ekran fonksiyonları tek fonksiyonda ✅ tamamlandı
+Bayi ve satış ekranlarında "ek" parçaları ekran fonksiyonlarını üst üste sarıyordu (`const _eski = git; git = function …`). Bir ekranda neyin hangi sırayla çalıştığı parçaların yükleme sırasına bağlıydı ve tek yerden görülemiyordu (K2). İki uygulamada da bu zincirler birleştirildi.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Bayi: 11 fonksiyon, 38 sarma | `git`, `katalog`, `urunAc`, `siparislerim`, `cariSayfa`, `siparisKarti`… tek yerde tanımlı. Sonradan eklenen özellikler (favoriler, projeler, karşılaştırma, renk önizleme, online ödeme, kredi limiti, adres çubuğu…) parçalarında `EK.<ad>` olarak tanımlı; ekran fonksiyonu bunları kendi içinde, yazılı sırayla çağırıyor. Hiç çalışmayan ilk tanımlar (`git`, `siparislerim`) ve tek işi bir fonksiyonu sarmak olan parça (`23-v3.1`) silindi |
+| Satış: 14 fonksiyon, 33 sarma + 2 sayfa sarması | Menü sayfaları tek tabloda (`SAYFALAR`; ek sayfalar `EK.sayfalar`). Sipariş durumu tek fonksiyonda, sırası açık: kredi limiti → onay kuralı → durum ve geçmiş → sevkte fatura → bayi portalına yansıtma → yayın, işlem kaydı, net tutar. Sipariş penceresi, ayarlar, ürünler, müşteri kartı aynı biçimde. Onay kuralını sessizce kapatan yeniden tanım (`onayGerekli`) da asıl fonksiyona alındı |
+| Ek haritası ve denetim | `docs/SARMALAMA_HARITASI.md` artık her ekran fonksiyonunun hangi ekleri hangi sırayla çağırdığını ve eklerin nerede tanımlı olduğunu gösterir. `node araclar/sarmalama.mjs --denetle` kalan sarmalamayı ve tanımsız eki hata sayar; testlerde çalışır. Yeni özellik ekleme kuralı haritanın başında |
+| Bulunan hata (2b-1'den) | Bayinin REST ile gönderdiği kayıtta yanıtın HTTP kodu kaydın kendi `durum` alanının üzerine yazılıyordu. Sipariş gönderildiği anda Siparişlerim sayfası yarıda kalıyor (boş), adres `/katalog`'da kalıyordu; sayfa ancak sunucudan güncel veri gelince düzeliyordu. HTTP kodu artık ayrı alanda |
+| Bulunan hata (3a'dan) | Masaüstü uygulaması bekleyen işleri oturum açıldıktan sonraki ilk denetimde "görüldü" sayıyordu. Bu denetim oturumdan önce denk gelirse, girişten sonraki ilk birkaç saniyede gelen siparişin bildirimi hiç çıkmıyordu. Önceki turda yük altında görülen "dalgalanan test" buydu. Artık oturum açıldığı anda sayılıyor |
+| Testler | 135 test (önceki 129 + `testler/ekler.test.js` 6): her ekin bayi web sitesinde, tek dosyalık sürümde ve satış panelinde ekranda çalıştığı; menüdeki her satış sayfasının açıldığı; sipariş durumunda limit onayı, geçmiş, işlem kaydı ve tek fatura. SQLite ve JSON depoyla geçiyor; masaüstü testleri üç çalıştırmada üçünde geçti |
+
+Bilinçli olarak bırakılan: Ekler hâlâ sürüm adlı parçalarda (`18-v2.8-…`, `25-ek6.js`). Dosyaları özelliğe göre yeniden adlandırıp bölmek, okumaların REST'e geçmesiyle birlikte sayfa sayfa yapılacak (adım 2); böylece her dosyaya bir kez dokunulur.
+
 #### Faz 2b-2: Ekranlar (≈2 hafta)
-1. Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 7, `git` 5, `cariSayfa` 5 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
+1. ✅ (adım 1) Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 7, `git` 5, `cariSayfa` 5 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
 2. Okumalar sayfa sayfa REST'e geçer (katalog fiyatları, siparişler, cari); eşitleme ucu bayi sitesinde yalnız kişisel anahtarlar için kalır.
 3. Renk önizleme motoru `ortak/` modülüne taşınır.
 4. TR/EN çevirileri `tr.json` / `en.json` dosyalarına.
@@ -406,7 +420,7 @@ Bu sorunlar ekranlar yeniden yazılmadan, eşitleme katmanında ve sunucuda çö
 #### Faz 3b-2: Pilot ve satış ekranları (≈2 hafta, 2b-2 ile birlikte)
 1. Kod imzalama sertifikası (SmartScreen uyarısı kalksın); GitHub'a `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD` gizlileri.
 2. Pilot (`satis-masaustu/PILOT.md`): satış yöneticisi + 1 temsilci, Windows'ta kurulum ve bir güncelleme turu; sonra tüm ekip.
-3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir. Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur. Okumalar sayfa sayfa REST'e geçer.
+3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir (✅ adım 1). Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur. Okumalar sayfa sayfa REST'e geçer.
 
 Kabul (Faz 3 geneli):
 - Faz 0 testlerinin satış kısmı geçiyor ✅.

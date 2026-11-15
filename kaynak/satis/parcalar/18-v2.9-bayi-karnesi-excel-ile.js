@@ -210,9 +210,8 @@ const gunSonra = g => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate
     VERI.urunler.forEach(u => u.secenek.forEach(s => R.push([u.ad, u.kategori, s.ad, s.sinif, s.fiyat ?? '', fiyatAl(u, s) ?? '', ''])));
     csvIndir('exit_fiyat_guncelleme_sablonu.csv', R);
   }
-  const _urunlerX = urunler;
-  urunler = function () {
-    _urunlerX(); const u = $('#ustSag'); if (!u || $('#fxYukle')) return;
+  EK.urunlerExcel = function () {
+    const u = $('#ustSag'); if (!u || $('#fxYukle')) return;
     u.insertAdjacentHTML('afterbegin', `<button class="btn cizgi" id="fxSablon" title="Yeni $ sütununu doldurup geri yükleyin">Fiyat şablonu</button> <button class="btn marka" id="fxYukle">Excel'den fiyat yükle</button> `);
     $('#fxSablon').onclick = sablonIndir;
     $('#fxYukle').onclick = () => dosyaSec('.xlsx,.csv,.txt', fiyatExcel);
@@ -280,11 +279,9 @@ const gunSonra = g => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate
 
   // gezinme ve rozetler
   const SAY = { karne: ['Bayi karnesi', karne], hatirlatmalar: ['Hatırlatmalar', hatirlatmalar] };
-  const _gitH = git;
-  git = function (s) { const S = SAY[s]; if (S) { try { $('#yol').textContent = 'Satış Yönetimi  /  ' + S[0]; } catch (e) {} aktif = s; $$('aside button.m[data-s]').forEach(b => b.classList.toggle('on', b.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; S[1](); window.scrollTo(0, 0); } else _gitH(s); htRozet(); };
-  $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
+  Object.assign(EK.sayfalar, SAY); EK.hatirlatmaRozeti = () => htRozet();
+    $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
   let ilk = true;
-  const _acH = ac;
-  ac = function () { _acH(); setTimeout(() => { if (!ilk) return; ilk = false; const n = vadesi().length; if (n) toast(`Bugün ${n} hatırlatmanız var.`); }, 3200); };
+  EK.acHatirlatma = function () { setTimeout(() => { if (!ilk) return; ilk = false; const n = vadesi().length; if (n) toast(`Bugün ${n} hatırlatmanız var.`); }, 3200); };
   setInterval(() => { if (ben) htRozet(); }, 30000);
 })();

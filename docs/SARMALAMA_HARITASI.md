@@ -38,5 +38,14 @@ Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-i
 
 | Ekran fonksiyonu | Tanım | Ekler (çağrılma sırasıyla) |
 |---|---|---|
+| `durumYaz` | 03-ana.js:40 | `durumLimit` (22-ek6.js:32) → `durumYayinla` (20-v3.0-bayi-hedef-ve-prim.js:40) → `durumIslem` (22-ek6.js:44) → `durumNet` (26-ek9.js:8) |
+| `ac` | 03-ana.js:102 | `acOnce` (22-ek6.js:24) → `acHatirlatma` (18-v2.9-bayi-karnesi-excel-ile.js:285) → `acSonra` (22-ek6.js:25) → `masaustuIsler` (28-masaustu.js:125) |
+| `git` | 03-ana.js:122 | `sayfa6` (22-ek6.js:195) → `rozetler` (16-v2.8-odeme-bildirimleri-numune-talepleri.js:99) → `hatirlatmaRozeti` (18-v2.9-bayi-karnesi-excel-ile.js:282) |
+| `siparisAc` | 03-ana.js:186 | `siparisFiyatUyarisi` (27-ek10-sunucu-oturum.js:39) |
+| `ayarlar` | 03-ana.js:391 | `ayarlarSunucu` (27-ek10-sunucu-oturum.js:48) |
+| `faturaKes` | 03-ana.js:474 | `faturaIslem` (22-ek6.js:45) |
+| `urunler` | 03-ana.js:679 | `urunlerExcel` (18-v2.9-bayi-karnesi-excel-ile.js:213) |
+| `S6.kullanicilar6` | 22-ek6.js:170 | `kullanicilarSifre` (27-ek10-sunucu-oturum.js:21) |
+| `S6.tahsilat` | 25-ek8.js:14 | `tahsilatSiparisler` (26-ek9.js:11) |
 
-Toplam: 0 ekran fonksiyonu, 0 ek. Kalan sarmalama: `durumYaz` 03-ana.js:418 (`_durumYaz`), `siparisAc` 03-ana.js:425 (`_siparisAc`), `musteriler` 03-ana.js:486 (`_musteriler`), `ai` 03-ana.js:511 (`_ai`), `git` 03-ana.js:545 (`_git`), `ornekVeri` 03-ana.js:551 (`_ornekVeri`), `git` 03-ana.js:623 (`_git2`), `kmpForm` 03-ana.js:681 (`_kmpForm`), `kampanyalar` 03-ana.js:688 (`_kampanyalar`), `git` 03-ana.js:690 (`_git3`), `durumYaz` 03-ana.js:705 (`_durumYaz2`), `siparisAc` 03-ana.js:728 (`_siparisAc2`), `urunYaz` 03-ana.js:746 (`_urunYaz`), `urunler` 03-ana.js:768 (`_urunler2`), `siparisAc` 03-ana.js:790 (`_siparisAc3`), `musteriKarti` 03-ana.js:829 (`_musteriKarti`), `ayarlar` 03-ana.js:839 (`_ayarlar2`), `git` 03-ana.js:854 (`_git4`), `ac` 03-ana.js:857 (`_ac2`), `ayarlar` 14-v2.7-sadelestirme-onay-akisi-ve.js:8 (`_ayarlarK`), `git` 16-v2.8-odeme-bildirimleri-numune-talepleri.js:100 (`_gitE`), `urunler` 18-v2.9-bayi-karnesi-excel-ile.js:213 (`_urunlerX`), `git` 18-v2.9-bayi-karnesi-excel-ile.js:283 (`_gitH`), `ac` 18-v2.9-bayi-karnesi-excel-ile.js:287 (`_acH`), `git` 20-v3.0-bayi-hedef-ve-prim.js:37 (`_gitBH`), `durumYaz` 20-v3.0-bayi-hedef-ve-prim.js:41 (`_durumBH`), `ac` 22-ek6.js:24 (`_ac`), `durumYaz` 22-ek6.js:33 (`_dy`), `faturaKes` 22-ek6.js:46 (`_fk`), `git` 22-ek6.js:195 (`_git6`), `durumYaz` 26-ek9.js:8 (`_dy9`), `siparisAc` 27-ek10-sunucu-oturum.js:42 (`_sa`), `ayarlar` 27-ek10-sunucu-oturum.js:54 (`_ay`).
+Toplam: 9 ekran fonksiyonu, 18 ek. Kalan sarmalama: yok.

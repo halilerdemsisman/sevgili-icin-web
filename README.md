@@ -80,7 +80,7 @@ Satış masaüstü uygulamasını geliştirme modunda açar (ilk açılışta su
 ```bash
 npm run sarmalama
 ```
-`docs/SARMALAMA_HARITASI.md` dosyasını yeniden üretir.
+`docs/SARMALAMA_HARITASI.md` dosyasını (ekran fonksiyonları ve ekleri) yeniden üretir. `node araclar/sarmalama.mjs --denetle` kalan sarmalama veya tanımsız ek varsa hata verir.
 
 ```bash
 node araclar/veri_incele.mjs sunucu/veri.json
@@ -89,7 +89,7 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 
 ## Çalışma kuralları
 
-- `kaynak/<uyg>/sablon.html` içindeki `{{dahil yol}}` işaretleri derlemede ilgili dosyanın içeriğiyle değiştirilir (web sitesinde ayrı dosya olur). `{{web yol}}` işaretli satırlar yalnız web sitesine girer. Parçaların sırası önemlidir: "ek" modülleri global fonksiyonları sırayla sarar (bkz. [docs/SARMALAMA_HARITASI.md](docs/SARMALAMA_HARITASI.md)).
+- `kaynak/<uyg>/sablon.html` içindeki `{{dahil yol}}` işaretleri derlemede ilgili dosyanın içeriğiyle değiştirilir (web sitesinde ayrı dosya olur). `{{web yol}}` işaretli satırlar yalnız web sitesine girer. Ekran fonksiyonları (`git`, `katalog`, `urunAc`, `durumYaz`…) yeniden atanmaz; yeni özellik parçasında `EK.<ad>` olarak tanımlanıp ekran fonksiyonunun içinde `EK.<ad>?.(…)` ile çağrılır (`docs/SARMALAMA_HARITASI.md`). Parçaların sırası önemlidir: "ek" modülleri global fonksiyonları sırayla sarar (bkz. [docs/SARMALAMA_HARITASI.md](docs/SARMALAMA_HARITASI.md)).
 - Kodda `/*@katalog*/null` yerine `katalog/urunler.json`, `/*@maskeler*/null` yerine `katalog/maskeler.json` gömülür. Tek dosyalık sürümde görseller data URI'ye çevrilir; web sitesinde `/gorsel/<id>-k.webp` (küçük) ve `gorselB` alanında `/gorsel/<id>.webp` (tam boy) adresleri yazılır.
 - **Yeni ürün:** `urunler.json`'a kayıt ekleyin; fotoğrafı `katalog/gorsel/<id>.jpg` olarak koyup `"gorsel": "gorsel/<id>.jpg"` yazın, sonra `node araclar/webp.mjs` çalıştırın.
 - **Yeni renk maskesi:** `katalog/maske/<id>.png` ekleyin, `maskeler.json`'a `["<id>", "maske/<id>.png"]` satırını ekleyin.
@@ -97,7 +97,7 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 
 ## Testler
 
-`npm test` on bir dosyayı çalıştırır (toplam 130 test; her biri kendi geçici sunucusunu boş veriyle açar). `DEPO=json npm test` aynı testleri JSON depoyla çalıştırır.
+`npm test` on iki dosyayı çalıştırır (toplam 135 test; her biri kendi geçici sunucusunu boş veriyle açar). `DEPO=json npm test` aynı testleri JSON depoyla çalıştırır.
 
 - `testler/uctan-uca.test.js`: Bayi ve satış aynı sunucuya bağlanır. Akış: kayıt, sepet, sipariş, onay (%15 iskonto), değişiklik talebi, ödeme linki, ödeme, tahsilat, özel teklif. Her adımda sunucudaki veri de kontrol edilir.
 - `testler/bilinen-sorunlar.test.js`: Rapordaki kritik sorunlar (kimliksiz API erişimi, başka bayinin verisi, varsayılan şifre, sipariş kaybı, kota). Faz 0'da orijinal pakette hepsinin başarısız olduğu görüldü; Faz 1a'da kapatıldı.
@@ -109,4 +109,5 @@ Canlı verinin yedeğini `yedekler/` klasörüne alır ve özetini çıkarır (k
 - `testler/rest-yazma.test.js`: REST yazma uçları (ödeme bildirimi, iade, numune, özel teklif, sipariş değişikliği; satış alanlarının ve başka bayinin kaydının reddi, 409 yanıtları, düşük fiyatın işaretlenmesi); tarayıcıda iş verisinin localStorage'a yazılmaması, bağlantı yokken siparişin gönderilmemesi, sunucuya ulaşılamazken giriş ve kaydın kapalı olması; tek dosyalık portalın sunucusuz çalışmaya devam etmesi.
 - `testler/masaustu.test.js`: Satış masaüstü uygulaması gerçek sunucuya bağlanarak: sunucu adresinin sorulup hatırlanması, sayfanın Node'a erişememesi ve başka siteye gidememesi, bayi siparişinin 2 sn içinde masaüstü bildirimi ve görev çubuğu sayacı olarak düşmesi, bildirimden ve ayrı pencerede sipariş açma, Ctrl+K ve Ctrl+1..9, dışa aktarılan dosyanın ve PDF'in kaydı, bağlantı hatası sayfası; son görülen verilerin saklanması, çıkışta silinmesi ve sunucu kapalıyken salt okunur gösterilmesi; tarayıcıda durum çubuğu ve hızlı arama; sunucunun güncelleme dosyalarını (Range ile) vermesi. Electron kurulu değilse (`satis-masaustu` içinde `npm install`) uygulama testleri atlanır.
 - `testler/eszamanli.test.js`: Çok kullanıcılı satış ekibi. Sunucu tarafında sözlük, liste ve sona ekleme yamaları sınanır; temsilci kapsamı ve bayinin yalnız kendi görünümü de denetlenir. Koşullu yazmada iki eşzamanlı karardan biri 409 alır. Tarayıcıda iki satış kullanıcısı aynı anda farklı siparişleri değiştirir. Birinin değişikliği diğerinin açık ekranına yenilemeden gelir. Aynı ödemeye iki kişi aynı anda basar ve tahsilat cariye bir kez düşer.
+- `testler/ekler.test.js`: Ekran fonksiyonlarının sarılmadığı (`sarmalama.mjs --denetle`); her ekin bayi web sitesinde, tek dosyalık sürümde ve satış panelinde ekranda çalıştığı (favori süzgeci, karşılaştırma çubuğu, ürün penceresinin düğmeleri, kredi limiti kartı, ek sayfalar); sipariş gönderilince Siparişlerim'in kendi adresinde açılması; satışta menüdeki her sayfa, sipariş durumunda limit onayı, geçmiş, işlem kaydı ve tek fatura.
 - `testler/ayarlar.test.js`: Tarayıcıda: Ayarlar'dan sunucuya Claude anahtarı ve yeni temsilci, "Claude ile derin analiz"in sunucu üzerinden çalışması, bayi siparişinin anlık bildirimle satışa 2 sn içinde düşmesi.

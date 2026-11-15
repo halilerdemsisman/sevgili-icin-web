@@ -21,29 +21,28 @@
       get: (t, k, r) => k === 'toJSON' ? () => t : Reflect.get(t, k)
     });
   }
-  const _ac = ac;
-  ac = function () {
-    if (temsilciMi()) { HAM.MUS = MUS; SIP = suzgec(SIP, o => o.kul); MUS = suzgec(MUS, (m, k) => k); }
-    _ac.apply(this, arguments);
+  EK.acOnce = function () { if (temsilciMi()) { HAM.MUS = MUS; SIP = suzgec(SIP, o => o.kul); MUS = suzgec(MUS, (m, k) => k); } };
+  EK.acSonra = function () {
     islem('Giriş', ROL_AD[rolu(ben)] || '');
     if (temsilciMi()) ['kullanicilar6'].forEach(s => { const b = $(`aside button.m[data-s=${s}]`); b && b.remove(); });
     setTimeout(iadeRozet, 500);
   };
   if (ben && temsilciMi()) { HAM.MUS = MUS; SIP = suzgec(SIP, o => o.kul); MUS = suzgec(MUS, (m, k) => k); }
-  const _dy = durumYaz;
-  durumYaz = function (no, d) {
+  // sipariş ilerletilirken kredi limiti; false: durum yazılmaz
+  EK.durumLimit = function (no, d) {
     const o = SIP[no], ileri = ['onay', 'uretim', 'sevk'].includes(d) && o && !['onay', 'uretim', 'sevk'].includes(o.durum);
     if (ileri && o && !o.limitOnay) { const r = riskHesap(o.kul); const yeniRisk = r.risk + (['yeni'].includes(o.durum) ? tutarlar(o).net : 0);
       if (r.limit > 0 && yeniRisk > r.limit) {
-        if (!yonetici()) { toast(`${(MUS[o.kul] || {}).firma || o.kul}: kredi limiti aşılıyor (${usd(yeniRisk)} / ${usd(r.limit)}). Bu siparişi yönetici onaylamalı.`); islem('Limit engeli', `${no} · ${usd(yeniRisk)} / ${usd(r.limit)}`); try { git(aktif); } catch (e) {} return; }
+        if (!yonetici()) { toast(`${(MUS[o.kul] || {}).firma || o.kul}: kredi limiti aşılıyor (${usd(yeniRisk)} / ${usd(r.limit)}). Bu siparişi yönetici onaylamalı.`); islem('Limit engeli', `${no} · ${usd(yeniRisk)} / ${usd(r.limit)}`); try { git(aktif); } catch (e) {} return false; }
         const p = pencere(`<h3>Kredi limiti aşılıyor</h3><p>${esc((MUS[o.kul] || {}).firma || o.kul)} için risk <b>${usd(yeniRisk)}</b> olacak; limit <b>${usd(r.limit)}</b>. Vadesi geçmiş: <b>${usd(r.gecmis)}</b>.</p><p class="kucuk">Onaylarsanız sipariş limit aşımı onayıyla işleme alınır ve işlem kaydına yazılır.</p><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn cizgi" id="lmVaz">Vazgeç</button><button class="btn marka" id="lmOk">Limiti aşarak onayla</button></div>`);
         p.querySelector('#lmVaz').onclick = () => { p.remove(); try { git(aktif); } catch (e) {} };
         p.querySelector('#lmOk').onclick = () => { o.limitOnay = { kim: kimAd(), zaman: Date.now(), risk: yeniRisk, limit: r.limit }; islem('Limit aşımı onayı', `${no} · ${usd(yeniRisk)} / ${usd(r.limit)}`); p.remove(); durumYaz(no, d); };
-        return;
+        return false;
       } }
-    const eski = o ? o.durum : ''; _dy.apply(this, arguments); if (o && eski !== d) islem('Sipariş durumu', `${no}: ${eski} → ${d}`);
+    return true;
   };
-  const _fk = faturaKes; faturaKes = function (o) { const n = (CARI[o.kul] || { hareket: [] }).hareket.length; _fk.apply(this, arguments); if ((CARI[o.kul] || { hareket: [] }).hareket.length > n) islem('Fatura kesildi', `FT-${o.no} · ${usd(tutarlar(o).net)}`); };
+  EK.durumIslem = (no, eski, d) => islem('Sipariş durumu', `${no}: ${eski} → ${d}`);
+  EK.faturaIslem = o => islem('Fatura kesildi', `FT-${o.no} · ${usd(tutarlar(o).net)}`); // faturaKes yalnız yeni fatura kesince çağırır
 
   // ================= 9. Kredi limiti ve risk =================
   function riskHesap(kul) {
@@ -183,7 +182,8 @@
     $$('[data-tm]').forEach(s => s.onchange = () => { const m = MUS[s.dataset.tm]; if (s.value) m.temsilci = s.value; else delete m.temsilci; yaz('exs-musteriler', MUS); islem('Temsilci ataması', `${m.firma || m.kul} → ${s.value || 'atanmamış'}`); S6.kullanicilar6(); });
     $('#ifK').onchange = e => { IF.kim = e.target.value; S6.kullanicilar6(); }; $('#ifQ').onchange = e => { IF.q = e.target.value; S6.kullanicilar6(); };
     $('#ifCsv').onclick = () => csv('exit_islem_kaydi.csv', [['Zaman', 'Kullanıcı', 'İşlem', 'Ayrıntı']].concat(IL.map(x => [new Date(x.t).toLocaleString('tr-TR'), (KUL[x.kim] || {}).ad || x.kim, x.olay, x.detay])));
-  };
+      EK.kullanicilarSifre?.();
+};
 
   // ================= menü ve gezinme =================
   ekleMenu('panel', 'Gösterge paneli', '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>', 'siparisler', true);
@@ -192,12 +192,7 @@
   ekleMenu('gruplar', 'Fiyat grupları', '<path d="M3 7h18M3 12h18M3 17h10"/>', 'limit');
   ekleMenu('ziyaret', 'Ziyaret ve görüşmeler', '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>', 'gruplar');
   ekleMenu('kullanicilar6', 'Temsilciler ve işlem kaydı', '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', 'ayarlar', true);
-  const _git6 = git;
-  git = function (s) {
-    if (S6[s]) { const b = $(`aside button.m[data-s=${s}]`); try { $('#yol').textContent = 'Satış Yönetimi  /  ' + (b ? [...b.childNodes].filter(n => n.nodeType === 3).map(n => n.textContent).join('').trim() : ''); } catch (e) {}
-      aktif = s; $$('aside button.m[data-s]').forEach(x => x.classList.toggle('on', x.dataset.s === s)); $('#menu').classList.remove('acik'); $('#ustSag').innerHTML = ''; S6[s](); window.scrollTo(0, 0); }
-    else _git6(s);
-  };
-  $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
+  EK.sayfa6 = s => typeof S6[s] === 'function' ? [null, S6[s]] : null; // başlık menüdeki yazıdan
+    $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
   window.S6 = S6;
 })();

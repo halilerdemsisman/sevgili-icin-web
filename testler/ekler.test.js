@@ -21,7 +21,7 @@ function ekTanimlari(klasorler) {
 const BAYI_EK = ekTanimlari(['bayi/parcalar']), WEB_EK = ekTanimlari(['web']);
 
 test('sarmalama kalmadı; her çağrılan ekin tanımı var (araclar/sarmalama.mjs --denetle)', () => {
-  const r = require('node:child_process').spawnSync(process.execPath, [path.join(KOK, 'araclar', 'sarmalama.mjs'), '--denetle', 'bayi'], { encoding: 'utf8' });
+  const r = require('node:child_process').spawnSync(process.execPath, [path.join(KOK, 'araclar', 'sarmalama.mjs'), '--denetle'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
 });
 
@@ -145,5 +145,82 @@ describe('Bayi tek dosyalık sürüm: ekler', () => {
     assert.equal(await p.locator('#s-cari #obAc').count(), 1);
     assert.deepEqual(H, []);
     await ctx.close();
+  });
+});
+
+const SATIS_EK = ekTanimlari(['satis/parcalar']);
+
+describe('Satış paneli: ekler', () => {
+  let s, b, p, H, bayiC, no;
+  const durum = async (n, d) => p.evaluate(([n, d]) => durumYaz(n, d), [n, d]);
+  before(async () => {
+    s = await sunucuBaslat();
+    bayiC = await s.kayit('ekmusteri', 'Ek-Musteri-2026');
+    const r = await s.api('/api/v1/siparisler', { adres: 'Bursa', kalemler: [{ id: 21, secenek: 'Fileli', adet: 4 }] }, { cerez: bayiC, uyg: 'bayi' });
+    assert.equal(r.durum, 201, r.metin); no = r.json.no;
+    b = await chromium.launch();
+    const c = await b.newContext({ viewport: { width: 1440, height: 900 } }); const [k, v] = s.yoneticiCerez.split('=');
+    await c.addCookies([{ name: k, value: v, url: s.url }]);
+    p = await c.newPage(); H = hataTopla(p); p.on('dialog', d => d.accept());
+    await p.goto(s.url + '/satis');
+    await p.waitForFunction(n => window.EXIT_OTURUM && typeof window.git === 'function' && typeof SIP !== 'undefined' && SIP[n], no);
+    await p.locator('#uyg').waitFor({ state: 'visible' });
+  });
+  after(async () => { await b?.close(); s?.kapat(); });
+
+  test('bütün parçalar eklerini tanımladı; menüdeki her sayfa açılır', async () => {
+    const tanimli = await p.evaluate(() => Object.keys(EK));
+    // 28-masaustu.js yalnız masaüstü uygulamasında çalışır (testler/masaustu.test.js)
+    for (const [ad, f] of Object.entries(SATIS_EK)) if (!/masaustu/.test(f)) assert.ok(tanimli.includes(ad), `EK.${ad} tanımlı değil`);
+    const menu = await p.$$eval('aside button.m[data-s]', L => L.map(x => x.dataset.s));
+    for (const sayfa of ['siparisler', 'musteriler', 'kampanyalar', 'urunler', 'analiz', 'ai', 'hedefler', 'raporlar', 'ayarlar', 'bayihedef', 'talepler', 'odemeler', 'numuneler', 'karne', 'limit', 'tahsilat', 'kullanicilar6'])
+      assert.ok(menu.includes(sayfa), 'menüde yok: ' + sayfa);
+    for (const sayfa of menu) {
+      await p.click(`aside button.m[data-s=${sayfa}]`);
+      assert.equal(await p.evaluate(() => aktif), sayfa);
+      assert.deepEqual(await p.$$eval('aside button.m.on', L => L.map(x => x.dataset.s)), [sayfa]);
+      assert.match(await p.textContent('#yol'), /^Satış Yönetimi {2}\/ {2}\S/, sayfa);
+      assert.ok((await p.innerHTML('#icerik')).length > 100, sayfa + ' çizildi');
+    }
+    // sabit başlıklı sayfalar
+    for (const [sayfa, b_] of [['raporlar', 'Raporlar'], ['urunler', 'Ürünler ve fiyatlar'], ['bayihedef', 'Bayi hedef ve prim']]) {
+      await p.evaluate(x => git(x), sayfa); assert.equal(await p.textContent('#yol'), 'Satış Yönetimi  /  ' + b_);
+    }
+    // ekranların ekleri: ürünler (fiyat geçmişi + Excel), tahsilat (ödeme bekleyen siparişler), kullanıcılar (şifre sıfırlama), ayarlar (sunucu)
+    await p.evaluate(() => git('urunler')); for (const id of ['#uGec', '#fxYukle', '#fxSablon']) assert.equal(await p.locator(id).count(), 1, id);
+    await p.evaluate(() => git('tahsilat')); assert.match(await p.textContent('#icerik'), /Ödeme bekleyen onaylı siparişler/);
+    await p.evaluate(() => git('kullanicilar6')); assert.equal(await p.locator('#ssKart').count(), 1);
+    await p.evaluate(() => git('ayarlar')); assert.equal(await p.locator('#aiDurum').count(), 1); assert.equal(await p.locator('#kyEkle').count(), 1);
+    assert.equal(await p.locator('#icerik .kart h3', { hasText: 'Onay kuralı' }).count(), 0); // v2.7'de kaldırıldı
+    await p.evaluate(() => git('musteriler')); assert.ok(await p.locator('[data-kart]').count() >= 1);
+    await p.click('[data-kart="ekmusteri"]'); assert.equal(await p.locator('.perde #mTem').count(), 1); await p.click('.perde .kapat');
+    assert.deepEqual(H, []);
+  });
+
+  test('sipariş penceresi ekleri; durum değişikliği: geçmiş, işlem kaydı, sevkte fatura, kredi limiti', async () => {
+    await p.evaluate(n => { git('siparisler'); siparisAc(n); }, no);
+    for (const sec of ['#pTakip', '#pBild']) assert.equal(await p.locator('.perde ' + sec).count(), 1, sec);
+    await p.click('.perde .kapat');
+    // kredi limiti: yönetici "limiti aşarak onayla" penceresini görür
+    await p.evaluate(() => { CARI.ekmusteri = { vade: 60, limit: 1, hareket: [] }; cariYaz(); });
+    await durum(no, 'onay');
+    await p.locator('.perde #lmOk').waitFor();
+    assert.equal(await p.evaluate(n => SIP[n].durum, no), 'yeni');
+    await p.click('#lmOk');
+    await p.waitForFunction(n => SIP[n].durum === 'onay', no);
+    const o = await p.evaluate(n => SIP[n], no);
+    assert.ok(o.limitOnay && o.limitOnay.limit === 1);
+    assert.deepEqual(o.gecmis.map(g => g.durum), ['yeni', 'onay']);
+    await durum(no, 'sevk');
+    const c = await p.evaluate(() => CARI.ekmusteri.hareket);
+    assert.deepEqual(c.filter(h => h.tip === 'fatura').map(h => h.no), ['FT-' + no]);
+    await durum(no, 'sevk'); // ikinci kez fatura kesilmez
+    assert.equal(await p.evaluate(() => CARI.ekmusteri.hareket.filter(h => h.tip === 'fatura').length), 1);
+    const I = await p.evaluate(() => oku('exs-islem', []).map(x => x.olay + ' · ' + x.detay));
+    for (const m of ['Limit aşımı onayı · ' + no, `Sipariş durumu · ${no}: yeni → onay`, `Sipariş durumu · ${no}: onay → sevk`, 'Fatura kesildi · FT-' + no])
+      assert.ok(I.some(x => x.startsWith(m)), 'işlem kaydında yok: ' + m + '\n' + I.join('\n'));
+    // bayi portalına yansır
+    await p.waitForFunction(n => (oku('exb-siparisler', []) || []).find(x => x.no === n)?.durum === 'sevk', no);
+    assert.deepEqual(H, []);
   });
 });
