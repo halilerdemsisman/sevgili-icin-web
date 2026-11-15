@@ -32,7 +32,7 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda, anlık bildirim, yapay zekâ anahtarı sunucuda, REST v1; Faz 2–3'ün temeli |
 | 2a | Bayi web sitesi: temel | Ayrı dosyalar + WebP, sayfa adresleri, yeni menü ve telefon düzeni, XSS denetimi |
 | 2b-1 | Bayi web sitesi: veri | Kayıtlar REST ile (numara, fiyat sunucuda, sonuç beklenir), iş verisi tarayıcıda saklanmaz, çevrimdışı sipariş engeli |
-| 2b-2 | Bayi web sitesi: ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · kalan: okumalar REST'e, renk önizleme ortak modülde, TR/EN dosyaları |
+| 2b-2 | Bayi web sitesi: ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · ✅ adım 2a: okumalar REST'ten · kalan: parçaların özelliğe göre bölünmesi, renk önizleme ortak modülde, TR/EN dosyaları |
 | 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
 | 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
@@ -40,9 +40,9 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1, 3a ve 3b-1 tamamlandı; 2b-2 ve 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) bitti.
+Faz 1, 2a, 2b-1, 3a ve 3b-1 tamamlandı. 2b-2 ve 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) ve bayi sitesinde okumaların REST'e geçmesi (2b-2 adım 2a) bitti.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · 2b-2/3b-2 adım 1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve ekranların kalan adımları (okumalar REST'e, tek veri modülü, renk önizleme, TR/EN; 2b-2 + 3b-2).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · 2b-2/3b-2 adım 1 ✅ · 2b-2 adım 2a ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve ekranların kalan adımları (bayi: parçaların özelliğe göre bölünmesi, renk önizleme, TR/EN; satış: tek veri modülü ve okumalar REST'e).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -122,7 +122,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ✅ 2b-2/3b-2 adım 1: sarmalama kalmadı; her ekran fonksiyonu eklerini kendi içinde çağırıyor, `araclar/sarmalama.mjs --denetle` testlerde |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-2/3b-2 adım 1 (135 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-2 adım 2a (145 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -345,7 +345,7 @@ Neden ikiye bölündü: Kabul ölçütünün asıl kısmı (bayi tarayıcısınd
 | Tek dosyalık portal | Sunucusuz kullanımda kayıtlar yine yerelde oluşur (aynı iki fonksiyonun yerel kolu; testle doğrulandı) |
 | Testler | 102 test (önceki 89 + `testler/rest-yazma.test.js` 13); SQLite ve JSON depoyla geçiyor. Faz 0'ın uçtan uca akışı (kayıt → sipariş → onay → değişiklik talebi → ödeme → teklif) yeni yazma yoluyla geçiyor |
 
-Bilinçli olarak bırakılanlar: Okumalar hâlâ eşitleme ucuyla (`/api/veri` + anlık bildirim) gelir; sepet, favori, proje gibi kişisel anahtarlar ve satış mesajlarının "okundu" işareti de eşitleme ucuyla yazılır. Bunlar tek bayinin kendi anahtarları olduğu için eşzamanlı yazma (V3) sorunu yaratmaz. Okumaların REST'e geçmesi ekranlar modüllere bölünürken (2b-2) sayfa sayfa yapılacak.
+Bilinçli olarak bırakılanlar: Okumalar hâlâ eşitleme ucuyla (`/api/veri` + anlık bildirim) gelir; sepet, favori, proje gibi kişisel anahtarlar ve satış mesajlarının "okundu" işareti de eşitleme ucuyla yazılır. Bunlar tek bayinin kendi anahtarları olduğu için eşzamanlı yazma (V3) sorunu yaratmaz. Okumaların REST'e geçmesi ekranlar modüllere bölünürken (2b-2) sayfa sayfa yapılacak (✅ 2b-2 adım 2a: bayi sitesinde bütün iş verisi okumaları REST'ten).
 
 #### Faz 2b-2 / 3b-2 adım 1: Ekran fonksiyonları tek fonksiyonda ✅ tamamlandı
 Bayi ve satış ekranlarında "ek" parçaları ekran fonksiyonlarını üst üste sarıyordu (`const _eski = git; git = function …`). Bir ekranda neyin hangi sırayla çalıştığı parçaların yükleme sırasına bağlıydı ve tek yerden görülemiyordu (K2). İki uygulamada da bu zincirler birleştirildi.
@@ -361,9 +361,25 @@ Bayi ve satış ekranlarında "ek" parçaları ekran fonksiyonlarını üst üst
 
 Bilinçli olarak bırakılan: Ekler hâlâ sürüm adlı parçalarda (`18-v2.8-…`, `25-ek6.js`). Dosyaları özelliğe göre yeniden adlandırıp bölmek, okumaların REST'e geçmesiyle birlikte sayfa sayfa yapılacak (adım 2); böylece her dosyaya bir kez dokunulur.
 
+#### Faz 2b-2 adım 2a: Bayi okumaları REST'ten ✅ tamamlandı
+Bayi web sitesi iş verisini artık REST uçlarından okuyor. Eşitleme ucu sitede yalnız bayinin kişisel anahtarları (sepet, favori, proje, adres, kendi hatırlatmaları) için kaldı. Ekranların okuma biçimi değişmedi: bellekteki kopyayı yeni veri modülü (`kaynak/web/veri.js`) REST yanıtından dolduruyor. Böylece tek dosyalık (sunucusuz) sürüm aynı ekran koduyla çalışmaya devam ediyor.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Yeni okuma uçları | `GET /api/v1/hatirlatmalar` (+ `PATCH …/:id` ile okundu), `duyurular`, `hedef`, `odeme-linki`, `stok`; `katalog` artık kampanya listesini de veriyor; `cari?hareket=tum` bütün hareketleri veriyor. Belge: `docs/API.md` |
+| Fiyat tek yerde | Sitede fiyat, kampanya ve gizli ürün tarayıcıda hesaplanmıyor; katalog fiyatı siparişte uygulanan sunucu hesabıyla aynı kaynaktan geliyor (`sunucu/lib/fiyat.js`). Önceden aynı hesap tarayıcıda ve sunucuda ayrı ayrı yapılıyordu |
+| Değişiklik takibi | Her kaynak imzasıyla (ETag) geliyor. Veri değişince anlık bildirimin ardından yalnız etkilenen kaynakların yeni imzası iniyor; site yalnız imzası değişeni yeniden okuyor. Başka bir bayinin siparişi değişince bu bayinin listesi yeniden indirilmiyor |
+| Eşitleme ucu kişisel kipte | Site `?kapsam=kisisel` ile bağlanıyor: sunucu bu kipte yalnız bayinin kendi kişisel anahtarlarını veriyor ve kabul ediyor. Tarayıcı katmanı da iş verisi anahtarını hiç göndermiyor. Satış mesajının "okundu" işareti artık REST ile yazılıyor |
+| Gizlilik | Kampanya ve duyurulardaki hedef bayi listesi (başka bayilerin kullanıcı adları) artık bayiye gönderilmiyor; önceden eşitleme ucuyla tam liste iniyordu |
+| Açılış hızı | Yavaş 4G (150 ms gecikme, 1,6 Mbit/s), 4 kat yavaşlatılmış işlemci, 40 siparişli bayi: katalogun görünmesi **4,2 sn → 2,9 sn**. Bütün veriyi tek seferde ve sayfayı bekleterek çeken istek kalktı; kaynaklar paralel ve sayfayı bekletmeden geliyor |
+| Bulunan hata | Oturum artık veri gelince açıldığı için ilk sayfa geçişi, bağlantıyla açılan adresin (ör. `/belgeler`, `/siparisler/EXG-…`) üzerine `/katalog` yazıyordu; testler yakaladı. Adres çubuğu artık açılış adresi işlenene kadar yazılmıyor |
+| Testler | 145 test (önceki 135 + `testler/rest-okuma.test.js` 10): uçlar, kişisel kip, imzaların ETag ile aynı olması ve başka bayinin değişikliğinden etkilenmemesi; tarayıcıda satışın sipariş durumu, fiyat ve kampanya değişikliğinin sayfa yenilenmeden gelmesi, sitenin eşitleme ucuna iş verisi göndermemesi. SQLite ve JSON depoyla geçiyor |
+
+Bilinçli olarak bırakılan: Ekranlar veriyi yine `oku('exb-…')` ile okuyor; yani ekranların içi henüz "kaynak" bilmiyor, anahtar biçimini biliyor. Bu, tek dosyalık sürümü ayrı bir kod yolu açmadan çalışır tutmak için seçildi. Parçalar özelliğe göre bölünürken (adım 2b) ekranlar okumalarını doğrudan veri modülünden yapacak biçime getirilebilir.
+
 #### Faz 2b-2: Ekranlar (≈2 hafta)
 1. ✅ (adım 1) Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 7, `git` 5, `cariSayfa` 5 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
-2. Okumalar sayfa sayfa REST'e geçer (katalog fiyatları, siparişler, cari); eşitleme ucu bayi sitesinde yalnız kişisel anahtarlar için kalır.
+2. ✅ (adım 2a) Okumalar REST'e geçer (katalog fiyatları, siparişler, cari); eşitleme ucu bayi sitesinde yalnız kişisel anahtarlar için kalır.
 3. Renk önizleme motoru `ortak/` modülüne taşınır.
 4. TR/EN çevirileri `tr.json` / `en.json` dosyalarına.
 

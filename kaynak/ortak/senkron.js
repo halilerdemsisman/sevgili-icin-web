@@ -8,6 +8,9 @@
 //   gelen kopya yalnız bellekte durur ve sekme kapanınca kaybolur. Ekranlar yine localStorage üzerinden okur/yazar,
 //   bu katman ilgili anahtarları belleğe yönlendirir. Sunucuya ulaşılamazsa site çevrimdışı modda açılır
 //   (EXIT_CEVRIMDISI): giriş ve kayıt kapalı, bağlantı gelince sayfa kendiliğinden yenilenir.
+// Faz 2b-2 (adım 2): web sitesi iş verisini REST'ten okur (web/veri.js). Bu katman sitede yalnız bayinin kişisel
+//   anahtarlarını (sepet, favori, proje, adres, hatırlatma ayarı…) eşitler (?kapsam=kisisel); iş verisi anahtarlarını
+//   sunucuya hiç göndermez. /api/degisen yanıtındaki kaynak imzaları 'exit-kaynak' olayıyla veri modülüne iletilir.
 (function () {
   if (!/^https?:$/.test(location.protocol)) return;
   // /satis (sunucu) veya exit_satis_paneli.html (dosya); bayi sitesinin /siparisler gibi adresleri bayidir
@@ -17,6 +20,9 @@
   const ORTAK = k => /^ex[bs]-/.test(k) && !YEREL.test(k);
   const S = Storage.prototype, setI0 = S.setItem, remI0 = S.removeItem, getI0 = S.getItem;
   const BELLEK = UYG === 'bayi' && !!window.EXIT_WEB, B = new Map();
+  // bayi sitesinde eşitlenen kişisel anahtarlar (sunucu: kurallar.js KISISEL); diğerleri REST'ten gelir
+  const KISISEL = /^exb-(hat-gizli|duyuru-okundu|sepet|fav|proje|adres|bildirim|gorulen|mkat|hat)-(.+)$/;
+  const KAPSAM = BELLEK ? 'kapsam=kisisel' : '', ek = y => KAPSAM ? y + (y.includes('?') ? '&' : '?') + KAPSAM : y;
   // ham erişim (senkron katmanının kendisi için): iş verisi anahtarları bellek kipinde Map'e gider
   const getI = function (k) { return BELLEK && this === localStorage && ORTAK(k) ? (B.has(k) ? B.get(k) : null) : getI0.call(this, k); };
   const setI = function (k, v) { if (BELLEK && this === localStorage && ORTAK(k)) B.set(k, String(v)); else setI0.call(this, k, v); };
@@ -49,7 +55,7 @@
     }
   };
   try {
-    const x = istek('GET', 'api/veri');
+    const x = istek('GET', ek('api/veri'));
     if (x.status === 200) {
       const j = JSON.parse(x.responseText); yuklu = true;
       // İlk kurulum: sunucuda iş verisi yokken yönetici girişi yapılırsa, bu tarayıcıda (eski, dosyadan açılan
@@ -158,7 +164,7 @@
   const kuyruk = new Map(); let zam = null;
   const gonder = () => { zam = null; if (!oturum || !kuyruk.size) return; const L = [...kuyruk]; kuyruk.clear();
     const P = paket(L); if (!P.degisen.length && !P.yama.length) return;
-    fetch('api/veri', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify(P) })
+    fetch(ek('api/veri'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify(P) })
       .then(r => { if (r.status === 401) { oturumKapandi(); return null; } if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(j => { if (!j) return; const B = new Map(j.birlesen || []);
         // bu arada yeniden değiştirilen anahtara dokunulmaz (taban da eski kalır: sonraki yama doğru çıkar)
@@ -169,6 +175,8 @@
   let islemK = null; // koşullu yazma sırasında yakalanan değişiklikler
   const sira = (k, v) => {
     if (!oturum) return;
+    // web sitesi: iş verisi REST ile yazılır (kayitEkle/kayitGuncelle); eşitleme ucuna yalnız kişisel anahtar gider
+    if (BELLEK) { const m = k.match(KISISEL); if (!m || m[2] !== oturum.kul) { console.warn(k + ': iş verisi eşitleme ucuyla gönderilmez (REST ile yazılır).'); return; } }
     if (!kuyrukTaban.has(k)) kuyrukTaban.set(k, gorulen.get(k) ?? taban.get(k) ?? null);
     if (islemK) { islemK.set(k, v); kuyruk.delete(k); return; }
     if (eksik.has(k)) { console.warn(k + ' bu tarayıcıya tam yüklenemediği için değişiklik sunucuya gönderilmedi.'); durum(true); return; }
@@ -187,7 +195,7 @@
     const L = [...M]; if (!L.length) return Promise.resolve({ ok: true });
     // geri alınca ekranların bellekteki kopyası da tazelensin (exit-degisti)
     const geriAl = B => { B.forEach(([k, v]) => { if (v == null) remI.call(localStorage, k); else setI.call(localStorage, k, v); tabanKoy(k, v); }); bildir(B.map(x => x[0])); };
-    return fetch('api/veri', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify({ ...paket(L), kosul }) })
+    return fetch(ek('api/veri'), { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify({ ...paket(L), kosul }) })
       .then(r => r.json().catch(() => ({})).then(j => {
         if (r.status === 401) { oturumKapandi(); return { ok: false, hata: 'Oturum kapandı; yeniden giriş yapın.' }; }
         durum(true);
@@ -210,13 +218,22 @@
   window.EXIT_REST = (yontem, yol, govde) => fetch('api/v1/' + yol, { method: yontem, cache: 'no-store', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: govde ? JSON.stringify(govde) : undefined })
     .then(r => r.json().catch(() => ({})).then(j => { if (r.status === 401) oturumKapandi(); durum(true); return { ...j, ok: r.ok, http: r.status }; }), // http: yanıt kodu (kaydın kendi 'durum' alanı ezilmesin)
       () => { durum(false); return { ok: false, http: 0, cevrimdisi: true, hata: 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edip yeniden deneyin.' }; });
-  const cek = () => fetch('api/degisen?son=' + son, { cache: 'no-store', headers: { 'X-Exit-Uyg': UYG } }).then(r => r.json()).then(j => {
+  // REST'ten okunan bir kaynağı belleğe koyar (sunucuya geri gönderilmez); değiştiyse ekranlar 'exit-degisti' ile haber alır
+  window.EXIT_BELLEK_KOY = (k, v) => {
+    const y = getI.call(localStorage, k); tabanKoy(k, v);
+    if (v == null ? y == null : y === v) return false;
+    if (v == null) remI.call(localStorage, k); else setI.call(localStorage, k, v);
+    bildir([k]); return true;
+  };
+  const cek = () => fetch(ek('api/degisen?son=' + son), { cache: 'no-store', headers: { 'X-Exit-Uyg': UYG } }).then(r => r.json()).then(j => {
     son = j.zaman; if (oturum && !j.oturum) return oturumKapandi(); durum(true);
     // ekranlar sunucudan gelen değişikliği dinleyebilir (masaüstü bildirimleri): addEventListener('exit-degisti', e => e.detail)
     const D = [];
     j.degisen.forEach(([k, v]) => { if (kuyruk.has(k)) return; tabanKoy(k, v);
       try { const y = getI.call(localStorage, k); if (v == null ? y != null : y !== v) D.push(k); v == null ? remI.call(localStorage, k) : y !== v && setI.call(localStorage, k, v); eksik.delete(k); } catch (e) { eksik.add(k); try { remI.call(localStorage, k); } catch (e2) {} } });
-    bildir(D); }).catch(() => durum(false));
+    bildir(D);
+    // web sitesi: değişen REST kaynaklarının imzası (web/veri.js yalnız farklı olanı yeniden okur)
+    if (j.kaynaklar && j.kaynaklar.length) dispatchEvent(new CustomEvent('exit-kaynak', { detail: j.kaynaklar })); }).catch(() => durum(false));
   // Anlık bildirim (SSE): sunucu her değişiklikte sinyal gönderir, istemci hemen çeker. Bağlantı açıkken
   // yoklama 30 sn'ye iner; bağlantı yoksa 4 sn'lik yoklama sürer.
   let sseAcik = false, sonCek = 0, sz = null;
@@ -228,7 +245,7 @@
     es.onerror = () => { sseAcik = false; };
     es.onmessage = () => { clearTimeout(sz); sz = setTimeout(cekSimdi, 150); };
   }
-  addEventListener('beforeunload', () => { if (kuyruk.size && oturum) navigator.sendBeacon('api/veri?uyg=' + UYG, new Blob([JSON.stringify(paket([...kuyruk]))], { type: 'application/json' })); });
+  addEventListener('beforeunload', () => { if (kuyruk.size && oturum) navigator.sendBeacon(ek('api/veri?uyg=' + UYG), new Blob([JSON.stringify(paket([...kuyruk]))], { type: 'application/json' })); });
   function oturumKapandi() { if (kapandi) return; kapandi = true; oturum = null; kuyruk.clear(); try { sessionStorage.removeItem(OTURUM_ANAHTARI); } catch (e) {} durum(true); }
 
   let rozet; function durum(ok) {

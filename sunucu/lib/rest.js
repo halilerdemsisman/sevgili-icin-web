@@ -15,6 +15,17 @@
 //   POST  /api/v1/{odemeler|iadeler|numuneler|teklifler}       yeni ödeme bildirimi / iade / numune / özel teklif talebi
 //   PATCH /api/v1/siparisler/:no        bayinin değiştirebildiği alanlar (yeni siparişte kalem/iptal; sonra talep, proje)
 //   PATCH /api/v1/teklifler/:no         onaylı teklifte "sepette"
+// Faz 2b-2 (adım 2): bayi web sitesi iş verisini bu uçlardan okur; eşitleme ucu sitede yalnız kişisel anahtarlar
+// (sepet, favori, proje…) için kalır.
+//   GET   /api/v1/katalog                 + kampanyalar (bayiye geçerli kampanya listesi; kampanya bandı)
+//   GET   /api/v1/cari?hareket=tum        bütün hareketler (varsayılan: son 50)
+//   GET   /api/v1/hatirlatmalar           satış ekibinin mesajları (bayi: kendisine gelenler)
+//   PATCH /api/v1/hatirlatmalar/:id       bayi: okundu / gizli
+//   GET   /api/v1/{duyurular|hedef|odeme-linki|stok}   bayiye yayınlanan duyurular, yıllık hedef, ödeme linki, stok/termin özeti
+// Bayinin okuduğu her kaynak ETag (imza) ile döner. Sunucuda bir kaynağı etkileyen anahtar değişince
+// /api/degisen yanıtında kaynakların yeni imzası gelir ([[ad, imza]]); site yalnız imzası değişen kaynağı yeniden okur.
+const crypto = require('crypto');
+const imzala = o => '"' + crypto.createHash('sha1').update(JSON.stringify(o)).digest('base64url').slice(0, 16) + '"';
 const coz = (s, v) => { try { return s == null ? v : JSON.parse(s); } catch (e) { return v; } };
 const metin = (v, n = 200) => String(v == null ? '' : v).trim().slice(0, n);
 const sayi = (v, alt, ust) => { const n = +v; return isFinite(n) && n >= alt && n <= ust ? n : null; };
@@ -51,13 +62,47 @@ const TURLER = {
     return { oran, takim, hedef: sayi(b.hedef, 0, 1e9), termin: tarihMi(b.termin) ? b.termin : '', not: metin(b.not, 1000), masa: masa && masa.id ? masa : null, sandalye };
   } },
 };
+// Kayıt listeleri (GET): yol → anahtar. Yeni kayıt (POST) yalnız TURLER'de olanlar için
+const LISTELER = { siparisler: 'exb-siparisler', odemeler: 'exb-odeme', iadeler: 'exb-iade', numuneler: 'exb-numune', teklifler: 'exb-teklif', hatirlatmalar: 'exb-hatirlat' };
 // PATCH ile bayinin istediği alanlar (sunucu kuralları ayrıca kaydın durumuna göre süzer)
-const DEGISEN = { siparisler: ['kalemler', 'adres', 'durum', 'revizyon', 'rev', 'revZaman', 'gecmis', 'bayiIptal', 'proje', 'tahminiTeslim', 'talep'], teklifler: ['sepette'] };
+const DEGISEN = { hatirlatmalar: ['okundu', 'gizli'], siparisler: ['kalemler', 'adres', 'durum', 'revizyon', 'rev', 'revZaman', 'gecmis', 'bayiIptal', 'proje', 'tahminiTeslim', 'talep'], teklifler: ['sepette'] };
 
 function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem, kullanicilar, oturum }) {
   // satış için görülebilecek bayiler (temsilci kapsamı); bayi için kendisi
   const kapsam = ot => ot.tur === 'bayi' ? ot.kul : kurallar.kapsam({ ...ot });
   const gorebilir = (ot, kul) => { const K = kapsam(ot); return K == null || (K instanceof Set ? K.has(kul) : K === kul); };
+
+  // kullanıcının görebildiği hâl (eşitleme ucuyla aynı süzme)
+  const gor = (k, ot) => coz(kurallar.oku(k, depo.al(k) ?? null, ot), null);
+  // satış ekibinin hedef listesi (bayiler) başka bayilerin adını içerir: bayiye gitmez (süzme sunucuda yapıldı)
+  const hedefsiz = L => (Array.isArray(L) ? L : []).filter(nesneMi).map(({ bayiler, ...x }) => x);
+  const tumu = (k, ot) => depo.kayitlar(k, { kul: kapsam(ot), sinir: 1e9 }).kayitlar;
+
+  function ben(ot) {
+    const k = kullanicilar(ot.tur)[ot.kul] || {};
+    const { sifre, sifreDegistir, ...acik } = k;
+    return { tur: ot.tur, rol: ot.rol, ...acik };
+  }
+  function kampanyalar(ot) { return ot.tur === 'bayi' ? hedefsiz(gor('exb-kampanya', ot)) : (gor('exb-kampanya', ot) || []); }
+
+  // Bayinin okuduğu kaynaklar: etkilendiği anahtarlar ve yanıt gövdesi (liste kaynaklarında bütün liste).
+  const KAYNAK = {
+    ben: { k: ['exb-kullanicilar'], oku: ben },
+    katalog: { k: ['exb-fiyat', 'exb-gizli', 'exb-kampanya'], oku: ot => ({ urunler: katalog(ot), kampanyalar: kampanyalar(ot), para: 'USD' }) },
+    cari: { k: ['exb-cari', 'exs-cari', 'exs-siparisler', 'exs-iskonto'], oku: ot => cari(ot.kul, true) },
+    duyurular: { k: ['exb-duyuru'], bayi: true, oku: ot => ({ duyurular: hedefsiz(gor('exb-duyuru', ot)) }) },
+    hedef: { k: ['exb-bayi-hedef'], bayi: true, oku: ot => ({ hedef: (gor('exb-bayi-hedef', ot) || {})[ot.kul] || null }) },
+    'odeme-linki': { k: ['exb-odeme-link'], bayi: true, oku: ot => ({ link: String((gor('exb-odeme-link', ot) || {})[ot.kul] || '').trim() }) },
+    stok: { k: ['exb-stok'], bayi: true, oku: ot => ({ stok: gor('exb-stok', ot) }) },
+  };
+  for (const [ad, k] of Object.entries(LISTELER)) KAYNAK[ad] = { k: [k], oku: ot => tumu(k, ot) };
+  const imza = (ad, ot) => imzala(KAYNAK[ad].oku(ot));
+  // /api/degisen için: değişen anahtarların etkilediği kaynakların yeni imzası (yalnız bayi)
+  function imzalar(ot, anahtarlar) {
+    if (!ot || ot.tur !== 'bayi') return [];
+    const A = new Set(anahtarlar);
+    return Object.keys(KAYNAK).filter(ad => KAYNAK[ad].k.some(k => A.has(k))).map(ad => [ad, imza(ad, ot)]);
+  }
 
   function katalog(ot) {
     if (!fiyatlar) return [];
@@ -96,26 +141,27 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
     });
   }
 
-  function cari(kul) {
+  function cari(kul, tum) {
     const C = coz(depo.al('exs-cari'), {}) || {}, c = C[kul] || { hareket: [] }, H = Array.isArray(c.hareket) ? c.hareket : [];
     const r = limitler.risk(kul);
     return { bayi: kul, vade: c.vade || null, limit: r.limit || null, bakiye: Math.round(r.bakiye * 100) / 100, acikSiparis: Math.round(r.acik * 100) / 100,
       risk: Math.round(r.risk * 100) / 100, kullanilabilir: r.limit ? Math.round((r.limit - r.risk) * 100) / 100 : null,
-      hareketler: H.slice().sort((a, b) => (b.tarih || 0) - (a.tarih || 0)).slice(0, 50) };
+      tanimli: !!C[kul], hareketler: H.slice().sort((a, b) => (b.tarih || 0) - (a.tarih || 0)).slice(0, tum ? undefined : 50) };
   }
 
-  return async function rest(q, r, u, p, ip, tur) {
+  async function rest(q, r, u, p, ip, tur) {
     const ot = oturum(q, tur);
     if (!ot) return js(r, { hata: 'Oturum yok veya süresi doldu.' }, 401);
     const yol = p.slice('/api/v1'.length), sp = u.searchParams;
 
-    if (yol === '/ben' && q.method === 'GET') {
-      const k = kullanicilar(ot.tur)[ot.kul] || {};
-      const { sifre, sifreDegistir, ...acik } = k;
-      return js(r, { tur: ot.tur, rol: ot.rol, ...acik });
+    // bayinin okuduğu tekil kaynaklar (ben, katalog, duyurular, hedef, ödeme linki, stok); imza ETag'de
+    const mk = q.method === 'GET' && yol.match(/^\/(ben|katalog|duyurular|hedef|odeme-linki|stok)$/);
+    if (mk) {
+      const K = KAYNAK[mk[1]];
+      if (K.bayi && ot.tur !== 'bayi') return js(r, { hata: 'Bu kaynak bayi hesabıyla okunur.' }, 403);
+      const o = K.oku(ot);
+      return js(r, o, 200, ot.tur === 'bayi' ? { ETag: imzala(o) } : {});
     }
-
-    if (yol === '/katalog' && q.method === 'GET') return js(r, { urunler: katalog(ot), para: 'USD' });
 
     if (yol === '/siparisler' && q.method === 'GET') {
       let K = kapsam(ot);
@@ -123,7 +169,7 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
       if (bayi && ot.tur === 'satis') { if (!gorebilir(ot, bayi)) return js(r, { hata: 'Bu bayiyi göremezsiniz.' }, 403); K = bayi; }
       const adet = Math.min(200, Math.max(1, +sp.get('adet') || 50)), sayfa = Math.max(1, +sp.get('sayfa') || 1);
       const { toplam, kayitlar } = depo.kayitlar('exb-siparisler', { kul: K, durum: sp.get('durum') || undefined, sinir: adet, atla: (sayfa - 1) * adet });
-      return js(r, { toplam, sayfa, adet, siparisler: kayitlar });
+      return js(r, { toplam, sayfa, adet, siparisler: kayitlar }, 200, ot.tur === 'bayi' ? { ETag: imza('siparisler', ot) } : {});
     }
 
     const m = yol.match(/^\/siparisler\/([A-Z]+-\d{4}-\d+)$/);
@@ -148,13 +194,13 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
     }
 
     // ---- Faz 2b: ödeme bildirimi, iade, numune, özel teklif ----
-    const mt = yol.match(/^\/(odemeler|iadeler|numuneler|teklifler)$/);
+    const mt = yol.match(/^\/(odemeler|iadeler|numuneler|teklifler|hatirlatmalar)$/);
     if (mt && q.method === 'GET') {
-      const T = TURLER[mt[1]], adet = Math.min(200, Math.max(1, +sp.get('adet') || 50)), sayfa = Math.max(1, +sp.get('sayfa') || 1);
-      const { toplam, kayitlar } = depo.kayitlar(T.k, { kul: kapsam(ot), durum: sp.get('durum') || undefined, sinir: adet, atla: (sayfa - 1) * adet });
-      return js(r, { toplam, sayfa, adet, kayitlar });
+      const adet = Math.min(200, Math.max(1, +sp.get('adet') || 50)), sayfa = Math.max(1, +sp.get('sayfa') || 1);
+      const { toplam, kayitlar } = depo.kayitlar(LISTELER[mt[1]], { kul: kapsam(ot), durum: sp.get('durum') || undefined, sinir: adet, atla: (sayfa - 1) * adet });
+      return js(r, { toplam, sayfa, adet, kayitlar }, 200, ot.tur === 'bayi' ? { ETag: imza(mt[1], ot) } : {});
     }
-    if (mt && q.method === 'POST') {
+    if (mt && q.method === 'POST' && TURLER[mt[1]]) {
       if (ot.tur !== 'bayi') return js(r, { hata: 'Bu kayıt bayi hesabıyla oluşturulur.' }, 403);
       const T = TURLER[mt[1]];
       let b; try { b = await govde(q, 12e6); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
@@ -167,13 +213,14 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
       if (!kayit) return js(r, { hata: s.reddedilen.map(y => y[1]).join('; ') || 'Kaydedilemedi.' }, 400);
       return js(r, { ...kayit, ...(s.reddedilen.length ? { uyari: s.reddedilen.map(y => y[1]) } : {}) }, 201);
     }
-    const mp = yol.match(/^\/(siparisler|teklifler)\/([A-Z]+-\d{4}-\d+)$/);
+    const mp = yol.match(/^\/(siparisler|teklifler)\/([A-Z]+-\d{4}-\d+)$/) || yol.match(/^\/(hatirlatmalar)\/([\w.-]{1,80})$/);
     if (mp && q.method === 'PATCH') {
       if (ot.tur !== 'bayi') return js(r, { hata: 'Satış değişiklikleri satış panelinden yapılır.' }, 403);
-      const k = mp[1] === 'siparisler' ? 'exb-siparisler' : 'exb-teklif';
+      const k = LISTELER[mp[1]];
       let b; try { b = await govde(q, 1e6); } catch (e) { return js(r, { hata: 'geçersiz istek' }, 400); }
       // kayıt gövde okunduktan sonra alınır: aynı anda gelen iki değişiklik birbirini ezmesin
       const s = depo.kayitlar(k, { no: mp[2], kul: ot.kul, sinir: 1 }).kayitlar[0];
+      // (hatırlatmalarda kimlik alanı id: depo.kayitlar 'no' seçeneğini listenin kimlik alanıyla karşılaştırır)
       if (!s) return js(r, { hata: 'Kayıt bulunamadı.' }, 404);
       if (!nesneMi(b)) return js(r, { hata: 'geçersiz istek' }, 400);
       const istenen = Object.keys(b).filter(f => DEGISEN[mp[1]].includes(f));
@@ -195,11 +242,14 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
       const kul = ot.tur === 'bayi' ? ot.kul : sp.get('bayi');
       if (!kul) return js(r, { hata: '?bayi= gerekli.' }, 400);
       if (!gorebilir(ot, kul)) return js(r, { hata: 'Bu bayiyi göremezsiniz.' }, 403);
-      return js(r, cari(kul));
+      const o = cari(kul, sp.get('hareket') === 'tum');
+      return js(r, o, 200, ot.tur === 'bayi' && sp.get('hareket') === 'tum' ? { ETag: imzala(o) } : {});
     }
 
     return js(r, { hata: 'bulunamadı' }, 404);
-  };
+  }
+  rest.imzalar = imzalar;
+  return rest;
 }
 
 module.exports = { restKur };

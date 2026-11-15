@@ -31,7 +31,9 @@ describe('Bayi web sitesi: ekler', () => {
     s = await sunucuBaslat();
     cerez = await s.kayit('ekbayi', 'Ek-Bayi-2026');
     // kredi limiti kartı (EK.cariLimit) limit tanımlı bayide görünür
-    const c = await s.api('/api/veri', { degisen: [['exb-cari', JSON.stringify({ ekbayi: { vade: 60, limit: 5000, hareket: [] } })]] });
+    // (satış paneli cariyi iki anahtara birden yazar: cariYaz; bayi sitesi limiti sunucunun hesabından okur)
+    const cari = JSON.stringify({ ekbayi: { vade: 60, limit: 5000, hareket: [] } });
+    const c = await s.api('/api/veri', { degisen: [['exs-cari', cari], ['exb-cari', cari]] });
     assert.equal(c.durum, 200, c.metin);
     const r = await s.api('/api/v1/siparisler', { adres: 'İzmir', kalemler: [{ id: 21, secenek: 'Fileli', adet: 3 }] }, { cerez, uyg: 'bayi' });
     assert.equal(r.durum, 201, r.metin);

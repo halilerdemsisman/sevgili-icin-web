@@ -201,7 +201,8 @@
       c.querySelectorAll('[data-au]').forEach(b => b.onclick = () => { c.remove(); urunAc(A[+b.dataset.au].urun); });
       c.querySelectorAll('[data-as]').forEach(b => b.onclick = () => { c.remove(); $('#hSepet').click(); });
       c.querySelectorAll('[data-ah]').forEach(b => b.onclick = () => { const G = oku(gKey(), {}) || {}; G[A[+b.dataset.ah].k] = bugun(); yaz(gKey(), G); hRozet(); ciz(); });
-      c.querySelectorAll('[data-am]').forEach(b => b.onclick = () => { const M = oku('exb-hatirlat', []), m = M.find(x => x.id === A[+b.dataset.am].mesaj); if (m) { m.okundu = Date.now(); yaz('exb-hatirlat', M); } hRozet(); ciz(); });
+      // satış mesajını okundu işaretle (sunucuya bağlıyken PATCH /api/v1/hatirlatmalar/:id)
+      c.querySelectorAll('[data-am]').forEach(b => b.onclick = () => bekleyerek(b, async () => { const id = A[+b.dataset.am].mesaj; if (id) await kayitGuncelle('hatirlatmalar', id, { okundu: Date.now() }); hRozet(); ciz(); }));
     }
     ciz();
   }

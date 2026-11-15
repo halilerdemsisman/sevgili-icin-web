@@ -167,9 +167,14 @@ const mrpIzinli = (q, ip) => ENV.MRP_HERKESE_ACIK === '1' || ozelAg(ip) || !!otu
   || String(ENV.MRP_IZINLI_IP || '').split(',').map(x => x.trim()).filter(Boolean).some(e => ip === e || (e.endsWith('.') && ip.startsWith(e)));
 
 const YEREL = /^(exb-dil|exb-oturum|exs-oturum|exs-ai-anahtar|exit-tema|exb-kars)$/;
-function gorunurVeri(ot) {
+// kisisel: bayi web sitesi (Faz 2b-2) iş verisini REST'ten okur; eşitleme ucundan yalnız kendi kişisel
+// anahtarlarını (sepet, favori, proje, adres…) alır ve yazar.
+const kisiselMi = (ot, k) => { const m = k.match(KISISEL); return !!m && m[2] === ot.kul; };
+const kisiselKapsam = (ot, u) => !!ot && ot.tur === 'bayi' && u.searchParams.get('kapsam') === 'kisisel';
+function gorunurVeri(ot, kisisel) {
   const veri = {}; if (!ot) return veri;
-  for (const k of depo.anahtarlar()) { const v = kurallar.oku(k, depo.al(k), ot); if (v !== undefined) veri[k] = v; }
+  for (const k of depo.anahtarlar()) {
+    if (kisisel && !kisiselMi(ot, k)) continue; const v = kurallar.oku(k, depo.al(k), ot); if (v !== undefined) veri[k] = v; }
   return veri;
 }
 
@@ -285,18 +290,20 @@ async function api(q, r, u, p, ip) {
     return js(r, { ok: true, gecici });
   }
 
-  if (p === '/api/veri' && q.method === 'GET') { const ot = oturum(q, tur); return js(r, { zaman: depo.zaman, veri: gorunurVeri(tamOturum(ot)), oturum: oturumOzeti(ot) }); }
+  if (p === '/api/veri' && q.method === 'GET') { const ot = oturum(q, tur); return js(r, { zaman: depo.zaman, veri: gorunurVeri(tamOturum(ot), kisiselKapsam(ot, u)), oturum: oturumOzeti(ot) }); }
 
   if (p === '/api/degisen') {
     const ot0 = oturum(q, tur), ot = tamOturum(ot0), son = +u.searchParams.get('son') || 0;
     if (!ot) return js(r, { zaman: depo.zaman, degisen: [], oturum: oturumOzeti(ot0) });
-    const degisen = [];
-    for (const k of depo.degisenler(son)) {
+    const degisen = [], kisisel = kisiselKapsam(ot, u), D = depo.degisenler(son);
+    for (const k of D) {
+      if (kisisel && !kisiselMi(ot, k)) continue;
       const ham = depo.al(k);
       if (ham == null) { const m = k.match(KISISEL); if (ot.tur === 'satis' || (m && m[2] === ot.kul) || (!m && !k.startsWith('exs-'))) degisen.push([k, null]); continue; }
       const v = kurallar.oku(k, ham, ot); if (v !== undefined) degisen.push([k, v]);
     }
-    return js(r, { zaman: depo.zaman, degisen, oturum: oturumOzeti(ot) });
+    // iş verisi değiştiyse REST kaynaklarının yeni imzası: site yalnız imzası değişeni yeniden okur
+    return js(r, { zaman: depo.zaman, degisen, ...(kisisel ? { kaynaklar: rest.imzalar(ot, D) } : {}), oturum: oturumOzeti(ot) });
   }
 
   if (p === '/api/veri' && q.method === 'POST') {
@@ -314,8 +321,11 @@ async function api(q, r, u, p, ip) {
       }
     }
     // kayıt düzeyinde yazma (Faz 3b): yama kullanıcının şu anki görünümüne uygulanır, sonra aynı kurallardan geçer
-    const degisen = b.degisen.slice(), yamali = [], hatali = [];
-    for (const [k, Y] of b.yama || []) {
+    const kisisel = kisiselKapsam(ot, u), hatali = [];
+    // web sitesi iş verisini REST ile yazar: bu kipte kişisel olmayan anahtar kabul edilmez
+    const kisiselSuz = L => L.filter(x => { const ok = !kisisel || (Array.isArray(x) && typeof x[0] === 'string' && kisiselMi(ot, x[0])); if (!ok && Array.isArray(x)) hatali.push([x[0], 'iş verisi REST ile yazılır']); return ok; });
+    const degisen = kisiselSuz(b.degisen.slice()), yamali = [];
+    for (const [k, Y] of kisiselSuz(b.yama || [])) {
       if (typeof k !== 'string' || !/^ex[bs]-/.test(k)) continue;
       const v = yamaUygula(gorunum(k), Y);
       if (v === undefined) { hatali.push([k, 'geçersiz yama']); continue; }

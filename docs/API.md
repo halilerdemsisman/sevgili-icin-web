@@ -1,4 +1,4 @@
-# EXIT Garden sunucu API'si (sürüm 3a)
+# EXIT Garden sunucu API'si (Faz 2b-2)
 
 Tüm uçlar JSON konuşur. Hatalar `{ "hata": "açıklama" }` biçimindedir. Yapay zekâ aktarımı ise Claude API'nin hata biçimini (`{ "error": { "message": … } }`) olduğu gibi döner.
 
@@ -22,7 +22,7 @@ Tüm uçlar JSON konuşur. Hatalar `{ "hata": "açıklama" }` biçimindedir. Yap
 
 ## REST v1
 
-Bayi web sitesi (Faz 2b-1'den beri) bütün kayıt oluşturma ve değiştirme işlemlerini bu uçlarla yapar; Faz 3'teki satış masaüstü uygulaması da bunları kullanacak. Veri, eşitleme ucuyla aynıdır: REST ile verilen sipariş eski ekranlarda da anında görünür. Yazmalar eşitleme ucuyla aynı kurallardan geçer (izinli alanlar, dosyaların diske çıkarılması, fiyat denetimi, işlem kaydı).
+Bayi web sitesi (Faz 2b-1'den beri) bütün kayıt oluşturma ve değiştirme işlemlerini, Faz 2b-2'den beri de bütün iş verisi okumalarını bu uçlarla yapar (bkz. "Bayi web sitesi nasıl okur"); Faz 3'teki satış masaüstü uygulaması da bunları kullanacak. Veri, eşitleme ucuyla aynıdır: REST ile verilen sipariş eski ekranlarda da anında görünür. Yazmalar eşitleme ucuyla aynı kurallardan geçer (izinli alanlar, dosyaların diske çıkarılması, fiyat denetimi, işlem kaydı).
 
 Görünürlük her uçta aynıdır:
 - bayi yalnız kendi kayıtlarını görür,
@@ -34,7 +34,7 @@ Oturumdaki kullanıcı kaydı (şifre alanları hariç) ile `tur` ve `rol`.
 
 ### `GET /api/v1/katalog`
 ```json
-{ "para": "USD", "urunler": [
+{ "para": "USD", "kampanyalar": [{ "ad": "Ali özel", "oran": 20, "kapsam": "urun", "hedef": ["Neo"], "bas": null, "bit": null }], "urunler": [
   { "id": 21, "ad": "Neo", "kategori": "Sandalyeler",
     "secenekler": [{ "ad": "Fileli", "sinif": "Sandalye", "liste": 83, "fiyat": 66,
                      "kampanya": { "ad": "Ali özel", "oran": 20, "bit": null } }] } ] }
@@ -42,6 +42,8 @@ Oturumdaki kullanıcı kaydı (şifre alanları hariç) ile `tur` ve `rol`.
 - `liste`: satışın fiyat güncellemesi varsa o, yoksa katalog fiyatı.
 - `fiyat`: bayiye geçerli en yüksek kampanya uygulanmış hali.
 - Bayi, satışın gizlediği ürünleri görmez.
+- `kampanyalar`: bayiye geçerli kampanyalar (sitedeki kampanya bandı). Hedef bayi listesi (`bayiler`) bayiye gönderilmez.
+- Bayi sitesi fiyatı tarayıcıda yeniden hesaplamaz; buradaki `liste`/`fiyat` siparişte sunucunun uyguladığı fiyatla aynı hesaptır (`sunucu/lib/fiyat.js`).
 
 ### `GET /api/v1/siparisler`
 Parametreler:
@@ -83,18 +85,38 @@ Gövde değişecek alanlardır: `kalemler`, `adres`, `durum` (`"iptal"`), `reviz
 | `numuneler` | `{tur: [..], adres, urun?, adet?, kod?, not?}` | en az bir tür ve adres |
 | `teklifler` | `{sandalye: {id, ad, secenek, iskelet, file?, kumas?}, masa?: {…}, oran, takim, hedef?, termin?, not?}` | sandalye zorunlu; masa yoksa oran 1 |
 
-`GET /api/v1/odemeler | iadeler | numuneler | teklifler` listeler (`?durum=`, `?sayfa=`, `?adet=`; bayi kendi kayıtlarını, satış kapsamındakileri görür).
+`GET /api/v1/odemeler | iadeler | numuneler | teklifler | hatirlatmalar` listeler (`?durum=`, `?sayfa=`, `?adet=`; bayi kendi kayıtlarını, satış kapsamındakileri görür).
 
 `PATCH /api/v1/teklifler/:no` gövdesi `{sepette: true}`: onaylanmış teklifin ürünleri sepete eklendi. Onaylanmamış teklifte `409`.
+
+### Satış ekibinin mesajları (hatırlatmalar)
+`GET /api/v1/hatirlatmalar`: bayiye gelen mesajlar (`{id, kul, metin, tur?, zaman, okundu?, gizli?}`); satış kapsamındakileri görür.
+`PATCH /api/v1/hatirlatmalar/:id` (yalnız bayi, kendi mesajı): gövdede yalnız `okundu` ve `gizli` dikkate alınır; başka alan `400`, başka bayinin mesajı `404`.
+
+### Bayiye yayınlananlar (yalnız bayi)
+| Uç | Yanıt |
+|---|---|
+| `GET /api/v1/duyurular` | `{duyurular: [{id, baslik, metin, bas?, bit?, aktif?…}]}`: bu bayiye (veya herkese) yayınlananlar; hedef bayi listesi gönderilmez |
+| `GET /api/v1/hedef` | `{hedef: {<yıl>: {hedef, prim…}} \| null}` |
+| `GET /api/v1/odeme-linki` | `{link}`: satışın bu bayiye tanımladığı online ödeme bağlantısı (yoksa boş) |
+| `GET /api/v1/stok` | `{stok}`: satış panelinin yayınladığı stok/termin özeti (tahmini teslim günü) |
 
 ### `GET /api/v1/cari`
 Bayi kendi özetini görür; satış `?bayi=kul` ile seçer.
 ```json
 { "bayi": "ali", "vade": 60, "limit": 1000, "bakiye": 200, "acikSiparis": 0, "risk": 200, "kullanilabilir": 800, "hareketler": [ … son 50 … ] }
 ```
+`?hareket=tum` bütün hareketleri verir (bayi sitesi). `tanimli: false`: bayinin cari kaydı yok.
 `risk = bakiye + onaylanmış ama faturası kesilmemiş siparişlerin iskontolu neti`. Bu hesap, temsilcinin onay yetkisini sınırlayan kredi limiti denetimiyle aynıdır.
 
+### Bayi web sitesi nasıl okur (Faz 2b-2)
+Site açılışta yukarıdaki kaynakları paralel okur (`kaynak/web/veri.js`): `ben`, `katalog`, `siparisler`, `odemeler`, `iadeler`, `numuneler`, `teklifler`, `hatirlatmalar`, `cari?hareket=tum`, `duyurular`, `hedef`, `odeme-linki`, `stok`. Listeler 200'lük sayfalarla okunur.
+
+Bayinin okuduğu her yanıt **imzasıyla** gelir (`ETag`; liste uçlarında sayfadan bağımsız olarak bütün listenin imzası). Sunucuda bir kaynağı etkileyen veri değişince anlık bildirimin ardından gelen `GET /api/degisen?son=…&kapsam=kisisel` yanıtı etkilenen kaynakların yeni imzasını taşır: `kaynaklar: [["siparisler", "\"…\""], ["cari", "\"…\""]]`. Site yalnız imzası elindekinden farklı olan kaynağı yeniden okur; başka bir bayinin siparişi değişince bu bayinin sipariş imzası değişmez.
+
 ## Eşitleme (mevcut uygulamalar)
+
+Bayi web sitesi eşitleme ucunu `?kapsam=kisisel` ile kullanır: `GET /api/veri` ve `/api/degisen` yalnız bayinin kişisel anahtarlarını (`exb-sepet-<kul>`, `exb-fav-`, `exb-proje-`, `exb-adres-`, `exb-hat-`, `exb-hat-gizli-`, `exb-bildirim-`, `exb-gorulen-`, `exb-duyuru-okundu-`, `exb-mkat-`) verir, `POST /api/veri` yalnız bunları kabul eder (diğerleri `reddedilen`: "iş verisi REST ile yazılır"). Kapsamsız kullanım (satış paneli, tek dosyalık portal, eski istemciler) değişmedi.
 
 | Uç | Açıklama |
 |---|---|

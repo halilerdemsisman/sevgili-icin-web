@@ -12,7 +12,10 @@
   const kisa = s => String(s || '').toLocaleLowerCase('tr').replace(/ı/g, 'i').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   const kategoriler = () => [...new Set(VERI.urunler.map(u => u.kategori))];
 
-  let sessiz = 0;          // adresten gelen gezinmede yeni geçmiş kaydı açma
+  // adresten gelen gezinmede yeni geçmiş kaydı açma. Oturum açılıp sayfanın açıldığı adres işlenene kadar da
+  // (girisYap içindeki ilk git('katalog') bağlantıyla açılan /belgeler gibi adresin üzerine yazmasın) sessiz.
+  let sessiz = 1;
+  const ilkYol = location.pathname;
   let sayfa = 'katalog';   // açık sayfa
   const adresYaz = (yol, durum, degistir) => {
     if (sessiz) return;
@@ -119,8 +122,10 @@
   });
 
   // ---- girişten sonra istenen adrese git (giriş ekranından önce açılan bağlantı kaybolmasın)
-  EK.girisAdres = () => adresiAc(location.pathname, true);
-  if (ben) adresiAc(location.pathname, true);
+  // (web sitesinde oturum, iş verisi REST'ten gelince açılır: 03-ana.js kurulum → girisYap → EK.girisAdres)
+  let ilk = true;
+  EK.girisAdres = () => { if (!ilk) return adresiAc(location.pathname, true); ilk = false; sessiz--; adresiAc(ilkYol, true); };
+  if (ben) EK.girisAdres();
 
   // sipariş kartı vurgusu
   const st = document.createElement('style');

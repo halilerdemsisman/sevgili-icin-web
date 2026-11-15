@@ -155,7 +155,7 @@ describe('Bayi web sitesi: tarayıcıda iş verisi yok (Faz 2b)', () => {
 
   test('sunucuya ulaşılamazsa giriş ve kayıt kapalı (yerelde hesap açılmaz)', async () => {
     const c2 = await b.newContext(); const q = await c2.newPage();
-    await q.route('**/api/veri', r => r.abort());
+    await q.route('**/api/veri?*', r => r.abort()); // site eşitleme ucunu ?kapsam=kisisel ile çağırır
     await q.goto(s.url + '/'); await q.locator('#gHata', { hasText: 'Sunucuya ulaşılamıyor' }).waitFor();
     assert.ok(await q.evaluate(() => window.EXIT_CEVRIMDISI === true));
     assert.ok(await q.locator('#fGiris button[type=submit], #fGiris button.marka').first().isDisabled());

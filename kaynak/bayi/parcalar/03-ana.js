@@ -34,7 +34,7 @@ const yaz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catc
 // Kayıt ekleme ve güncelleme (Faz 2b). Sunucuya bağlıyken REST ile: numara, sahip ve fiyat sunucuda belirlenir,
 // yanıt beklenir, hata bayiye gösterilir (bağlantı yoksa kayıt gönderilmez, yerelde de oluşmaz).
 // Sunucusuz (dosyadan açılan) sürümde kayıt yerelde oluşturulur. İkisi de Promise döner; hata Error.message'dadır.
-const KAYIT_TUR = { siparisler: ['exb-siparisler', 'no', 'EXG'], odemeler: ['exb-odeme', 'no', 'OB'], iadeler: ['exb-iade', 'id', 'IAD'], numuneler: ['exb-numune', 'no', 'NMN'], teklifler: ['exb-teklif', 'no', 'OT'] };
+const KAYIT_TUR = { siparisler: ['exb-siparisler', 'no', 'EXG'], odemeler: ['exb-odeme', 'no', 'OB'], iadeler: ['exb-iade', 'id', 'IAD'], numuneler: ['exb-numune', 'no', 'NMN'], teklifler: ['exb-teklif', 'no', 'OT'], hatirlatmalar: ['exb-hatirlat', 'id', ''] };
 const restKayit = r => { const { ok, http, cevrimdisi, uyari, hata, kayit, alanlar, ...x } = r; return x; };
 function yerelNo(on, L) { const y = new Date().getFullYear(), m = L.map(x => +(String(x.no || '').match(new RegExp('^' + on + '-' + y + '-(\\d+)$')) || [])[1] || 0); return on + '-' + y + '-' + String(Math.max(0, ...m) + 1).padStart(({ OB: 3, NMN: 3 })[on] || 4, '0'); } // hane sayısı sunucudakiyle aynı
 async function kayitEkle(tur, x, on) {
@@ -95,12 +95,24 @@ const bugunStr = () => new Date().toISOString().slice(0, 10);
 const kmpGecerli = k => k.aktif !== false && (!k.bas || k.bas <= bugunStr()) && (!k.bit || k.bit >= bugunStr());
 function kmpBul(u) { let en = null; KMP.filter(kmpGecerli).filter(k => !(k.bayiler || []).length || (benKul() && k.bayiler.includes(benKul()))).forEach(k => { const uy = k.kapsam === 'tumu' || (k.kapsam === 'kategori' && (k.hedef || []).includes(u.kategori)) || (k.kapsam === 'urun' && (k.hedef || []).includes(u.ad)); if (uy && (!en || k.oran > en.oran)) en = k; }); return en; }
 function kampanyaUygula() {
+  if (!VERI._tum) VERI._tum = VERI.urunler.slice();
+  // web sitesi: liste fiyatı, kampanyalı fiyat ve gizli ürünler sunucuda hesaplanır (GET /api/v1/katalog, web/veri.js);
+  // sipariş fiyatını belirleyen hesapla (sunucu/lib/fiyat.js) aynı yerden geldiği için tarayıcıda ikinci bir hesap yok
+  const SK = window.EXIT_VERI && EXIT_VERI.katalog;
+  if (SK) {
+    KMP = SK.kampanyalar || []; const M = new Map((SK.urunler || []).map(u => [u.id, u]));
+    VERI.urunler = VERI._tum.filter(u => M.has(u.id));
+    VERI.urunler.forEach(u => { const S = new Map((M.get(u.id).secenekler || []).map(s => [s.ad, s])); let k = null;
+      u.secenek.forEach(s => { if (s.orj === undefined) s.orj = s.fiyat; const x = S.get(s.ad); s.liste = x ? x.liste : s.orj; s.fiyat = x ? x.fiyat : s.liste; if (x && x.kampanya) k = x.kampanya; });
+      u.kmp = k ? { ad: k.ad, oran: k.oran, bit: k.bit } : null; });
+    return;
+  }
   KMP = oku('exb-kampanya', []) || []; const FY = oku('exb-fiyat', {}) || {}, GZ = oku('exb-gizli', []) || [];
   if (!VERI._tum) VERI._tum = VERI.urunler.slice(); VERI.urunler = VERI._tum.filter(u => !GZ.includes(u.ad));
   VERI.urunler.forEach(u => { const k = kmpBul(u); u.kmp = k ? { ad: k.ad, oran: k.oran, bit: k.bit } : null;
     u.secenek.forEach(s => { if (s.orj === undefined) s.orj = s.fiyat; const f = (FY[u.ad] || {})[s.ad]; s.liste = f != null && f !== '' ? +f : s.orj; s.fiyat = s.liste == null ? null : k ? Math.round(s.liste * (1 - k.oran / 100)) : s.liste; }); });
 }
-const kmpImza = () => JSON.stringify([oku('exb-kampanya', []), oku('exb-fiyat', {}), oku('exb-gizli', []), benKul()]);
+const kmpImza = () => window.EXIT_VERI ? [EXIT_VERI.imza.katalog, !!EXIT_VERI.katalog, benKul()].join('|') : JSON.stringify([oku('exb-kampanya', []), oku('exb-fiyat', {}), oku('exb-gizli', []), benKul()]);
 let _kmpSon = '';
 function kampanyaKontrol() { const i = kmpImza(); if (i === _kmpSon) return; const ilk = !_kmpSon; _kmpSon = i; kampanyaUygula(); if (!ilk && benKul()) { try { if (!$('#s-katalog').classList.contains('gizli')) katalog(); } catch (e) {} toast('Fiyatlar ve kampanyalar güncellendi.'); } }
 kampanyaKontrol(); setInterval(kampanyaKontrol, 15000);
@@ -110,6 +122,8 @@ const enDusuk = u => { const f = u.secenek.filter(s => !/Aksesuar/.test(s.sinif)
 // ---------- kullanıcılar
 let KUL = oku('exb-kullanicilar', null), ben = null;
 async function kurulum() {
+  // web sitesi: iş verisi (profil dahil) REST'ten gelir; ilk yükleme bitmeden oturum açılmaz
+  if (window.EXIT_VERI) { await EXIT_VERI.hazir; KUL = oku('exb-kullanicilar', null); }
   if (!KUL) { KUL = {}; yaz('exb-kullanicilar', KUL); }
 }
 $$('.sekme button').forEach(b => b.onclick = () => { $$('.sekme button').forEach(x => x.classList.toggle('on', x === b)); $('#fGiris').classList.toggle('gizli', b.dataset.s !== 'giris'); $('#fKayit').classList.toggle('gizli', b.dataset.s !== 'kayit'); });
