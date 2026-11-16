@@ -1,17 +1,31 @@
-# EXIT Satış masaüstü uygulaması (Faz 3): Windows kurulum dosyası.
-# Elle (Actions › "Masaüstü paketi" › Run workflow) veya "masaustu-v1.2.3" etiketiyle çalışır.
-# Çıktı (EXIT-Satis-Kurulum-<sürüm>.exe, .blockmap, latest.yml) iş akışının "Artifacts" bölümünden indirilir ve
-# sunucudaki güncelleme klasörüne kopyalanır (sunucu/KURULUM.md › Masaüstü uygulaması).
-# Kod imzalama sertifikası alındığında WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD gizlileri tanımlanır.
+# EXIT Satış masaüstü uygulaması (Faz 3): Windows kurulum dosyası ve Windows denemesi.
+# • "windows" işi: kurulum dosyası. Elle (Actions › "Masaüstü paketi" › Run workflow) veya "masaustu-v1.2.3"
+#   etiketiyle çalışır. Çıktı (EXIT-Satis-Kurulum-<sürüm>.exe, .blockmap, latest.yml) iş akışının "Artifacts"
+#   bölümünden indirilir ve sunucudaki güncelleme klasörüne kopyalanır (sunucu/KURULUM.md › Masaüstü uygulaması).
+#   Kod imzalama: satis-masaustu/IMZALAMA.md (gizliler tanımlanınca kurulum dosyası ve program imzalanır).
+# • "windows-dene" işi (Faz 3b-2): kurulum dosyasının iki sürümü (paketteki sürüm ve bir sonraki yama sürümü)
+#   üretilir; Windows makinesinde sessiz kurulum, uygulamanın test sunucusuyla açılması, bildirim ve görev çubuğu
+#   sayacı, şifreli son görülen veriler, güncelleme turu ve kaldırma denenir (araclar/windows-dene.mjs).
+#   Masaüstü uygulaması, sunucu veya bu dosya değişince ve her elle çalıştırmada çalışır. Sonuç işin özetinde,
+#   ekran görüntüleri "Artifacts" bölümünde (exit-satis-windows-deneme).
 name: Masaüstü paketi
 on:
   workflow_dispatch:
   push:
     tags: ['masaustu-v*']
+    branches: ['**']
+    paths:
+      - 'satis-masaustu/**'
+      - 'sunucu/**'
+      - 'kaynak/satis/**'
+      - 'kaynak/ortak/**'
+      - 'araclar/windows-dene.mjs'
+      - '.github/workflows/masaustu.yml'
 permissions:
   contents: read
 jobs:
   windows:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: windows-latest
     defaults:
       run:
@@ -29,6 +43,9 @@ jobs:
         env:
           CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+      - name: İmza denetimi
+        shell: pwsh
+        run: Get-ChildItem cikti/*.exe | ForEach-Object { $s = Get-AuthenticodeSignature $_.FullName; "$($_.Name): $($s.Status) $($s.SignerCertificate.Subject)" }
       - uses: actions/upload-artifact@v4
         with:
           name: exit-satis-windows
@@ -37,3 +54,41 @@ jobs:
             satis-masaustu/cikti/*.blockmap
             satis-masaustu/cikti/latest.yml
           if-no-files-found: error
+
+  windows-dene:
+    if: "!startsWith(github.ref, 'refs/tags/')"
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            satis-masaustu/package-lock.json
+      - name: Bağımlılıklar
+        run: |
+          npm ci
+          npm install --no-save playwright@1.63.0
+          npm ci --prefix satis-masaustu
+      - name: Derleme (test sunucusu dist/'ten açılır)
+        run: node araclar/derle.mjs
+      - name: Kurulum dosyaları (paketteki sürüm ve bir sonraki yama sürümü)
+        working-directory: satis-masaustu
+        shell: pwsh
+        run: |
+          npx electron-builder --win nsis --x64 --publish never
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm version patch --no-git-tag-version
+          npx electron-builder --win nsis --x64 --publish never -c.directories.output=cikti-yeni
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Windows denemesi
+        run: node araclar/windows-dene.mjs satis-masaustu/cikti satis-masaustu/cikti-yeni cikti-dene
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exit-satis-windows-deneme
+          path: cikti-dene/
+          if-no-files-found: warn
