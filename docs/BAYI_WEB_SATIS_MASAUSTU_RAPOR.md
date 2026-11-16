@@ -36,13 +36,13 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 2c | Bayi web sitesi: yayın | ✅ denetim: telefonda Lighthouse performansı 95–99, erişilebilirlik 100 (WCAG 2.1 AA) · kalan: alan adıyla pilot bayiler (alan adı ve VPS kararı bekleniyor) |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
 | 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
-| 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · ✅ adım 2: ekranlar ve özellikler ayrı dosyalarda · ✅ adım 3: tek veri modülü, iş verisi diskte değil · ✅ adım 4: okumalar REST'ten, açılışta eşzamanlı istek yok · kalan: kod imzalama, Windows'ta pilot |
+| 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · ✅ adım 2: ekranlar ve özellikler ayrı dosyalarda · ✅ adım 3: tek veri modülü, iş verisi diskte değil · ✅ adım 4: okumalar REST'ten, açılışta eşzamanlı istek yok · ✅ Windows'ta otomatik deneme ve deneme paketi (BASLAT.bat) · ✅ imzalama hazırlığı · kalan: imzalama sertifikası (karar bekleniyor), gerçek kullanıcılarla pilot |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı; 2c'nin denetim adımı bitti. 3b-2'nin kodla yapılan dört adımı (sarmalama zincirlerinin birleşmesi, dosyaların ekran ve özelliğe göre bölünmesi, tek veri modülü, okumaların REST'e geçmesi) bitti; 3b-2'de kod imzalama ve Windows pilotu kaldı.
+Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı; 2c'nin denetim adımı bitti. 3b-2'nin kodla yapılan dört adımı (sarmalama zincirlerinin birleşmesi, dosyaların ekran ve özelliğe göre bölünmesi, tek veri modülü, okumaların REST'e geçmesi) bitti. Kurulum, bildirim, güncelleme ve kaldırma her değişiklikte bir Windows makinesinde otomatik deneniyor; uygulama Windows'ta tek tıkla açılan deneme paketiyle denenebiliyor. 3b-2'de imzalama sertifikası ve gerçek kullanıcılarla pilot kaldı.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · Faz 2c denetim ✅ · 3b-2 adım 1–4 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor); bayi sitesinde alan adıyla pilot (Faz 2c adım 2).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · Faz 2c denetim ✅ · 3b-2 adım 1–4 ✅ · 3b-2 Windows denemesi ve deneme paketi ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; VPS yoksa şirket ağında EXIT-Deneme-Windows paketiyle yapılabilir; imzasız yapılabilir, imzalama sertifikası kararı ekibin tamamından önce gerekir: `satis-masaustu/IMZALAMA.md`); bayi sitesinde alan adıyla pilot (Faz 2c adım 2).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -461,7 +461,7 @@ Doğrulanamayanlar (Windows makinesi gerekir; 3b'de pilotla):
 - Bildirimlerin ve görev çubuğu sayacının Windows'taki görünümü.
 - Otomatik güncellemenin baştan sona çalışması: sunucuya yeni sürüm koyma, indirme, yeniden başlatınca kurulma.
 
-Bu ortamda yalnız sunucu tarafı (güncelleme dosyalarının ve parçalarının verilmesi) test edildi.
+Bu ortamda yalnız sunucu tarafı (güncelleme dosyalarının ve parçalarının verilmesi) test edildi. *(3b-2'de üçü de GitHub Actions'taki Windows makinesinde otomatik denendi; bkz. "Faz 3b-2: Windows denemesi".)*
 
 #### Faz 3b-1: Çok kullanıcılı satış ekibi ve pilot hazırlığı ✅ tamamlandı
 Neden ikiye bölündü: Plandaki "satış ekranlarını REST'e geçirme" işinin asıl amacı, birden çok satış kullanıcısının birbirinin işini ezmemesiydi (V3). İnceleme iki sorun gösterdi:
@@ -481,7 +481,7 @@ Bu sorunlar ekranlar yeniden yazılmadan, eşitleme katmanında ve sunucuda çö
 | Testler | 129 test (önceki 116 + `testler/eszamanli.test.js` 11 + masaüstü 2); SQLite ve JSON depoyla geçiyor |
 
 #### Faz 3b-2: Pilot ve satış ekranları (≈2 hafta, 2b-2 ile birlikte)
-1. Kod imzalama sertifikası (SmartScreen uyarısı kalksın); GitHub'a `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD` gizlileri.
+1. Kod imzalama (SmartScreen uyarısı kalksın). İlk plandaki `.pfx` dosyası (`WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD`) artık mümkün değil; yerine bulut imzalama (bkz. "Faz 3b-2: Windows denemesi" ve `satis-masaustu/IMZALAMA.md`).
 2. Pilot (`satis-masaustu/PILOT.md`): satış yöneticisi + 1 temsilci, Windows'ta kurulum ve bir güncelleme turu; sonra tüm ekip.
 3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir (✅ adım 1); dosyalar ekran ve özelliğe göre (✅ adım 2). Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur (✅ adım 3). Okumalar REST'e geçer (✅ adım 4).
 
@@ -524,10 +524,32 @@ Bilinçli olarak bırakılan:
 - Satışın kendi verisinin okunması eşitleme ucunda kaldı. Bu veriyi yalnız satış ekibi yazıyor ve her ekran bütününü kullanıyor (rapor, analiz, fiyat listesi); ayrı REST kaynaklarına bölmek ağ trafiğini azaltmaz. ERP/MRP bağlantısı (Faz 4) hangi veriyi dışarı açacağını belirleyince o veri için uç yazılır.
 - Liste bir kez değişince bütün liste yeniden okunuyor (bayi sitesinde de böyle). Sipariş sayısı binleri aşarsa yalnız değişen kayıtların indirilmesi (sunucuda kayıt başına değişiklik zamanı) eklenebilir.
 
+#### Faz 3b-2: Windows denemesi, deneme paketi ve imzalama hazırlığı ✅ tamamlandı (sertifika ve pilot kararı bekleniyor)
+Pilotta görülecek maddelerin makineyle denenebilenleri, her değişiklikte GitHub Actions'taki bir Windows makinesinde (Windows Server 2025) otomatik deneniyor: `araclar/windows-dene.mjs`, `.github/workflows/masaustu.yml` › `windows-dene`. Kurulum dosyasının iki sürümü (paketteki ve bir sonraki yama sürümü) üretilir, uygulama gerçek test sunucusuyla Playwright üzerinden sürülür.
+
+| Denenen | Sonuç |
+|---|---|
+| Sessiz kurulum | 15 sn, 115 MB; `EXIT Satış.exe` 1.0.0.0; masaüstü ve Başlat menüsü kısayolu |
+| İlk açılış | Sunucu adresi sorulur; yazılan adres kaydedilir, giriş ekranı açılır |
+| Giriş | Satış paneli açılır; durum çubuğunda "Masaüstü 1.0.0" |
+| Bildirim | Bayi siparişinden Windows bildirimine 0,5–0,8 sn; görev çubuğu sayacı 1, başlık "EXIT Satış (1)"; bildirime tıklayınca sipariş açılır |
+| Son görülen veriler | DPAPI ile şifreli (dosyada düz metin yok) |
+| Bağlantı kesilince | "Sunucuya ulaşılamıyor" sayfasında son görülen siparişler salt okunur; sunucu dönünce "Yeniden dene" satış paneline döner |
+| Güncelleme turu | 1.0.0 sunucudaki 1.0.1'i buldu, indirdi, kurdu ve kendiliğinden yeniden açıldı (12 sn); 1.0.1 yeniden güncelleme aramadı |
+| Kaldırma | Sessiz kaldırma başarılı |
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Bulunan hata | Uygulama Windows'ta kendi sayfalarını tanımıyordu: `file:///C:/…` adresinin yolu `/C:/…` olarak karşılaştırılıyordu. Bu yüzden Windows'ta ilk açılışta yazılan sunucu adresi **kaydedilemiyordu** (gerçek kullanıcı uygulamayı kuramazdı), "Yeniden dene" ve son görülen veriler çalışmıyordu. Linux testlerinde görünmüyordu. `ana.js`'te adres `fileURLToPath` ile Windows yoluna çevriliyor; sürücü harfi büyük/küçük, benzer adlı klasör, başka sürücü durumları denetlendi |
+| Deneme paketi | "EXIT-Deneme-Windows" (Actions › "Masaüstü paketi" › Artifacts): sunucu, masaüstü kurulum dosyası ve Node tek klasörde, kurulum gerekmez. `BASLAT.bat`'a çift tıklanır: ilk açılışta yönetici şifresi sorulur, sunucu açılır, satış paneli tarayıcıda açılır; pencerede satış, bayi ve masaüstü adresleri ile aynı ağdaki bilgisayarlar için adres yazar (`dagitim/windows/`, `araclar/deneme-paketi.mjs`). VPS hazır olmadan şirket ağında pilot bununla yapılabilir |
+| İmzalama hazırlığı | `satis-masaustu/IMZALAMA.md`. Haziran 2023'ten beri kod imzalama anahtarı donanımda (USB anahtar veya kuruluşun bulut HSM'i) tutulmak zorunda; ilk plandaki `.pfx` gizlisi bu yüzden mümkün değil. EV sertifika 2024'ten beri SmartScreen'de OV'den farklı muamele görmüyor. Azure Artifact Signing Türkiye'deki şirkete açık değil. Öneri: pilot imzasız (uyarı yalnız ilk kurulumda, güncellemelerde yok); ekibin tamamından önce OV sertifika + bulut imzalama (GitHub'da otomatik). Yapılandırmadaki `signExecutable: false` kaldırıldı (sertifika tanımlansa bile imzalamayı kapatıyordu); iş akışı imza durumunu yazıyor |
+
+Kalan (karar bekleniyor): imzalama sertifikası (B seçeneği), gerçek kullanıcı ve şirket bilgisayarıyla pilot (`PILOT.md`: Windows bildirim ayarları, şirket güvenlik yazılımı, vekil sunucu, bir haftalık kullanım).
+
 Kabul (Faz 3 geneli):
 - Faz 0 testlerinin satış kısmı geçiyor ✅.
 - Yeni bayi siparişi 2 sn içinde masaüstü bildirimi olarak düşüyor ✅ (0,5 sn).
-- Yeni sürüm yayınlandığında uygulama kendini güncelliyor (✅ Linux'ta baştan sona denendi; ⏳ Windows'ta pilotta).
+- Yeni sürüm yayınlandığında uygulama kendini güncelliyor (✅ Linux'ta ve Windows'ta baştan sona denendi; ⏳ gerçek kullanıcılarla pilotta).
 
 ### Faz 4: Entegrasyonlar (≈3–6 hafta, seçilen sağlayıcıya göre)
 1. **Online ödeme:** iyzico veya PayTR ile ödeme sayfası + sunucuya geri bildirim (callback). Ödeme doğrulanınca otomatik "Ödeme alındı" ve cari hareketi; satışın manuel onayı yalnız havale/EFT için kalır.
@@ -554,7 +576,7 @@ Kabul (Faz 3 geneli):
 | Göç sırasında mevcut veri kaybı | Yüksek | Faz 0'da yedek + göç betiği deneme ortamında birkaç kez çalıştırılır; göç sonrası sayım karşılaştırması |
 | Eski ve yeni sistemin aynı anda kullanılması | Orta | Geçiş günü tanımlanır; eski sistem o gün salt okunur yapılır |
 | Ekran davranışında farkedilmeyen değişiklik | Orta | Faz 0 Playwright testleri her fazda çalıştırılır |
-| Kod imzalama sertifikası gecikmesi | Düşük | Sertifika Faz 1 sırasında sipariş edilir; o zamana kadar PWA kurulumu |
+| Kod imzalama sertifikası gecikmesi | Düşük | Pilot imzasız yapılabilir (uyarı yalnız ilk kurulumda); kuruluş doğrulaması birkaç iş günü sürdüğü için OV sertifika pilot sırasında sipariş edilir (`satis-masaustu/IMZALAMA.md`) |
 | Ödeme kuruluşu sözleşme süresi | Orta | Faz 4 başvurusu Faz 1'de başlatılır |
 | Tek geliştiriciye bağımlılık | Orta | Belgeler `docs/` altında, testler ve repo düzeni ile devredilebilir |
 
