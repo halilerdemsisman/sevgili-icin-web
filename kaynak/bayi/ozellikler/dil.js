@@ -4,7 +4,8 @@
   // çeviri motoru ve kurallı (çoğul, tarih, liste) çeviriler bulunur.
   const EN = /*@json bayi/dil/en.json*/null;
   const { ay: AY, gun: GUN, renk: RENK, kategori: KAT, eksik: EKSIK } = EN;
-  const SOZ = Object.assign({}, KAT, RENK, EN.metin);
+  // sözlük üç katman: en.json'un temel metinleri < ürün verisinden çıkanlar < özelliklerin eklediği (dilEkle)
+  const TABAN = Object.assign({}, KAT, RENK, EN.metin), EKLI = {};
   const liste = s => s.split(', ').map(x => EKSIK[x] || x).join(', ');
   const renk = s => s.replace(/^(\S+)(?=\s*(\(|·|$))/, m => RENK[m] || m);
   const tarihUzun = s => s.replace(/(\d{1,2}) (\S+) (\d{4})(?: (\S+))?/, (m, d, a, y, g) => AY[a] ? (g && GUN[g] ? GUN[g] + ', ' : '') + d + ' ' + AY[a] + ' ' + y : m);
@@ -40,22 +41,31 @@
   const kelime = (s, L) => L.reduce((a, [t, e]) => a.replace(new RegExp('(?<![\\p{L}])' + t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![\\p{L}])', 'gu'), e), s);
   const tekCevir = s => kelime(s.replace(/(\d+)'(?:li|lı|lü|lu) paket/g, 'pack of $1').replace(/%\s?(\d+)/g, '$1%'), TEK);
   const ackCevir = s => s.split(/(?<=\.)\s+/).map(c => { for (const [r, t] of ACK) if (r.test(c)) return c.replace(r, t); return c; }).join(' ');
-  try {
-    VERI.urunler.forEach(u => {
-      u.secenek.forEach(s => { if (s.ad && !SOZ[s.ad]) SOZ[s.ad] = kelime(s.ad, SEC); if (s.sinif && !SOZ[s.sinif]) SOZ[s.sinif] = kelime(s.sinif, SEC); });
-      if (u.aciklama) SOZ[u.aciklama] = ackCevir(u.aciklama);
-      const t = u.teknik; if (t) { (t.malzeme || []).forEach(m => SOZ[m] = tekCevir(m)); (t.tablolar || []).forEach(tb => { tb.basliklar.forEach(h => h && (SOZ[h] = tekCevir(h))); tb.satirlar.forEach(r => r.forEach(c => { if (/[A-ZÇĞİÖŞÜ]{3}/.test(c)) SOZ[c] = tekCevir(c); })); }); }
-    });
-  } catch (e) {}
+  // ürün sözlüğü (seçenek, açıklama, teknik bilgi) ilk İngilizce çeviride hesaplanır: Türkçe açılışta telefonda
+  // yarım saniyeye yakın iş (Faz 2c, Lighthouse)
+  let URUN = null;
+  const urunSozlugu = () => {
+    if (URUN) return URUN;
+    URUN = {}; const var_ = k => URUN[k] || TABAN[k];
+    try {
+      VERI.urunler.forEach(u => {
+        u.secenek.forEach(s => { if (s.ad && !var_(s.ad)) URUN[s.ad] = kelime(s.ad, SEC); if (s.sinif && !var_(s.sinif)) URUN[s.sinif] = kelime(s.sinif, SEC); });
+        if (u.aciklama) URUN[u.aciklama] = ackCevir(u.aciklama);
+        const t = u.teknik; if (t) { (t.malzeme || []).forEach(m => URUN[m] = tekCevir(m)); (t.tablolar || []).forEach(tb => { tb.basliklar.forEach(h => h && (URUN[h] = tekCevir(h))); tb.satirlar.forEach(r => r.forEach(c => { if (/[A-ZÇĞİÖŞÜ]{3}/.test(c)) URUN[c] = tekCevir(c); })); }); }
+      });
+    } catch (e) {}
+    return URUN;
+  };
+  const sozluk = t => Object.hasOwn(EKLI, t) ? EKLI[t] : Object.hasOwn(urunSozlugu(), t) ? URUN[t] : Object.hasOwn(TABAN, t) ? TABAN[t] : undefined;
 
   // özelliklerin sözlükleri (yükleme sırasıyla; sonra gelenin deseni öne geçer) ve web sitesine özel metinler
-  function dilEkle(o, d) { Object.assign(SOZ, o || {}); if (d) DESEN.unshift(...d); }
+  function dilEkle(o, d) { Object.assign(EKLI, o || {}); if (d) DESEN.unshift(...d); }
   EN.ekler.forEach(e => dilEkle(e.metin, desen(e.desen)));
   if (window.EXIT_WEB) dilEkle(EN.web.metin);
 
   function cevir(s) {
     const t = s.trim(); if (!t || !/[A-Za-zÇĞİÖŞÜçğıöşü]/.test(t)) return null;
-    let r = SOZ[t];
+    let r = sozluk(t);
     if (r == null) for (const [re, f] of DESEN) if (re.test(t)) { r = t.replace(re, f); break; }
     if (r == null) { const p = cevirParca(t); if (p !== t) r = p; }
     if (r == null || r === t) return null;

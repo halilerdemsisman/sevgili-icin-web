@@ -62,6 +62,8 @@ header .h-menu .h-btn,.h-menu .h-btn{width:100%;justify-content:flex-start;color
   .as-btn .rozet.gizli{display:none}
   body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
   #sunucuDurum{bottom:calc(70px + env(safe-area-inset-bottom))!important}
+  /* karşılaştırma çubuğu alt sekme çubuğunun üstünde dursun (önceden "Daha fazla" düğmesini örtüyordu) */
+  #krBar{bottom:calc(74px + env(safe-area-inset-bottom))}
   .toast{bottom:calc(80px + env(safe-area-inset-bottom))!important}
   body:has(.perde) .alt-sekme{display:none}
   /* Cari hesabım: "Online öde" ve "Ödeme bildir" başlığın üstüne binmesin */

@@ -10,7 +10,7 @@
 
   // ================= 6 + 7. Belgelerim ve iade/şikayet sayfası =================
   const hs = $('#hSepet');
-  if (hs && !$('#hBildirim')) hs.insertAdjacentHTML('beforebegin', `<button class="h-btn" data-git="belgeler">${svg('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')}<span class="y">Belgeler</span></button><button class="h-btn" id="hBildirim" title="Bildirimler" style="position:relative">${svg('<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/>')}</button>`);
+  if (hs && !$('#hBildirim')) hs.insertAdjacentHTML('beforebegin', `<button class="h-btn" data-git="belgeler" aria-label="Belgeler">${svg('<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>')}<span class="y">Belgeler</span></button><button class="h-btn" id="hBildirim" title="Bildirimler" style="position:relative">${svg('<path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/>')}</button>`);
   const hh = $('#hHat'); if (hh) { const sv = hh.querySelector('svg'); if (sv) sv.outerHTML = svg('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M5 3 2 6M19 3l3 3"/>'); }
   if (!$('#s-belgeler')) $('#s-cari').insertAdjacentHTML('afterend', '<section id="s-belgeler" class="sayfa gizli"></section>');
   let SEK = 'fatura';

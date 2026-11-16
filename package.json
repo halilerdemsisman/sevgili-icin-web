@@ -15,5 +15,8 @@
     "test": "node araclar/derle.mjs && node --test --test-reporter=spec 'testler/*.test.js'",
     "masaustu": "npm --prefix satis-masaustu run baslat",
     "masaustu-paketle": "npm --prefix satis-masaustu run paketle"
+  },
+  "devDependencies": {
+    "axe-core": "4.10.3"
   }
 }

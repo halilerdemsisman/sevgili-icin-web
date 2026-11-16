@@ -1,5 +1,5 @@
 
-:root{--bg:#f5f6f8;--yuzey:#fff;--yuzey2:#f8fafc;--cizgi:#e5e7eb;--yazi:#0f172a;--yazi2:#475569;--soluk:#94a3b8;--marka:#f59e0b;--marka2:#d97706;--kirmizi:#ea2429;--koyu:#111827;--yesil:#059669;--golge:0 10px 30px rgba(15,23,42,.08)}
+:root{--bg:#f5f6f8;--yuzey:#fff;--yuzey2:#f8fafc;--cizgi:#e5e7eb;--yazi:#0f172a;--yazi2:#475569;--soluk:#5f6b7e;--marka:#f59e0b;--marka2:#d97706;--kirmizi:#ea2429;--koyu:#111827;--yesil:#059669;--golge:0 10px 30px rgba(15,23,42,.08)}
 *{box-sizing:border-box}html,body{margin:0}
 body{font-family:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--yazi);font-size:14px;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -12,6 +12,7 @@ button{cursor:pointer}
 
 /* Giriş */
 #giris{min-height:100vh;display:grid;grid-template-columns:1.1fr 1fr;background:var(--koyu)}
+html.oturum-aciliyor #giris{visibility:hidden} /* kayıtlı oturum açılırken giriş formu görünmesin */
 .g-sol{position:relative;overflow:hidden;color:#fff;padding:48px;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(1200px 600px at 10% 10%,#1f2937,#0b1120)}
 .g-sol::after{content:"";position:absolute;inset:0;background:linear-gradient(135deg,transparent 55%,rgba(245,158,11,.18) 55.2%,transparent 70%),linear-gradient(135deg,transparent 62%,rgba(234,36,41,.16) 62.2%,transparent 66%);pointer-events:none}
 .g-sol h1{font-size:40px;line-height:1.1;margin:0 0 14px;letter-spacing:-.02em;max-width:460px}
@@ -64,6 +65,7 @@ aside.filtre{background:#fff;border-radius:16px;padding:18px;height:max-content;
 .izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px}
 .kart{background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--cizgi);cursor:pointer;transition:.2s;display:flex;flex-direction:column}
 .kart:hover{transform:translateY(-3px);box-shadow:var(--golge);border-color:#fcd34d}
+#izgara .kart{content-visibility:auto;contain-intrinsic-size:auto 287px} /* ekran dışındaki kartlar çizilmez (Faz 2c); yükseklik: kartın gerçek yüksekliği */
 .kart .foto{aspect-ratio:4/3;background:#fff center/contain no-repeat;border-bottom:1px solid #f1f5f9;position:relative}
 .kart .foto.bos{display:flex;align-items:center;justify-content:center;color:var(--soluk);background:var(--yuzey2)}
 .kart .k-kat{position:absolute;left:10px;top:10px;background:rgba(17,24,39,.85);color:#fff;font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px}
@@ -156,7 +158,7 @@ aside.filtre{background:#fff;border-radius:16px;padding:18px;height:max-content;
  .h-btn span.y{display:none}
  .pencere{grid-template-columns:1fr}.p-foto{border-right:0;border-bottom:1px solid var(--cizgi)}.p-bilgi{max-height:none}
  .kpi{grid-template-columns:1fr 1fr}
- .izgara{grid-template-columns:1fr 1fr;gap:10px}
+ .izgara{grid-template-columns:1fr 1fr;gap:10px} #izgara .kart{contain-intrinsic-size:auto 250px}
  .ust-satir{flex-wrap:wrap}.ust-satir h2{font-size:17px}.ust-satir select{margin-left:0;flex-basis:100%}
  html,body{overflow-x:hidden}
  .tablo{font-size:12px}

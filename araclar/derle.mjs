@@ -122,6 +122,7 @@ function webDerle(uyg, hedef) {
     .replace(/\{\{dahil ([^}]+)\}\}/g, (_, yol) => parcaOku(uyg, yol, true));
   // bütün göreli adresler (api/…, manifest, sw.js) /katalog, /siparisler/… gibi alt adreslerde de köke çözülsün
   html = html.replace('<head>', '<head><base href="/">');
+  html = webHizlandir(html, hedef, dosyalar, dosya);
   for (const [yol, kaynak] of WEB_DOSYALARI) { yaz(path.join(hedef, yol), fs.readFileSync(kaynak)); dosyalar.push(yol); }
   for (const f of fs.readdirSync(path.join(KAYNAK, 'web', 'statik'))) { yaz(path.join(hedef, f), fs.readFileSync(path.join(KAYNAK, 'web', 'statik', f))); if (!/\.txt$/.test(f)) dosyalar.push(f); }
   yaz(path.join(hedef, 'index.html'), html);
@@ -131,6 +132,30 @@ function webDerle(uyg, hedef) {
   const sw = fs.readFileSync(path.join(KAYNAK, 'web', 'sw.js'), 'utf8').replace("/*@surum*/''", JSON.stringify(surum)).replace('/*@kabuk*/[]', JSON.stringify(['/', ...kabuk.map(f => '/' + f)]));
   yaz(path.join(hedef, 'sw.js'), sw);
   return { html, dosyalar, surum, boyut: (yol => fs.statSync(path.join(hedef, yol)).size) };
+}
+
+// Faz 2c (Lighthouse, telefon): sayfanın ilk çizimini bekleten dosyalar azalır. Tek dosyalık sürüm değişmez.
+//   • Stil dosyalarının hepsi belgedeki sırasıyla (kural sırası korunur) tek dosyada birleşir ve başa alınır:
+//     gövdenin sonundaki stiller, önündeki betikler çalışmadan sayfanın çizilmesini engelliyordu.
+//   • Gövdedeki betikler defer ile yüklenir: belge sırasıyla, belge okunduktan sonra ve DOMContentLoaded'dan önce
+//     çalışırlar (gövdenin sonunda oldukları için davranış aynıdır), ama sayfanın çizilmesini bekletmezler.
+//     Başlıktaki betikler (senkron, veri) eşzamanlı kalır: oturum ve veri çekimi gövdeden önce bilinmeli.
+//   • Başlıktaki 1 KB'tan küçük betikler (erken işaret, tema, oturum işareti) sayfanın içine yazılır (ayrı istek yok).
+function webHizlandir(html, hedef, dosyalar) {
+  const at = f => { fs.rmSync(path.join(hedef, f)); dosyalar.splice(dosyalar.indexOf(f), 1); };
+  const stiller = [...html.matchAll(/<link rel="stylesheet" href="\/(css\/[^"]+)">\n?/g)];
+  const birlesik = stiller.map(m => `/* ---- ${m[1].replace(/\.[0-9a-f]{10}\.css$/, '.css')} ---- */\n` + fs.readFileSync(path.join(hedef, m[1]), 'utf8')).join('\n');
+  stiller.forEach(m => at(m[1]));
+  html = html.replace(/<link rel="stylesheet" href="\/css\/[^"]+">\n?/g, '');
+  const cikti = `css/stil.${ozet(birlesik)}.css`; yaz(path.join(hedef, cikti), birlesik); dosyalar.push(cikti);
+  let [bas, govde] = html.split('</head>');
+  bas = bas.replace(/<script src="\/(js\/[^"]+)"><\/script>/g, (m, f) => {
+    const k = fs.readFileSync(path.join(hedef, f), 'utf8');
+    if (k.length >= 1024 || /<\/script/i.test(k)) return m;
+    at(f); return `<script>${k.trim()}</script>`;
+  }) + `<link rel="stylesheet" href="/${cikti}">\n`;
+  govde = govde.replace(/<script src="/g, '<script defer src="');
+  return bas + '</head>' + govde;
 }
 
 const yaz = (p, d) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs.writeFileSync(p, d); };

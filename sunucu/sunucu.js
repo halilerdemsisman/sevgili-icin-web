@@ -144,7 +144,12 @@ const cerezler = q => Object.fromEntries(String(q.headers.cookie || '').split(';
 const CEREZ = { bayi: 'exit_b', satis: 'exit_s' };
 const cerezYaz = (q, tur, deger) => `${CEREZ[tur]}=${deger ? encodeURIComponent(deger) : ''}; Path=/; HttpOnly; SameSite=Lax${httpsMi(q) ? '; Secure' : ''}; Max-Age=${deger ? (+ENV.OTURUM_GUN || 7) * 86400 : 0}`;
 const GUVENLIK = { 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'X-Frame-Options': 'SAMEORIGIN' };
-const js = (r, o, c = 200, b = {}) => { r.writeHead(c, { ...GUVENLIK, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...b }); r.end(JSON.stringify(o)); };
+// JSON yanıtları 1 KB'tan büyükse sıkıştırılır (katalog 70 KB → 15 KB; Caddy arkasında da Caddy yeniden sıkıştırmaz)
+const js = (r, o, c = 200, b = {}) => {
+  let g = JSON.stringify(o); const h = { ...GUVENLIK, 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...b };
+  if (g.length > 1024 && /\bgzip\b/.test(r.req?.headers['accept-encoding'] || '')) { g = zlib.gzipSync(g); h['Content-Encoding'] = 'gzip'; h.Vary = 'Accept-Encoding'; }
+  r.writeHead(c, h); r.end(g);
+};
 const govde = (q, sinir) => new Promise((ok, red) => { let b = '', n = 0; q.on('data', c => { n += c.length; if (n > sinir) { red(new Error('çok büyük')); q.destroy(); } else b += c; }); q.on('end', () => { try { ok(JSON.parse(b || '{}')); } catch (e) { red(e); } }); q.on('error', red); });
 // Başka siteden gelen yazma isteklerini engelle (CSRF)
 const kaynakUygun = q => { const o = q.headers.origin; if (!o) return true; try { return new URL(o).host === q.headers.host; } catch (e) { return false; } };

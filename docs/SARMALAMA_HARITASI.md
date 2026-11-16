@@ -14,7 +14,7 @@ içinde uygun yere `EK.yeniAd?.(…)` çağrısını yazın. Ekran fonksiyonunu 
 
 ## Bayi portalı
 
-Yükleme sırası: `erken.js` → `senkron.js` → `veri.js` → `tema-erken.js` → `temel.js` → `fiyat.js` → `oturum.js` → `gezinme.js` → `katalog.js` → `urun.js` → `sepet.js` → `siparisler.js` → `cari.js` → `teknik.js` → `baslangic.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `yardimci.js` → `excel-csv.js` → `stok-termin.js` → `favoriler.js` → `tekrar-siparis.js` → `toplu-siparis.js` → `dil.js` → `pwa.js` → `projeler.js` → `duyurular.js` → `odeme-bildirimi.js` → `numune.js` → `karsilastirma.js` → `set-olusturucu.js` → `hatirlatmalar.js` → `hedef-prim.js` → `adres-defteri.js` → `musteri-katalogu.js` → `belgeler.js` → `bildirimler.js` → `sik-alinanlar.js` → `kredi-limiti.js` → `siparis-talep.js` → `renk-onizleme.js` → `renk-onizleme.js` → `online-odeme.js` → `ozel-teklif.js` → `siparis-odeme.js` → `sunucu-oturum.js` → `duzen.js` → `adres.js`
+Yükleme sırası: `erken.js` → `senkron.js` → `veri.js` → `tema-erken.js` → `oturum-erken.js` → `temel.js` → `fiyat.js` → `oturum.js` → `gezinme.js` → `katalog.js` → `urun.js` → `sepet.js` → `siparisler.js` → `cari.js` → `teknik.js` → `baslangic.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `yardimci.js` → `excel-csv.js` → `stok-termin.js` → `favoriler.js` → `tekrar-siparis.js` → `toplu-siparis.js` → `dil.js` → `pwa.js` → `projeler.js` → `duyurular.js` → `odeme-bildirimi.js` → `numune.js` → `karsilastirma.js` → `set-olusturucu.js` → `hatirlatmalar.js` → `hedef-prim.js` → `adres-defteri.js` → `musteri-katalogu.js` → `belgeler.js` → `bildirimler.js` → `sik-alinanlar.js` → `kredi-limiti.js` → `siparis-talep.js` → `renk-onizleme.js` → `renk-onizleme.js` → `online-odeme.js` → `ozel-teklif.js` → `siparis-odeme.js` → `sunucu-oturum.js` → `erisilebilirlik.js` → `duzen.js` → `adres.js`
 
 | Ekran fonksiyonu | Tanım | Ekler (çağrılma sırasıyla) |
 |---|---|---|
@@ -28,7 +28,7 @@ Yükleme sırası: `erken.js` → `senkron.js` → `veri.js` → `tema-erken.js`
 | `siparisKarti` | siparisler.js:16 | `siparisKartiTahmin` (stok-termin.js:22) → `siparisKartiProje` (projeler.js:68) → `siparisKartiOdeme` (siparis-odeme.js:11) |
 | `siparislerim` | siparisler.js:32 | `siparislerTekrar` (tekrar-siparis.js:19) → `siparislerNumune` (numune.js:39) → `siparislerSikAlinan` (sik-alinanlar.js:15) → `siparislerTalep` (siparis-talep.js:38) |
 | `cariSayfa` | cari.js:9 | `cariOdemeBildirimi` (odeme-bildirimi.js:37) → `cariHedef` (hedef-prim.js:20) → `cariAdresler` (adres-defteri.js:43) → `cariLimit` (kredi-limiti.js:7) → `cariOnlineOdeme` (online-odeme.js:35) |
-| `katalogIndir` | teknik.js:9 | `katalogIndirDil` (dil.js:112) |
+| `katalogIndir` | teknik.js:9 | `katalogIndirDil` (dil.js:122) |
 
 Toplam: 11 ekran fonksiyonu, 41 ek. Kalan sarmalama: yok.
 

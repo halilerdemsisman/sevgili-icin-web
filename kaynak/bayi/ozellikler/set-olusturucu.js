@@ -37,7 +37,7 @@
           <div style="margin-top:8px">${S.K.map((k, i) => { const v = kalemVeri(k); return `<div class="set-kalem"><span class="rol">${esc(k.rol)}</span>
             <select data-ku="${i}">${k.kat ? '' : '<option value="">Ürün seçin</option>'}${(k.kat ? katUrun(k.kat) : KATSIRA.flatMap(c => katUrun(c))).map(u => `<option value="${u.id}" ${u.id === k.id ? 'selected' : ''}>${esc(k.kat ? u.ad : u.kategori + ' · ' + u.ad)}</option>`).join('')}</select>
             <select data-ks="${i}" ${v.u && v.u.secenek.length ? '' : 'disabled'}>${v.u && v.u.secenek.length ? v.u.secenek.map((s, j) => `<option value="${j}" ${j === k.si ? 'selected' : ''}>${esc(s.ad)} · ${para(s.fiyat)}</option>`).join('') : '<option>Teklif</option>'}</select>
-            <input data-ka="${i}" value="${k.adet}" inputmode="numeric" title="Adet">
+            <input data-ka="${i}" value="${k.adet}" inputmode="numeric" title="Adet" aria-label="Adet">
             <span class="t">${v.s && v.s.fiyat != null ? para(v.s.fiyat * k.adet) : v.u ? 'Teklif' : '—'}</span><button class="x" data-kx="${i}" title="Kaldır">×</button></div>`; }).join('')}</div>
           <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><select id="setYeniKat" class="set-ad" style="width:auto"><option value="">+ Kalem ekle…</option>${KATSIRA.filter(c => VERI.urunler.some(u => u.kategori === c)).map(c => `<option>${esc(c)}</option>`).join('')}</select></div>
           <div class="set-renk"><h3 style="margin:18px 0 0;font-size:15px">Ortak renkler</h3><div class="kucuk">Seçtiğiniz renk, setteki uygun tüm ürünlere uygulanır.</div>

@@ -7,13 +7,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>{{dahil ortak/tema-erken.js}}</script>
+<script>{{dahil bayi/cekirdek/oturum-erken.js}}</script>
 <title>EXIT Garden · Bayi Sipariş</title>
+<meta name="description" content="EXIT Garden bayi portalı: dış mekân mobilyası kataloğu, bayi fiyatları, sipariş, cari hesap ve ödeme.">
 <style>{{dahil bayi/stil/ana.css}}</style>
 </head>
 <body>
 
 <!-- GİRİŞ -->
-<div id="giris">
+<div id="giris" role="main">
   <div class="g-sol">
     <div class="logolar">
             <svg shape-rendering="geometricPrecision" text-rendering="geometricPrecision" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="EXIT Innovative Solutions">
@@ -77,7 +79,7 @@
   <text x="137" y="47.5" font-family="LogoPoppins, Arial, sans-serif" font-weight="300" font-size="35" class="logo-ink logo-ink-soft" textLength="86" lengthAdjust="spacingAndGlyphs">group</text>
 </svg>
         </div>
-      <h3>Bayi girişi</h3><p class="g-alt-yazi">Hesabınızla giriş yapın veya yeni bayi kaydı oluşturun.</p>
+      <h3 aria-level="2">Bayi girişi</h3><p class="g-alt-yazi">Hesabınızla giriş yapın veya yeni bayi kaydı oluşturun.</p>
       <div class="sekme"><button class="on" data-s="giris">Giriş yap</button><button data-s="kayit">Kayıt ol</button></div>
       <form id="fGiris">
         <div class="alan"><label>Kullanıcı adı</label><input id="gKul" autocomplete="username" placeholder="Bayi kullanıcı adınız" required></div>
@@ -135,7 +137,7 @@
       <button class="h-btn" data-git="katalog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="y">Katalog</span></button>
       <button class="h-btn" data-git="siparisler"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5h11M9 12h11M9 19h11M4 5h.01M4 12h.01M4 19h.01"/></svg><span class="y">Siparişlerim</span></button>
       <button class="h-btn" data-git="cari"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span class="y">Cari hesabım</span></button>
-      <button class="h-btn" id="hSepet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg><span class="y">Sepet</span><span class="rozet gizli" id="sepetSay">0</span></button>
+      <button class="h-btn" id="hSepet" aria-label="Sepet"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/></svg><span class="y">Sepet</span><span class="rozet gizli" id="sepetSay">0</span></button>
       <span class="h-firma" title="Bayi hesabı"><i id="hAv"></i><span class="y" id="hKim"></span></span>
       <button class="h-btn h-cikis" id="hCikis" title="Oturumu kapat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span class="y">Çıkış</span></button>
     </div>
@@ -144,11 +146,11 @@
   <section id="s-katalog">
     <nav class="kat" id="katNav"></nav>
     <main>
-      <aside class="filtre" id="filtre"></aside>
+      <aside class="filtre" id="filtre" role="region" aria-label="Filtreler"></aside>
       <section>
         <div class="ust-satir"><button class="btn cizgi mobil-filtre" id="mFiltre">Filtrele</button><h2 id="baslik">Tüm ürünler</h2><span class="say" id="say"></span><button class="btn cizgi" id="katPdf" title="Seçili filtreye göre yazdırılabilir katalog" style="padding:8px 12px;font-size:13px">Katalog (PDF)</button>
-          <select id="ustKat" class="ust-filtre" title="Kategori"></select><select id="ustSin" class="ust-filtre" title="Ürün tipi"></select>
-          <select id="sirala"><option value="ad">İsme göre</option><option value="artan">Fiyat: düşükten yükseğe</option><option value="azalan">Fiyat: yüksekten düşüğe</option></select></div>
+          <select id="ustKat" class="ust-filtre" title="Kategori" aria-label="Kategori"></select><select id="ustSin" class="ust-filtre" title="Ürün tipi" aria-label="Ürün tipi"></select>
+          <select id="sirala" aria-label="Sıralama"><option value="ad">İsme göre</option><option value="artan">Fiyat: düşükten yükseğe</option><option value="azalan">Fiyat: yüksekten düşüğe</option></select></div>
         <div class="etiketler" id="etiketler"></div>
         <div class="izgara" id="izgara"></div>
       </section>
@@ -182,9 +184,9 @@
   <text x="137" y="47.5" font-family="LogoPoppins, Arial, sans-serif" font-weight="300" font-size="35" class="logo-ink logo-ink-soft" textLength="86" lengthAdjust="spacingAndGlyphs">group</text>
 </svg>
         </div><p style="margin-top:12px">EXIT Garden, BG Group çatısı altında otel, kafe ve konutlar için dış mekân mobilyası üretir.</p></div>
-    <div><h4>Koleksiyon</h4><p>Oturma grupları</p><p>Sandalye ve bar sandalyeleri</p><p>Masa ve sehpalar</p><p>Şezlonglar</p></div>
-    <div><h4>Bayi</h4><p>Katalog</p><p>Siparişlerim</p><p>Cari hesabım</p><p>Sepet</p></div>
-    <div><h4>Kurumsal</h4><p><a href="https://www.exitgarden.com" target="_blank" rel="noopener" style="color:inherit">exitgarden.com</a></p><p>KVKK aydınlatma metni</p><p>Gizlilik politikası</p></div>
+    <div><h4 aria-level="2">Koleksiyon</h4><p>Oturma grupları</p><p>Sandalye ve bar sandalyeleri</p><p>Masa ve sehpalar</p><p>Şezlonglar</p></div>
+    <div><h4 aria-level="2">Bayi</h4><p>Katalog</p><p>Siparişlerim</p><p>Cari hesabım</p><p>Sepet</p></div>
+    <div><h4 aria-level="2">Kurumsal</h4><p><a href="https://www.exitgarden.com" target="_blank" rel="noopener" style="color:inherit">exitgarden.com</a></p><p>KVKK aydınlatma metni</p><p>Gizlilik politikası</p></div>
   </div><div class="alt"><span>© 2026 BG Group · EXIT Innovative Solutions. Tüm hakları saklıdır.</span><span>Bayi Portalı v2.0</span></div></footer>
 </div>
 
@@ -271,6 +273,7 @@
 <script>{{dahil bayi/ozellikler/ozel-teklif.js}}</script>
 <script>{{dahil bayi/ozellikler/siparis-odeme.js}}</script>
 <script>{{dahil bayi/ozellikler/sunucu-oturum.js}}</script>
+<script>{{dahil bayi/ozellikler/erisilebilirlik.js}}</script>
 
 <!-- Yalnız web sitesi: menü düzeni ve sayfa adresleri -->
 <style>{{web web/duzen.css}}</style>

@@ -42,7 +42,7 @@
       if (m || c.querySelector('.c-proje')) return; const ust = c.querySelector('.c-toplu') || c.querySelector('.c-ust'); if (!ust || !sepet().length && !prOku().length) return; m = true;
       try {
         const L = prOku(), ak = aktifPr(), akp = L.find(x => x.id === ak);
-        ust.insertAdjacentHTML('afterend', `<div class="c-proje"><b>${akp ? 'Proje: ' + esc(akp.ad) : 'Projeye kaydet'}</b><select id="cpSec"><option value="">Yeni proje…</option>${L.map(p => `<option value="${p.id}" ${p.id === ak ? 'selected' : ''}>${esc(p.ad)}</option>`).join('')}</select>
+        ust.insertAdjacentHTML('afterend', `<div class="c-proje"><b>${akp ? 'Proje: ' + esc(akp.ad) : 'Projeye kaydet'}</b><select id="cpSec" aria-label="Proje"><option value="">Yeni proje…</option>${L.map(p => `<option value="${p.id}" ${p.id === ak ? 'selected' : ''}>${esc(p.ad)}</option>`).join('')}</select>
           <input type="text" id="cpAd" placeholder="Proje adı" ${akp ? 'style="display:none"' : ''}><button class="btn cizgi" id="cpKay">Projeye kaydet</button>
           <label><input type="checkbox" id="cpBos"> Kaydettikten sonra sepeti boşalt</label></div>`);
         const sec = c.querySelector('#cpSec'), ad = c.querySelector('#cpAd');

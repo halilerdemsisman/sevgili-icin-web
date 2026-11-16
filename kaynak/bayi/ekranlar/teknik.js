@@ -3,7 +3,7 @@
 function teknikHtml(u) {
   const t = u.teknik; if (!t) return '';
   return `<details class="teknik" open><summary>Teknik bilgiler</summary>${(t.malzeme || []).length ? `<ul>${t.malzeme.map(m => `<li>${esc(m)}</li>`).join('')}</ul>` : ''}
-    ${(t.tablolar || []).map(tb => `<div class="tk-kay"><table><tr>${tb.basliklar.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${tb.satirlar.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div>`).join('')}
+    ${(t.tablolar || []).map(tb => `<div class="tk-kay" tabindex="0"><table><tr>${tb.basliklar.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${tb.satirlar.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div>`).join('')}
     <div class="kucuk">Ölçüler cm, ağırlık kg. Kaynak: exitgarden.com</div></details>`;
 }
 function katalogIndir() {

@@ -25,7 +25,7 @@ describe('Bayi portalı: dosya yapısı', () => {
     assert.ok(!fs.existsSync(path.join(KOK, 'kaynak', 'bayi', 'parcalar')), 'parcalar/ klasörü kalmamalı');
     assert.ok(!yollar.some(y => /v\d\.\d|ek\d/.test(path.basename(y)) && y.startsWith('bayi/')), 'bayi dosya adlarında sürüm yok');
     const html = fs.readFileSync(path.join(PAKET, 'web', 'index.html'), 'utf8');
-    for (const p of ['/js/cekirdek.', '/js/ozellikler.', '/css/ozellikler-stil.', '/js/web.']) assert.ok(html.includes(p), p);
+    for (const p of ['/js/cekirdek.', '/js/ozellikler.', '/css/stil.', '/js/web.']) assert.ok(html.includes(p), p);
     assert.ok((html.match(/<script src=/g) || []).length <= 12, 'web sitesinde en fazla 12 betik dosyası');
     const tek = fs.readFileSync(path.join(PAKET, 'exit_bayi_siparis.html'), 'utf8');
     assert.ok(!/\{\{(dahil|web|paket) /.test(tek) && !/\{\{(dahil|web|paket) /.test(html), 'doldurulmamış işaret kalmamalı');

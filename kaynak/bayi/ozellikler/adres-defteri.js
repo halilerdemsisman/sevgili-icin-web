@@ -32,7 +32,7 @@
     _sepetA(); const c = $$('.perde').pop(); if (!c) return; let mesgul = false;
     const ekle = () => { if (mesgul) return; const t = c.querySelector('#sAdres'); if (!t || c.querySelector('.ad-sat')) return; mesgul = true;
       const L = aOku(), v = L.find(x => x.varsayilan) || L[0];
-      t.insertAdjacentHTML('beforebegin', `<div class="ad-sat"><select id="sAdSec"><option value="">${L.length ? 'Kayıtlı adres seçin…' : 'Kayıtlı adres yok'}</option>${L.map(x => `<option value="${x.id}">${esc(x.ad)}</option>`).join('')}</select><button type="button" id="sAdYon">Adreslerim</button></div>`);
+      t.insertAdjacentHTML('beforebegin', `<div class="ad-sat"><select id="sAdSec" aria-label="Kayıtlı adres"><option value="">${L.length ? 'Kayıtlı adres seçin…' : 'Kayıtlı adres yok'}</option>${L.map(x => `<option value="${x.id}">${esc(x.ad)}</option>`).join('')}</select><button type="button" id="sAdYon">Adreslerim</button></div>`);
       if (v && (!t.value.trim() || t.value.trim() === (ben.sehir || '').trim())) { t.value = adresMetin(v); c.querySelector('#sAdSec').value = v.id; }
       c.querySelector('#sAdSec').onchange = e => { const a = aOku().find(x => x.id === e.target.value); if (a) t.value = adresMetin(a); };
       c.querySelector('#sAdYon').onclick = () => adresler(() => { const s = c.querySelector('.ad-sat'); if (s) s.remove(); ekle(); });

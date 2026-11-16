@@ -29,6 +29,8 @@ Görünürlük her uçta aynıdır:
 - temsilci yalnız atandığı bayileri görür (atama hiç yoksa tümünü),
 - yönetici tümünü görür.
 
+İstek `Accept-Encoding: gzip` taşıyorsa 1 KB'tan büyük JSON yanıtları gzip ile sıkıştırılır (`Content-Encoding: gzip`, `Vary: Accept-Encoding`; Faz 2c). Tarayıcılar ve `fetch` bunu kendiliğinden açar.
+
 ### `GET /api/v1/ben`
 Oturumdaki kullanıcı kaydı (şifre alanları hariç) ile `tur` ve `rol`.
 

@@ -15,7 +15,7 @@ function urunAc(id) {
   const perde = document.createElement('div'); perde.className = 'perde';
   perde.onclick = e => { if (e.target === perde) perde.remove(); };
   document.body.appendChild(perde);
-  const renkGrup = (ad, liste, alan, no, alt) => `<div class="adim"><h4><i>${no}</i>${ad}<em>${S[alan] ? esc(liste.find(x => x.kod === S[alan]).ad + (S[alan] !== liste.find(x => x.kod === S[alan]).ad ? ' · ' + S[alan] : '')) : alt}</em></h4>
+  const renkGrup = (ad, liste, alan, no, alt) => `<div class="adim"><h4 aria-level="3"><i>${no}</i>${ad}<em>${S[alan] ? esc(liste.find(x => x.kod === S[alan]).ad + (S[alan] !== liste.find(x => x.kod === S[alan]).ad ? ' · ' + S[alan] : '')) : alt}</em></h4>
     <div class="renkler">${liste.map(r => `<button class="renk ${S[alan] === r.kod ? 'on' : ''}" data-a="${alan}" data-k="${esc(r.kod)}"><div class="ornek" style="background:${r.ornek}"></div><b>${esc(r.ad)}</b>${r.ad !== r.kod ? `<small>${esc(r.kod)}</small>` : ''}</button>`).join('')}</div></div>`;
   function ciz() {
     const ih = ihtiyac(u, S.sec);
@@ -34,14 +34,14 @@ function urunAc(id) {
         <div><span>Adet</span><b>${S.adet}</b></div></div>
         <p class="kucuk">Renkler ekranda temsilidir; kesin ton için kartelaya bakınız.</p></div>
       <div class="p-bilgi"><span class="kucuk">${esc(u.kategori)}</span><h2>${esc(u.ad)}</h2>${u.kmp ? `<div class="kmp-bant"><b>%${u.kmp.oran} kampanya</b> · ${esc(u.kmp.ad)}${u.kmp.bit ? ` · ${tarih(u.kmp.bit)} tarihine kadar geçerli` : ''}</div>` : ''}<p class="aciklama">${esc(u.aciklama || '')}</p>${teknikHtml(u)}
-        ${u.secenek.length ? `<div class="adim"><h4><i>${no++}</i>Seçenek / ölçü</h4><div class="secenekler">${u.secenek.map((s, i) => `<button class="cip ${S.sec === s ? 'on' : ''}" data-i="${i}"><small>${esc(s.sinif)}</small><b>${esc(s.ad)}</b> · ${u.kmp && s.liste != null ? `<s class="eski">${para(s.liste)}</s> ` : ''}${para(s.fiyat)}</button>`).join('')}</div></div>`
+        ${u.secenek.length ? `<div class="adim"><h4 aria-level="3"><i>${no++}</i>Seçenek / ölçü</h4><div class="secenekler">${u.secenek.map((s, i) => `<button class="cip ${S.sec === s ? 'on' : ''}" data-i="${i}"><small>${esc(s.sinif)}</small><b>${esc(s.ad)}</b> · ${u.kmp && s.liste != null ? `<s class="eski">${para(s.liste)}</s> ` : ''}${para(s.fiyat)}</button>`).join('')}</div></div>`
           : '<div class="uyari">Bu ürünün fiyatı listede yok. Seçimlerinizle birlikte fiyat teklifi isteyebilirsiniz.</div>'}
         ${renkGrup('İskelet rengi', ISKELET, 'iskelet', no++, 'Seçiniz')}
         ${ih.file ? renkGrup('File rengi', FILE, 'file', no++, 'Seçiniz') : ''}
         ${ih.kumas ? renkGrup('Kumaş', KUMAS, 'kumas', no++, 'Seçiniz') : ''}
         ${ih.fitil ? renkGrup('Fitil rengi', KUMAS, 'fitil', no++, 'Seçiniz') : ''}
-        <div class="adim"><h4><i>${no++}</i>Adet ve not</h4><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <div class="adet"><button data-ad="-1">−</button><input id="pAdet" value="${S.adet}" inputmode="numeric"><button data-ad="1">+</button></div>
+        <div class="adim"><h4 aria-level="3"><i>${no++}</i>Adet ve not</h4><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div class="adet"><button data-ad="-1">−</button><input id="pAdet" aria-label="Adet" value="${S.adet}" inputmode="numeric"><button data-ad="1">+</button></div>
           <input id="pNot" placeholder="Not (isteğe bağlı)" value="${esc(S.not)}" style="flex:1;min-width:180px;padding:10px 12px;border:1px solid var(--cizgi);border-radius:10px"></div></div>
         <div class="p-alt"><div class="tutar">${birim == null ? 'Teklif' : para(birim * S.adet)}<small>${birim == null ? 'fiyat sonradan bildirilir' : S.adet + ' × ' + para(birim)}</small></div>
           <button class="btn marka" id="pEkle" ${eksik.length ? 'disabled' : ''} title="${eksik.length ? 'Eksik: ' + eksik.join(', ') : ''}">${birim == null ? 'Teklif sepetine ekle' : 'Sepete ekle'}</button></div>

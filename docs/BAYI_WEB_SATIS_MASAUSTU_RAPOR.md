@@ -33,16 +33,16 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 2a | Bayi web sitesi: temel | Ayrı dosyalar + WebP, sayfa adresleri, yeni menü ve telefon düzeni, XSS denetimi |
 | 2b-1 | Bayi web sitesi: veri | Kayıtlar REST ile (numara, fiyat sunucuda, sonuç beklenir), iş verisi tarayıcıda saklanmaz, çevrimdışı sipariş engeli |
 | 2b-2 | Bayi web sitesi: ekranlar | ✅ sarmalama zincirleri birleşti · okumalar REST'ten · ekranlar ve özellikler ayrı dosyalarda · renk önizleme ortak modülde · İngilizce çeviriler dosyada |
-| 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
+| 2c | Bayi web sitesi: yayın | ✅ denetim: telefonda Lighthouse performansı 95–99, erişilebilirlik 100 (WCAG 2.1 AA) · kalan: alan adıyla pilot bayiler (alan adı ve VPS kararı bekleniyor) |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
 | 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
 | 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · kalan: kod imzalama, Windows'ta pilot, tek veri modülü ve okumalar REST'e |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı. 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) bitti.
+Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı; 2c'nin denetim adımı bitti. 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) bitti.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · 3b-2 adım 1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve satış ekranlarının kalan adımları (tek veri modülü, okumalar REST'e, dosyaların özelliğe göre bölünmesi); bayi sitesinde Faz 2c (erişilebilirlik, Lighthouse, alan adıyla pilot).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · Faz 2c denetim ✅ · 3b-2 adım 1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve satış ekranlarının kalan adımları (tek veri modülü, okumalar REST'e, dosyaların özelliğe göre bölünmesi); bayi sitesinde alan adıyla pilot (Faz 2c adım 2).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -122,7 +122,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ✅ 2b-2/3b-2 adım 1: sarmalama kalmadı; her ekran fonksiyonu eklerini kendi içinde çağırıyor, `araclar/sarmalama.mjs --denetle` testlerde |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-2 (151 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2c (158 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -401,8 +401,39 @@ Bilinçli olarak bırakılan: Satış panelinin parçaları (`kaynak/satis/parca
 
 Kabul ✅: Faz 0 testlerinin bayi kısmı modüllere bölünmüş ekranlarda geçiyor; sarmalama haritasında bayi tarafında sarılan fonksiyon kalmıyor.
 
+#### Faz 2c adım 1: Erişilebilirlik ve Lighthouse denetimi ✅ tamamlandı
+Ölçüm: Lighthouse 12, telefon (yavaş 4G ve 4 kat yavaş işlemci benzetimi), her sayfa 3 ölçümün ortancası, girişli bayi (giriş sayfası girişsiz). Araç: `node araclar/lighthouse.mjs` (README).
+
+| Sayfa | Performans önce → sonra | Erişilebilirlik önce → sonra | LCP sonra | TBT önce → sonra |
+|---|---|---|---|---|
+| Giriş | 85 → 99 | 100 → 100 | 2,0 sn | 180 → 0 ms |
+| Katalog | 66 → 96 | 94 → 100 | 2,6 sn | 800 → 120 ms |
+| Ürün penceresi | 65 → 95 | 88 → 100 | 2,8 sn | 910 → 90 ms |
+| Siparişler | 76 → 98 | 100 → 100 | 2,4 sn | 590 → 30 ms |
+| Cari | 75 → 98 | 100 → 100 | 2,4 sn | 640 → 55 ms |
+| Belgeler | 73 → 98 | 98 → 100 | 2,4 sn | 610 → 30 ms |
+
+Kendi ölçümümüzde (yavaş 4G, 40 siparişli bayi) katalog ~2,9 sn yerine **~2,1 sn**'de görünüyor. SEO 90 → 100.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Girişli bayi giriş formunu görmüyor | Kayıtlı oturumla açılışta sayfa önce bir an giriş formunu gösteriyor, katalog sonra geliyordu (Lighthouse film şeridinde ilk iki kare). Oturum varsa giriş ekranı gizli başlar (`cekirdek/oturum-erken.js`), oturum açılınca ya da açılamazsa görünür olur |
+| Stiller tek dosyada, başta | Web derlemesinde (`webHizlandir`) sekiz stil dosyası belgedeki sırasıyla tek dosyada birleşir ve başa alınır (önceden gövdenin sonundaki stiller sayfanın çizilmesini bekletiyordu). Gövdedeki betikler `defer` ile yüklenir; 1 KB'tan küçük baş betikleri sayfanın içine yazılır. Tek dosyalık sürüm değişmez |
+| Türkçe açılışta çeviri işi yok | Çeviri motoru ürün sözlüğünü (seçenek, açıklama, teknik bilgi) açılışta hesaplıyordu: Türkçe kullanan bayi için de telefonda ~0,5 sn. Artık ilk İngilizce çeviride hesaplanır. 1037 metinlik çeviri derlemi birebir aynı |
+| Katalog kartları | Ekran dışındaki kartlar çizilmez (`content-visibility`); yer tutucu yükseklik kartın gerçek yüksekliği (kaydırırken sayfa kaymaz) |
+| Logo animasyonu | Animasyonu yeniden başlatmak için sayfa yerleşimi zorla hesaplatılıyordu (katalog açıkken telefonda ~0,6 sn duraklama); artık iki kare sonra yeniden başlar |
+| JSON sıkıştırma | 1 KB'tan büyük API yanıtları gzip ile gider (katalog 70 KB → 15 KB); Caddy arkasında da zararsız |
+| Erişilebilirlik (axe, WCAG 2.1 AA) | 28 ekran durumunda (giriş, kayıt, bütün sayfalar ve pencereler, telefon, koyu tema) bulunan sorunlar giderildi: etiketler alana bağlı (formların çoğu `<label>Ad</label><input>` biçimindeydi; `ozellikler/erisilebilirlik.js` etiketi ardından gelen alana bağlar), etiketsiz alan ve açılır listelere ad (sıralama, kategori, adet, proje, kayıtlı adres, hatırlatma), yalnız simgeli düğmelere ad (sepet, belgeler), soluk metin kontrastı 2,6:1 → 5,4:1 (`--soluk`), başlık sırası, kaydırılan teknik tablo klavyeyle ulaşılabilir, sayfalarda ana bölge işareti |
+| Telefonda karşılaştırma çubuğu | Karşılaştırmaya ürün eklenince çubuk telefonun alt sekme çubuğunu ("Daha fazla" dahil) örtüyordu; artık üstünde durur |
+| Testler | 158 test (önceki 151 + `testler/erisilebilirlik.test.js` 7): axe ile WCAG 2.1 A/AA (giriş, kayıt, 12 sayfa/pencere, telefon, koyu tema), etiket–alan bağı, karşılaştırma çubuğu, hız düzeni, girişli açılışta giriş formunun hiç görünmemesi. SQLite ve JSON depoyla geçiyor. `axe-core` geliştirme bağımlılığı (`npm install`) |
+
+Bilinçli olarak bırakılan (Lighthouse "iyi uygulamalar" 82):
+- Açılıştaki eşzamanlı veri isteği (`ortak/senkron.js`, iki uygulamada ortak): kaldırılması eşitleme katmanının açılışının değişmesini gerektirir; satışın tek veri modülüyle (3b-2) birlikte ele alınacak.
+- Telefonda 12 pikselden küçük yazılar (kart rozetleri, küçük fiyat notları): tasarım kararı.
+- axe'in "en iyi uygulama" önerileri (bütün içeriğin bölge işaretleri içinde olması, uygulama içinde h1): WCAG ölçütü değil.
+
 #### Faz 2c: Yayın (≈1 hafta)
-1. Erişilebilirlik ve Lighthouse denetimi (hedef: telefonda performans ≥ 85).
+1. ✅ Erişilebilirlik ve Lighthouse denetimi (hedef: telefonda performans ≥ 85; ölçülen 95–99).
 2. Alan adı + HTTPS ile yayın (`bayi.exitgarden.com`), önce 2–3 pilot bayi.
 
 ### Faz 3: Satış masaüstü uygulaması
