@@ -11,6 +11,9 @@
 // Faz 2b-2 (adım 2): web sitesi iş verisini REST'ten okur (web/veri.js). Bu katman sitede yalnız bayinin kişisel
 //   anahtarlarını (sepet, favori, proje, adres, hatırlatma ayarı…) eşitler (?kapsam=kisisel); iş verisi anahtarlarını
 //   sunucuya hiç göndermez. /api/degisen yanıtındaki kaynak imzaları 'exit-kaynak' olayıyla veri modülüne iletilir.
+// Faz 3b-2 (adım 3): satış paneli de sunucudan açılıp oturum varken iş verisini yalnız bellekte tutar (masaüstü
+//   uygulamasının ve tarayıcının diskinde iş verisi kalmaz). Eşitleme ucu satışta değişmedi. Oturum yokken
+//   (giriş ekranı) tarayıcıdaki eski veriye dokunulmaz: yöneticinin ilk girişinde sunucuya aktarılır, sonra silinir.
 (function () {
   if (!/^https?:$/.test(location.protocol)) return;
   // /satis (sunucu) veya exit_satis_paneli.html (dosya); bayi sitesinin /siparisler gibi adresleri bayidir
@@ -19,18 +22,22 @@
   const YEREL = /^(exb-dil|exb-oturum|exs-oturum|exs-ai-anahtar|exit-tema|exb-kars)$/;
   const ORTAK = k => /^ex[bs]-/.test(k) && !YEREL.test(k);
   const S = Storage.prototype, setI0 = S.setItem, remI0 = S.removeItem, getI0 = S.getItem;
-  const BELLEK = UYG === 'bayi' && !!window.EXIT_WEB, B = new Map();
+  // WEB: bayi web sitesi (iş verisi REST'ten, eşitleme yalnız kişisel). BELLEK: iş verisi Map'te (sitede baştan,
+  // satışta oturumlu ilk yüklemede açılır).
+  const WEB = UYG === 'bayi' && !!window.EXIT_WEB, B = new Map(); let BELLEK = WEB;
   // bayi sitesinde eşitlenen kişisel anahtarlar (sunucu: kurallar.js KISISEL); diğerleri REST'ten gelir
   const KISISEL = /^exb-(hat-gizli|duyuru-okundu|sepet|fav|proje|adres|bildirim|gorulen|mkat|hat)-(.+)$/;
-  const KAPSAM = BELLEK ? 'kapsam=kisisel' : '', ek = y => KAPSAM ? y + (y.includes('?') ? '&' : '?') + KAPSAM : y;
+  const KAPSAM = WEB ? 'kapsam=kisisel' : '', ek = y => KAPSAM ? y + (y.includes('?') ? '&' : '?') + KAPSAM : y;
   // ham erişim (senkron katmanının kendisi için): iş verisi anahtarları bellek kipinde Map'e gider
   const getI = function (k) { return BELLEK && this === localStorage && ORTAK(k) ? (B.has(k) ? B.get(k) : null) : getI0.call(this, k); };
   const setI = function (k, v) { if (BELLEK && this === localStorage && ORTAK(k)) B.set(k, String(v)); else setI0.call(this, k, v); };
   const remI = function (k) { if (BELLEK && this === localStorage && ORTAK(k)) B.delete(k); else remI0.call(this, k); };
-  const yerelAnahtarlar = () => { const L = BELLEK ? [...B.keys()] : []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (ORTAK(k)) L.push(k); } return L; };
-  if (BELLEK) {
+  const diskteki = () => { const L = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (ORTAK(k)) L.push(k); } return L; };
+  const diskiTemizle = () => { try { diskteki().forEach(k => remI0.call(localStorage, k)); } catch (e) {} };
+  const yerelAnahtarlar = () => BELLEK ? [...B.keys()] : diskteki();
+  if (WEB) {
     // önceki sürümlerden (veya tek dosyalık portaldan) bu tarayıcıda kalmış iş verisi kopyaları silinir
-    try { yerelAnahtarlar().forEach(k => remI0.call(localStorage, k)); } catch (e) {}
+    diskiTemizle();
     S.getItem = function (k) { return getI.call(this, k); };
     S.setItem = function (k, v) { setI.call(this, k, v); };
     S.removeItem = function (k) { remI.call(this, k); };
@@ -46,6 +53,8 @@
     // Giriş yapılmamışken yerel veriye dokunulmaz: eski sürümden kalan veri, yönetici girişinde sunucuya
     // aktarılabilsin. Çıkışta yerel kopyalar EXIT_YEREL_TEMIZLE ile silinir.
     if (!oturum) return;
+    // satış: oturum açıldı; eski kopyalar (ilk kurulumda aktarıldıktan sonra) diskten silinir, veri bellekte durur
+    if (!BELLEK && UYG === 'satis') { diskiTemizle(); BELLEK = true; }
     const yerel = yerelAnahtarlar();
     // sunucuda olmayan veya bu kullanıcıya gösterilmeyen yerel kopyalar silinir (önceki kullanıcının verisi kalmasın)
     yerel.forEach(k => { if (!(k in j.veri)) remI.call(localStorage, k); });
@@ -71,7 +80,7 @@
   } catch (e) {}
   window.EXIT_SUNUCU = yuklu; window.EXIT_OTURUM = oturum; window.EXIT_UYG = UYG; window.EXIT_BELLEK = BELLEK;
   if (!yuklu) {
-    if (!BELLEK) return;
+    if (!WEB) return;
     // web sitesi sunucuya ulaşamadı: çevrimdışı mod. Bağlantı gelince (veya 15 sn'de bir denenerek) yenilenir.
     window.EXIT_CEVRIMDISI = true;
     const dene = () => fetch('api/oturum', { cache: 'no-store' }).then(r => { if (r.ok) location.reload(); }).catch(() => {});
@@ -80,7 +89,7 @@
   }
 
   // Çıkışta: bu tarayıcıdaki ortak veri kopyalarını sil (sunucuya silme isteği gitmez)
-  window.EXIT_YEREL_TEMIZLE = () => { yerelAnahtarlar().forEach(k => remI.call(localStorage, k)); };
+  window.EXIT_YEREL_TEMIZLE = () => { yerelAnahtarlar().forEach(k => remI.call(localStorage, k)); diskiTemizle(); };
   window.sunucuNo = on => { if (!oturum) return null; try { const x = istek('POST', 'api/numara', { on }); return x.status === 200 ? JSON.parse(x.responseText).no : null; } catch (e) { return null; } };
   window.EXIT_API = (yol, govde) => fetch(yol, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Exit-Uyg': UYG }, body: JSON.stringify(govde || {}) })
     .then(r => r.json().catch(() => ({})).then(j => ({ durum: r.status, ...j })));
@@ -176,7 +185,7 @@
   const sira = (k, v) => {
     if (!oturum) return;
     // web sitesi: iş verisi REST ile yazılır (kayitEkle/kayitGuncelle); eşitleme ucuna yalnız kişisel anahtar gider
-    if (BELLEK) { const m = k.match(KISISEL); if (!m || m[2] !== oturum.kul) { console.warn(k + ': iş verisi eşitleme ucuyla gönderilmez (REST ile yazılır).'); return; } }
+    if (WEB) { const m = k.match(KISISEL); if (!m || m[2] !== oturum.kul) { console.warn(k + ': iş verisi eşitleme ucuyla gönderilmez (REST ile yazılır).'); return; } }
     if (!kuyrukTaban.has(k)) kuyrukTaban.set(k, gorulen.get(k) ?? taban.get(k) ?? null);
     if (islemK) { islemK.set(k, v); kuyruk.delete(k); return; }
     if (eksik.has(k)) { console.warn(k + ' bu tarayıcıya tam yüklenemediği için değişiklik sunucuya gönderilmedi.'); durum(true); return; }

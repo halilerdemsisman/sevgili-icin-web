@@ -5,15 +5,14 @@
   const nb = $('aside button.m[data-s=numuneler]') || $('aside button.m[data-s=siparisler]');
   if (nb && !$('aside button.m[data-s=hatirlatmalar]')) nb.insertAdjacentHTML('afterend', dug('hatirlatmalar', 'hat', 'Hatırlatmalar'));
   const pencere = (html, gen) => pencereAc(html, gen ? '' : 'max-width:620px');
-  let HT = oku('exs-hatirlatma', []);
   const htYaz = () => yaz('exs-hatirlatma', HT);
-  const BH = () => oku('exb-hatirlat', []);
-  function bayiyeHatirlat(kul, tur, metin) { const M = BH(); M.push({ id: 'm' + Date.now().toString(36), kul, tur, metin, zaman: Date.now(), kim: kimAd(), okundu: false }); yaz('exb-hatirlat', M); }
+  const bayiHat = () => oku('exb-hatirlat', []);
+  function bayiyeHatirlat(kul, tur, metin) { const M = bayiHat(); M.push({ id: 'm' + Date.now().toString(36), kul, tur, metin, zaman: Date.now(), kim: kimAd(), okundu: false }); yaz('exb-hatirlat', M); }
   function otomatik() {
     const A = [], now = Date.now(), bg = bugunISO(), gz = oku('exs-hat-gizli', {}) || {}, ekle = x => { if (gz[x.k] !== bg) A.push(x); };
     Object.values(SIP).filter(o => o.durum === 'yeni' && now - o.tarih > GUN).sort((a, b) => a.tarih - b.tarih).forEach(o => ekle({ k: 'sy-' + o.no, renk: 'kirmizi', metin: `${o.no} · ${o.firma}: ${Math.floor((now - o.tarih) / GUN)} gündür yanıt bekliyor`, alt: usd(tutarlar(o).net) + ' · ' + tarih(o.tarih), sip: o.no }));
     Object.values(SIP).filter(o => o.termin && ['onay', 'uretim'].includes(o.durum)).forEach(o => { const g = gunFarki(o.termin); if (g <= 3) ekle({ k: 'tr-' + o.no + o.termin, renk: g < 0 ? 'kirmizi' : 'sari', metin: `${o.no} · ${o.firma}: termin ${g < 0 ? -g + ' gün geçti' : g === 0 ? 'bugün' : g + ' gün sonra'}`, alt: 'Termin ' + tarih(o.termin) + ' · ' + DURUM[o.durum][0], sip: o.no }); });
-    Object.values(MUS).forEach(m => { const c = cariOzet(m.kul); if (c.gecmis > 0.5) { const son = BH().filter(x => x.kul === m.kul && x.tur === 'odeme').sort((a, b) => b.zaman - a.zaman)[0];
+    Object.values(MUS).forEach(m => { const c = cariOzet(m.kul); if (c.gecmis > 0.5) { const son = bayiHat().filter(x => x.kul === m.kul && x.tur === 'odeme').sort((a, b) => b.zaman - a.zaman)[0];
       ekle({ k: 'vg-' + m.kul, renk: 'kirmizi', metin: `${m.firma || m.kul}: vadesi geçmiş ${usd(c.gecmis)} (${c.gecikmeGun} gün)`, alt: son ? 'Bayiye son hatırlatma ' + tarih(son.zaman) + (son.okundu ? ' · okundu' : ' · okunmadı') : 'Bayiye henüz hatırlatma gönderilmedi', kul: m.kul, odeme: c.gecmis }); } });
     Object.values(MUS).forEach(m => { const S = Object.values(SIP).filter(o => o.kul === m.kul && o.durum !== 'iptal'); if (!S.length) return; const g = Math.floor((now - Math.max(...S.map(o => o.tarih))) / GUN); if (g >= SESSIZ_GUN) ekle({ k: 'ss-' + m.kul, renk: 'mavi', metin: `${m.firma || m.kul}: ${g} gündür sipariş yok`, alt: 'Arayıp görüşme notu ekleyin', kul: m.kul }); });
     const od = oku('exb-odeme', []).filter(o => o.durum === 'bekliyor').length, nm = oku('exb-numune', []).filter(o => o.durum === 'yeni').length;

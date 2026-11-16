@@ -2,6 +2,11 @@
 //   • Şablondaki her dosya var; sürüm adlı parçalar (03-ana.js, 22-ek6.js…) kalmadı; dosyalar paketlerde.
 //   • Bir özellik açılışta hata verirse paketteki diğer özellikler çalışmaya devam eder.
 //   • Bölerken bulunan hata: ziyaret kaydından oluşan hatırlatma, Hatırlatmalar sayfası açılmadan rozete yansımıyordu.
+// Adım 3: tek veri modülü (cekirdek/veri.js, DEPO).
+//   • Bellekte tutulan satış verisi yalnız veri modülünde tanımlı; canlı güncelleme aynı tabloyu kullanır.
+//   • Sunucudan açılan satış paneli, oturum açıkken iş verisini tarayıcının kalıcı alanına yazmaz.
+//   • Önceden ekran açılışında okunup bir daha tazelenmeyen duyurular (ve fiyat grupları, bayi hedefleri)
+//     başka kullanıcı değiştirince sayfa yenilenmeden güncellenir.
 const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -27,6 +32,23 @@ describe('Satış paneli: dosya yapısı', () => {
   });
 });
 
+describe('Satış paneli: tek veri modülü', () => {
+  const oku = f => fs.readFileSync(path.join(KOK, 'kaynak', 'satis', f), 'utf8');
+  test('bellekteki veri yalnız veri modülünde tanımlı; canlı güncelleme aynı tabloyu kullanır', () => {
+    const veri = oku('cekirdek/veri.js');
+    const satirlar = [...veri.matchAll(/^\s*\['(ex[sb]-[a-z-]+)',\s*\(\) => ([A-Z]+),/gm)];
+    assert.ok(satirlar.length >= 18, 'tablo satırları: ' + satirlar.length);
+    for (const [, k, ad] of satirlar) assert.match(veri, new RegExp(`\\b${ad} = depoIlk\\('${k}'\\)`), `${ad} tablodaki anahtardan okunur`);
+    for (const k of ['cekirdek', 'ekranlar', 'ozellikler'])
+      for (const f of fs.readdirSync(path.join(KOK, 'kaynak', 'satis', k))) {
+        if (`${k}/${f}` === 'cekirdek/veri.js') continue;
+        const L = oku(`${k}/${f}`).split('\n').filter(l => /^\s*(let|var|const)\s+[A-Z][A-Z0-9_]*\s*=\s*oku\('exs-/.test(l) && !/exs-kullanicilar/.test(l));
+        assert.deepEqual(L, [], `${k}/${f}: kalıcı veri değişkeni veri modülünde tanımlanmalı`);
+      }
+    assert.ok(!/'exs-[a-z-]+'\s*:/.test(oku('ozellikler/canli.js')), 'canli.js kendi anahtar listesini tutmaz');
+  });
+});
+
 describe('Satış paneli: özellikler', () => {
   let s, b;
   before(async () => { s = await sunucuBaslat(); await s.kayit('ziyaretbayi'); b = await chromium.launch(); });
@@ -46,6 +68,32 @@ describe('Satış paneli: özellikler', () => {
     const menu = await p.$$eval('aside button.m[data-s]', L => L.map(x => x.dataset.s));
     for (const m of ['limit', 'gruplar', 'iadeler', 'panel', 'tahsilat', 'teklifler', 'urunanaliz']) assert.ok(menu.includes(m), 'sonraki özellik çalıştı: ' + m);
     await p.click('aside button.m[data-s=limit]'); assert.match(await p.textContent('#icerik'), /Bayi limitleri/);
+    await ctx.close();
+  });
+
+  test('iş verisi tarayıcının kalıcı alanına yazılmaz; ekranlar bellekten okur', async () => {
+    const [ctx, p] = await ac(); const H = hataTopla(p);
+    await p.goto(s.url + '/satis'); await p.locator('#uyg:not(.gizli)').waitFor();
+    assert.equal(await p.evaluate(() => window.EXIT_BELLEK), true);
+    await p.click('aside button.m[data-s=musteriler]'); assert.match(await p.textContent('#icerik'), /ziyaretbayi/);
+    await p.evaluate(() => { HDF['2099-01'] = { temsilci: {}, bolge: {} }; yaz('exs-hedef', HDF); });
+    await p.waitForTimeout(600);
+    assert.ok(JSON.parse(s.veri().veri['exs-hedef'] || '{}')['2099-01'], 'değişiklik sunucuya gitti');
+    const disk = (await ctx.storageState()).origins.flatMap(o => o.localStorage.map(x => x.name)).filter(k => /^ex[bs]-/.test(k) && !/^(exb-dil|exs-ai-anahtar)$/.test(k));
+    assert.deepEqual(disk, [], 'diskte iş verisi yok');
+    assert.deepEqual(H, []);
+    await ctx.close();
+  });
+
+  test('başka kullanıcının duyuru değişikliği sayfa yenilenmeden gelir', async () => {
+    const [ctx, p] = await ac(); const H = hataTopla(p);
+    await p.goto(s.url + '/satis'); await p.locator('#uyg:not(.gizli)').waitFor();
+    await p.click('aside button.m[data-s=duyurular]');
+    const d = [{ id: 'dx', baslik: 'Yeni sezon kataloğu', metin: '', tur: 'genel', bas: '', bit: '', bayiler: [], aktif: true, zaman: Date.now(), kim: 'başka' }];
+    assert.equal((await s.api('/api/veri', { degisen: [['exs-duyuru', JSON.stringify(d)]] })).durum, 200);
+    await p.waitForFunction(() => /Yeni sezon kataloğu/.test(document.querySelector('#icerik').textContent), null, { timeout: 8000 });
+    assert.equal(await p.evaluate(() => DY.length), 1);
+    assert.deepEqual(H, []);
     await ctx.close();
   });
 

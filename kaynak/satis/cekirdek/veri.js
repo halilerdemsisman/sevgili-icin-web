@@ -1,7 +1,42 @@
 // Çekirdek: satış verisi (siparişler, müşteriler, iskonto…) ve portaldan gelen siparişlerin birleştirilmesi.
-// ---------- veri katmanı
+// ---------- tek veri modülü (Faz 3b-2 adım 3)
+// Ekranların bellekte tuttuğu satış verisi yalnız burada tanımlıdır: her satır bir anahtar, onu tutan değişken ve
+// anahtar yokken başlangıç değeri. Ekranlar değişkeni okur, kaydederken yaz(anahtar, değişken) çağırır. Başka bir
+// kullanıcının değişikliği sunucudan gelince ozellikler/canli.js bu tabloyla bellekteki kopyayı yerinde günceller.
+// Yeni bir kalıcı veri: tabloya bir satır ve aşağıya bir değişken. Bayi kayıtları (exb-siparisler, exb-odeme,
+// exb-numune…) bellekte tutulmaz; ekranlar her çizimde oku() ile okur, canli.js yalnız sayfayı yeniler.
+// Sunucudan açılınca bu anahtarların hiçbiri tarayıcının kalıcı alanına yazılmaz (ortak/senkron.js, BELLEK).
+const DEPO = [
+  //  anahtar               değişken      başlangıç         değişince (başkasının değişikliği)
+  ['exs-siparisler',     () => SIP,   {}],
+  ['exs-musteriler',     () => MUS,   {}],
+  ['exs-iskonto',        () => ISK,   {}],
+  ['exs-kur',            () => KUR,   { TRY: null, EUR: null, zaman: null, kaynak: '' }],
+  ['exs-cari',           () => CARI,  {}],
+  ['exs-crm',            () => CRM,   {}],
+  ['exs-fiyat',          () => FIYAT, {},                () => { _fOnce = JSON.stringify(FIYAT); }], // fiyat geçmişi başkasının değişikliğini kendi değişikliği saymasın
+  ['exs-gizli',          () => GIZLI, [],                () => { _gOnce = JSON.stringify(GIZLI); }],
+  ['exs-kampanya',       () => KMP,   []],
+  ['exs-onay-ayar',      () => ONAY,  { iskonto: 15, tutar: 25000 }],
+  ['exs-fiyat-gecmis',   () => FGEC,  []],
+  ['exs-fiyat-surum',    () => FSUR,  []],
+  ['exs-bildirim',       () => BLD,   []],
+  ['exs-hedef',          () => HDF,   {}],  // { 'YYYY-MM': { temsilci: {kul: tutar}, bolge: {ad: tutar} } }
+  ['exs-hatirlatma',     () => HT,    []],
+  ['exs-duyuru',         () => DY,    () => oku('exb-duyuru', []) || []], // önceki sürüm duyuruları yalnız bayi anahtarında tutuyordu
+  ['exs-fiyat-grup',     () => GR,    []],
+  ['exs-bayi-hedef',     () => BH,    {}],  // { kul: { yil: { hedef, basamak } } }, ortak basamak: BH._basamak[yil]
+];
+const depoSatir = k => DEPO.find(x => x[0] === k);
+const depoBos = k => { const b = depoSatir(k)[2]; return typeof b === 'function' ? b() : structuredClone(b); };
+const depoIlk = k => oku(k, null) ?? depoBos(k);
+let SIP = depoIlk('exs-siparisler'), MUS = depoIlk('exs-musteriler'), ISK = depoIlk('exs-iskonto'), KUR = depoIlk('exs-kur'),
+  CARI = depoIlk('exs-cari'), CRM = depoIlk('exs-crm'), FIYAT = depoIlk('exs-fiyat'), GIZLI = depoIlk('exs-gizli'),
+  KMP = depoIlk('exs-kampanya'), ONAY = depoIlk('exs-onay-ayar'), FGEC = depoIlk('exs-fiyat-gecmis'), FSUR = depoIlk('exs-fiyat-surum'),
+  BLD = depoIlk('exs-bildirim'), HDF = depoIlk('exs-hedef'), HT = depoIlk('exs-hatirlatma'), DY = depoIlk('exs-duyuru'),
+  GR = depoIlk('exs-fiyat-grup'), BH = depoIlk('exs-bayi-hedef');
+
 // Siparişler: müşteri uygulaması aynı tarayıcıdaysa doğrudan okunur; değilse müşterinin indirdiği sipariş dosyaları içe aktarılır.
-let SIP = oku('exs-siparisler', {}), MUS = oku('exs-musteriler', {}), ISK = oku('exs-iskonto', {}), KUR = oku('exs-kur', { TRY: null, EUR: null, zaman: null, kaynak: '' });
 function birlestir() {
   let yeni = 0;
   oku('exb-siparisler', []).forEach(o => { if (!SIP[o.no]) { SIP[o.no] = { ...o, kaynak: 'portal' }; yeni++; } else if (SIP[o.no].kaynak === 'portal' && !SIP[o.no].satisDurum) SIP[o.no].durum = SIP[o.no].durum; });

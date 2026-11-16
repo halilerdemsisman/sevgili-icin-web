@@ -22,25 +22,13 @@ window.kosullu = (kosul, f) => window.EXIT_KOSULLU ? window.EXIT_KOSULLU(kosul, 
     return d;
   }
   const liste = (hedef, yeni) => { if (!Array.isArray(hedef) || !Array.isArray(yeni) || J(hedef) === J(yeni)) return false; hedef.splice(0, hedef.length, ...yeni); return true; };
-  const BAG = {
-    'exs-siparisler': () => sozluk(SIP, oku('exs-siparisler', {})),
-    'exs-musteriler': () => sozluk(MUS, oku('exs-musteriler', {})),
-    'exs-iskonto': () => sozluk(ISK, oku('exs-iskonto', {})),
-    'exs-kur': () => sozluk(KUR, oku('exs-kur', {})),
-    'exs-cari': () => sozluk(CARI, oku('exs-cari', {})),
-    'exs-crm': () => sozluk(CRM, oku('exs-crm', {})),
-    'exs-onay-ayar': () => sozluk(ONAY, oku('exs-onay-ayar', {})),
-    'exs-hedef': () => sozluk(HDF, oku('exs-hedef', {})),
-    'exs-kampanya': () => liste(KMP, oku('exs-kampanya', [])),
-    'exs-bildirim': () => liste(BLD, oku('exs-bildirim', [])),
-    'exs-fiyat-gecmis': () => liste(FGEC, oku('exs-fiyat-gecmis', [])),
-    'exs-fiyat-surum': () => liste(FSUR, oku('exs-fiyat-surum', [])),
-    // fiyat geçmişi farkı başkasının değişikliğini kendi değişikliği saymasın
-    'exs-fiyat': () => { const d = sozluk(FIYAT, oku('exs-fiyat', {})); if (d) _fOnce = J(FIYAT); return d; },
-    'exs-gizli': () => { const d = liste(GIZLI, oku('exs-gizli', [])); if (d) _gOnce = J(GIZLI); return d; },
-  };
+  // bellekteki kopyalar: tek veri modülündeki tablo (cekirdek/veri.js, DEPO); sözlük yerinde, liste baştan güncellenir
+  const BAG = Object.fromEntries(DEPO.map(([k, al, , sonra]) => [k, () => {
+    const h = al(), y = oku(k, null) ?? depoBos(k), d = Array.isArray(ham(h)) ? liste(ham(h), y) : sozluk(h, y);
+    if (d && sonra) sonra(); return d;
+  }]));
   // bayi kayıtları ekranlarda her çizimde yeniden okunur; yalnız sayfa yenilenir
-  const YENILE = /^exb-(siparisler|odeme|numune|teklif|iade|hatirlat)$|^exs-(hatirlatma|islem|duyuru|fiyat-grup|bayi-hedef)$/;
+  const YENILE = /^exb-(siparisler|odeme|numune|teklif|iade|hatirlat)$|^exs-(islem)$/;
   let zam = null, bekleyen = false;
   const guvenli = () => { const a = document.activeElement; return !document.querySelector('.perde, #haPerde, #exSifPerde') && !(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) && !(getSelection && String(getSelection()).length); };
   function yenile() {

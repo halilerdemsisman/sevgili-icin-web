@@ -1,6 +1,5 @@
 // Ekran parçası: bayiye bildirim (WhatsApp / e-posta) siparişin penceresinde.
 // ---------- 12. bayiye bildirim (WhatsApp / e-posta)
-let BLD = oku('exs-bildirim', []);
 function bildirimMetni(o) {
   const d = DURUM[o.durum][0], t = tutarlar(o);
   return [`Sayın ${o.ad || o.firma},`, ``, `${o.no} numaralı siparişinizin durumu: *${d}*.`, o.termin ? `Tahmini teslim: ${tarih(o.termin)}` : '', o.kargo ? `Nakliye: ${o.kargo}${o.takip ? ' · Takip no: ' + o.takip : ''}` : '', o.satisNot ? `Not: ${o.satisNot}` : '', `Sipariş tutarı: ${usd(t.net)}`, ``, `Bayi portalındaki “Siparişlerim” ekranından ayrıntıları görebilirsiniz.`, ``, `EXIT Garden Satış Ekibi`].filter((x, i, a) => x !== '' || a[i - 1] !== '').join('\n');

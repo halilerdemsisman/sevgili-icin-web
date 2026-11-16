@@ -1,6 +1,5 @@
 // Çekirdek: cari hesap, fatura, sipariş takibi (v2.1).
 // ===== v2.1: sipariş takibi, cari hesap, müşteri kartı, satış tahmini, raporlar =====
-let CARI = oku('exs-cari', {}), CRM = oku('exs-crm', {});
 const GUN = 864e5, VADE_VARS = 60;
 const cariYaz = () => { yaz('exs-cari', CARI); yaz('exb-cari', CARI); };
 const cariHesap = kul => (CARI[kul] = CARI[kul] || { vade: VADE_VARS, hareket: [] });

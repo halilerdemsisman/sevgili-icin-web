@@ -1,7 +1,6 @@
 // Fiyat grupları (v3.1): grubun iskontosu gruptaki bayilere uygulanır.
 (function () {
   menuEkle('gruplar', 'Fiyat grupları', '<path d="M3 7h18M3 12h18M3 17h10"/>', 'limit');
-  let GR = oku('exs-fiyat-grup', []);
   const grYaz = () => yaz('exs-fiyat-grup', GR);
   function grupUygula(g) { Object.values(MUS).forEach(m => { if (m && m.grup === g.id) { ISK[m.kul] = { ...(ISK[m.kul] || {}), oran: g.iskonto, grup: g.id }; } }); yaz('exs-iskonto', ISK); }
   S6.gruplar = function () {

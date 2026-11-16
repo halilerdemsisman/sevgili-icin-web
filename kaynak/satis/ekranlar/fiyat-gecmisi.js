@@ -1,6 +1,5 @@
 // Ekran: fiyat geçmişi ve sürümleri.
 // ---------- 11. fiyat geçmişi
-let FGEC = oku('exs-fiyat-gecmis', []), FSUR = oku('exs-fiyat-surum', []);
 const fgYaz = () => { yaz('exs-fiyat-gecmis', FGEC.slice(-2000)); yaz('exs-fiyat-surum', FSUR.slice(-30)); };
 function surumKaydet(ad, oto) { FSUR.push({ ad, zaman: Date.now(), kim: kimAd(), fiyat: JSON.parse(JSON.stringify(FIYAT)), gizli: GIZLI.slice(), oto: !!oto }); fgYaz(); }
 // FIYAT/GIZLI her yazıldığında farkı kaydet

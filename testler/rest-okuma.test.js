@@ -160,6 +160,8 @@ describe('Bayi web sitesi: okumalar REST\'ten (Faz 2b-2)', () => {
     assert.ok(govdeler.length, 'kişisel anahtar yazıldı');
     for (const [u, g] of govdeler) {
       assert.match(u, /kapsam=kisisel/);
+      // sayfadan ayrılırken bekleyen değişiklik sendBeacon ile gider; Playwright onun gövdesini göstermez (adres yine denetlenir)
+      if (!g) continue;
       const J = JSON.parse(g), K = [...(J.degisen || []), ...(J.yama || [])].map(x => x[0]);
       assert.ok(K.every(k => /^exb-(hat-gizli|duyuru-okundu|sepet|fav|proje|adres|bildirim|gorulen|mkat|hat)-canlibayi$/.test(k)), K.join(', '));
     }

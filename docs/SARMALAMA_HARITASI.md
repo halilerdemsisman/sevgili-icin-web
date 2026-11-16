@@ -38,14 +38,14 @@ Yükleme sırası: `senkron.js` → `tema-erken.js` → `temel.js` → `veri.js`
 
 | Ekran fonksiyonu | Tanım | Ekler (çağrılma sırasıyla) |
 |---|---|---|
-| `durumYaz` | veri.js:14 | `durumLimit` (temsilci-gorunurluk.js:25) → `durumYayinla` (bayi-hedef-prim.js:40) → `durumIslem` (temsilci-gorunurluk.js:37) → `durumNet` (odeme-bekleniyor.js:7) |
-| `ac` | oturum.js:15 | `acOnce` (temsilci-gorunurluk.js:17) → `acHatirlatma` (hatirlatmalar.js:71) → `acSonra` (temsilci-gorunurluk.js:18) → `masaustuIsler` (masaustu.js:125) |
-| `git` | gezinme.js:10 | `sayfa6` (yardimci.js:5) → `rozetler` (odeme-bildirimleri.js:48) → `hatirlatmaRozeti` (hatirlatmalar.js:66) |
+| `durumYaz` | veri.js:49 | `durumLimit` (temsilci-gorunurluk.js:25) → `durumYayinla` (bayi-hedef-prim.js:39) → `durumIslem` (temsilci-gorunurluk.js:37) → `durumNet` (odeme-bekleniyor.js:7) |
+| `ac` | oturum.js:15 | `acOnce` (temsilci-gorunurluk.js:17) → `acHatirlatma` (hatirlatmalar.js:70) → `acSonra` (temsilci-gorunurluk.js:18) → `masaustuIsler` (masaustu.js:125) |
+| `git` | gezinme.js:10 | `sayfa6` (yardimci.js:5) → `rozetler` (odeme-bildirimleri.js:48) → `hatirlatmaRozeti` (hatirlatmalar.js:65) |
 | `siparisAc` | siparisler.js:56 | `siparisFiyatUyarisi` (sunucu-oturum.js:39) |
 | `ayarlar` | ayarlar.js:3 | `ayarlarSunucu` (sunucu-oturum.js:48) |
-| `faturaKes` | cari.js:15 | `faturaIslem` (temsilci-gorunurluk.js:38) |
-| `urunler` | urunler.js:15 | `urunlerExcel` (fiyat-excel.js:45) |
-| `S6.ziyaret` | ziyaretler.js:4 | `gorur` (temsilci-gorunurluk.js:39) → `hatirlatmaYenile` (hatirlatmalar.js:68) |
+| `faturaKes` | cari.js:14 | `faturaIslem` (temsilci-gorunurluk.js:38) |
+| `urunler` | urunler.js:14 | `urunlerExcel` (fiyat-excel.js:45) |
+| `S6.ziyaret` | ziyaretler.js:4 | `gorur` (temsilci-gorunurluk.js:39) → `hatirlatmaYenile` (hatirlatmalar.js:67) |
 | `S6.panel` | gosterge-paneli.js:4 | `iadeListesi` (iadeler.js:35) |
 | `S6.kullanicilar6` | kullanicilar.js:4 | `islemListesi` (temsilci-gorunurluk.js:39) → `atamaVar` (temsilci-gorunurluk.js:39) → `kullanicilarSifre` (sunucu-oturum.js:21) |
 | `S6.tahsilat` | tahsilat.js:5 | `tahsilatSiparisler` (odeme-bekleniyor.js:10) |

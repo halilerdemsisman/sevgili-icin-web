@@ -3,7 +3,6 @@
   const mb = $('aside button.m[data-s=karne]') || $('aside button.m[data-s=musteriler]');
   if (mb && !$('aside button.m[data-s=bayihedef]')) mb.insertAdjacentHTML('afterend', `<button class="m" data-s="bayihedef"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>Bayi hedef ve prim <span class="say gizli"></span></button>`);
   const VARS = [{ oran: 80, prim: 1 }, { oran: 100, prim: 2 }, { oran: 120, prim: 3 }];
-  let BH = oku('exs-bayi-hedef', {});  // { kul: { yil: { hedef, basamak } } }, ortak basamak: BH._basamak[yil]
   const BF = { yil: new Date().getFullYear() };
   const basamak = y => ((BH._basamak || {})[y] || VARS).slice().sort((a, b) => a.oran - b.oran);
   const gercek = (kul, y) => Object.values(SIP).filter(o => o.kul === kul && o.durum !== 'iptal' && o.durum !== 'yeni' && new Date(o.tarih).getFullYear() === y).reduce((a, o) => a + tutarlar(o).net, 0);

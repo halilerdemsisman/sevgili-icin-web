@@ -5,7 +5,6 @@
   const kb = $('aside button.m[data-s=kampanyalar]');
   if (kb && !$('aside button.m[data-s=duyurular]')) kb.insertAdjacentHTML('afterend', dug('duyurular', 'duyuru', 'Duyurular'));
   // ---------- duyurular
-  let DY = oku('exs-duyuru', null) || oku('exb-duyuru', []) || [];
   const dyYaz = () => { yaz('exs-duyuru', DY); yaz('exb-duyuru', DY); };
   const TUR = { genel: 'Genel duyuru', urun: 'Yeni ürün', fiyat: 'Fiyat değişikliği', kampanya: 'Kampanya' };
   const dyDurum = d => { const b = new Date().toISOString().slice(0, 10); return d.aktif === false ? ['Pasif', 'iptal'] : d.bas && d.bas > b ? ['Planlandı', 'hazirlaniyor'] : d.bit && d.bit < b ? ['Süresi doldu', ''] : ['Yayında', 'gonderildi']; };

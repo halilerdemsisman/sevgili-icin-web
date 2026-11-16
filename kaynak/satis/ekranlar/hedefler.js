@@ -2,7 +2,6 @@
 // ---------- 10. hedef takibi
 const BOLGE = { 'Marmara': ['istanbul', 'kocaeli', 'bursa', 'tekirdağ', 'edirne', 'kırklareli', 'sakarya', 'yalova', 'bilecik', 'balıkesir', 'çanakkale'], 'Ege': ['izmir', 'aydın', 'muğla', 'manisa', 'denizli', 'uşak', 'kütahya', 'afyonkarahisar', 'afyon'], 'Akdeniz': ['antalya', 'mersin', 'adana', 'hatay', 'isparta', 'burdur', 'kahramanmaraş', 'osmaniye'], 'İç Anadolu': ['ankara', 'konya', 'kayseri', 'eskişehir', 'sivas', 'nevşehir', 'aksaray', 'niğde', 'kırşehir', 'kırıkkale', 'karaman', 'yozgat', 'çankırı'], 'Karadeniz': ['samsun', 'trabzon', 'ordu', 'rize', 'giresun', 'zonguldak', 'düzce', 'bolu', 'kastamonu', 'sinop', 'amasya', 'tokat', 'çorum', 'artvin', 'bartın', 'karabük', 'gümüşhane', 'bayburt'], 'Doğu Anadolu': ['erzurum', 'van', 'malatya', 'elazığ', 'erzincan', 'kars', 'ağrı', 'iğdır', 'ardahan', 'bingöl', 'muş', 'bitlis', 'tunceli', 'hakkari'], 'Güneydoğu Anadolu': ['gaziantep', 'şanlıurfa', 'diyarbakır', 'mardin', 'batman', 'siirt', 'şırnak', 'adıyaman', 'kilis'] };
 const bolgeBul = sehir => { const s = String(sehir || '').toLocaleLowerCase('tr').trim(); for (const [b, L] of Object.entries(BOLGE)) if (L.includes(s)) return b; return s ? 'Yurt dışı / diğer' : 'Belirsiz'; };
-let HDF = oku('exs-hedef', {});  // { 'YYYY-MM': { temsilci: {kul: tutar}, bolge: {ad: tutar} } }
 const ayAnahtar = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
 const temsilciOf = kul => (MUS[kul] || {}).temsilci || '';
 function hedefler() {

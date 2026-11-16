@@ -1,6 +1,5 @@
 // Ekran: kampanya ve sezon indirimleri.
 // ===== kampanya ve sezon indirimleri =====
-let KMP = oku('exs-kampanya', []);
 const kmpYaz = () => { yaz('exs-kampanya', KMP); yaz('exb-kampanya', KMP); };
 yaz('exb-kampanya', KMP);
 const bugun = () => new Date().toISOString().slice(0, 10);

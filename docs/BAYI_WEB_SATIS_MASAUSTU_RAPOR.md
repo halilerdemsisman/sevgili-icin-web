@@ -36,13 +36,13 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 2c | Bayi web sitesi: yayın | ✅ denetim: telefonda Lighthouse performansı 95–99, erişilebilirlik 100 (WCAG 2.1 AA) · kalan: alan adıyla pilot bayiler (alan adı ve VPS kararı bekleniyor) |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
 | 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
-| 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · ✅ adım 2: ekranlar ve özellikler ayrı dosyalarda · kalan: kod imzalama, Windows'ta pilot, tek veri modülü ve okumalar REST'e |
+| 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · ✅ adım 2: ekranlar ve özellikler ayrı dosyalarda · ✅ adım 3: tek veri modülü, iş verisi diskte değil · kalan: kod imzalama, Windows'ta pilot, okumalar REST'e |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı; 2c'nin denetim adımı bitti. 3b-2'nin ilk iki adımı (sarmalama zincirlerinin birleşmesi, dosyaların ekran ve özelliğe göre bölünmesi) bitti.
+Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı; 2c'nin denetim adımı bitti. 3b-2'nin ilk üç adımı (sarmalama zincirlerinin birleşmesi, dosyaların ekran ve özelliğe göre bölünmesi, tek veri modülü) bitti.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · Faz 2c denetim ✅ · 3b-2 adım 1–2 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve satış ekranlarının kalan adımları (tek veri modülü, okumalar REST'e); bayi sitesinde alan adıyla pilot (Faz 2c adım 2).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · Faz 2c denetim ✅ · 3b-2 adım 1–3 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve satış ekranlarında okumaların REST'e geçmesi; bayi sitesinde alan adıyla pilot (Faz 2c adım 2).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -122,7 +122,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ✅ 2b-2/3b-2 adım 1: sarmalama kalmadı; her ekran fonksiyonu eklerini kendi içinde çağırıyor, `araclar/sarmalama.mjs --denetle` testlerde |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 3b-2 (161 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 3b-2 (164 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -428,7 +428,7 @@ Kendi ölçümümüzde (yavaş 4G, 40 siparişli bayi) katalog ~2,9 sn yerine **
 | Testler | 158 test (önceki 151 + `testler/erisilebilirlik.test.js` 7): axe ile WCAG 2.1 A/AA (giriş, kayıt, 12 sayfa/pencere, telefon, koyu tema), etiket–alan bağı, karşılaştırma çubuğu, hız düzeni, girişli açılışta giriş formunun hiç görünmemesi. SQLite ve JSON depoyla geçiyor. `axe-core` geliştirme bağımlılığı (`npm install`) |
 
 Bilinçli olarak bırakılan (Lighthouse "iyi uygulamalar" 82):
-- Açılıştaki eşzamanlı veri isteği (`ortak/senkron.js`, iki uygulamada ortak): kaldırılması eşitleme katmanının açılışının değişmesini gerektirir; satışın tek veri modülüyle (3b-2) birlikte ele alınacak.
+- Açılıştaki eşzamanlı veri isteği (`ortak/senkron.js`, iki uygulamada ortak): kaldırılması eşitleme katmanının açılışının değişmesini gerektirir; satış okumalarının REST'e geçmesiyle (3b-2'nin son adımı) birlikte ele alınacak; tek veri modülü (adım 3) bunun için ekranları hazırladı.
 - Telefonda 12 pikselden küçük yazılar (kart rozetleri, küçük fiyat notları): tasarım kararı.
 - axe'in "en iyi uygulama" önerileri (bütün içeriğin bölge işaretleri içinde olması, uygulama içinde h1): WCAG ölçütü değil.
 
@@ -483,7 +483,7 @@ Bu sorunlar ekranlar yeniden yazılmadan, eşitleme katmanında ve sunucuda çö
 #### Faz 3b-2: Pilot ve satış ekranları (≈2 hafta, 2b-2 ile birlikte)
 1. Kod imzalama sertifikası (SmartScreen uyarısı kalksın); GitHub'a `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD` gizlileri.
 2. Pilot (`satis-masaustu/PILOT.md`): satış yöneticisi + 1 temsilci, Windows'ta kurulum ve bir güncelleme turu; sonra tüm ekip.
-3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir (✅ adım 1); dosyalar ekran ve özelliğe göre (✅ adım 2). Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur. Okumalar sayfa sayfa REST'e geçer.
+3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir (✅ adım 1); dosyalar ekran ve özelliğe göre (✅ adım 2). Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur (✅ adım 3). Okumalar sayfa sayfa REST'e geçer.
 
 #### Faz 3b-2 adım 2: Satış ekranları ve özellikleri ayrı dosyalarda ✅ tamamlandı
 Satış panelinin kaynağı, bayi portalında 2b-2'de yapıldığı gibi, sürüm adlı parçalardan (`03-ana.js` 112 KB, `22-ek6.js`, `25-ek8.js`, `18-v2.9-bayi-karnesi-excel-ile.js`…) ekran ve özellik dosyalarına bölündü.
@@ -496,6 +496,19 @@ Satış panelinin kaynağı, bayi portalında 2b-2'de yapıldığı gibi, sürü
 | Doğrulama | Bölmeden önce ve sonra 31 durumun (menüdeki 25 sayfa, sipariş penceresi, müşteri kartı, kampanya formu, hızlı arama, 1280×720 pencere, koyu tema) her öğesinin yapısı, metni ve hesaplanan stili karşılaştırıldı: fark yok, menü sırası aynı. ESLint ile birleşik betikte tanımsız ya da iki kez tanımlanan ad yok |
 | Bulunan hata | Ziyaret kaydına "sonraki görüşme" tarihi girilince oluşan hatırlatma, menüdeki Hatırlatmalar rozetine sayfa açılana kadar yansımıyordu (kod başka parçadaki yerel listeyi güncellemeye çalışıyor, yanlışlıkla genel bir değişken oluşturuyordu) |
 | Testler | 161 test (önceki 158 + `testler/satis-yapi.test.js` 3): dosya yapısı ve paketler, hata veren özelliğin diğerlerini durdurmaması, ziyaret hatırlatmasının rozete yansıması |
+
+#### Faz 3b-2 adım 3: Satışta tek veri modülü ✅ tamamlandı
+Satış ekranlarının bellekte tuttuğu veri (siparişler, müşteriler, iskonto, kur, cari, görüşmeler, fiyat, gizli ürünler, kampanya, onay ayarı, fiyat geçmişi ve sürümleri, bildirim, hedefler, hatırlatmalar, duyurular, fiyat grupları, bayi hedefleri) önceden on bir dosyada ayrı ayrı okunuyordu. Canlı güncelleme (`ozellikler/canli.js`) aynı listeyi bir kez daha tutuyordu ve bazı anahtarlar o listede yoktu.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Tek tablo | `cekirdek/veri.js`'teki `DEPO` tablosunda her satır bir anahtar, onu tutan değişken ve başlangıç değeri. Bu satış verisi başka hiçbir dosyada tanımlanmıyor. Canlı güncelleme aynı tablodan kuruluyor: başka bir kullanıcının değişikliği gelince sözlükler yerinde, listeler baştan güncelleniyor. Yeni bir kalıcı veri için tabloya bir satır eklemek yetiyor |
+| İş verisi diskte değil | Sunucudan açılan satış paneli (tarayıcı ve masaüstü uygulaması), oturum açıkken iş verisini tarayıcının kalıcı alanına (localStorage) yazmıyor; veri yalnız bellekte duruyor ve pencere kapanınca kalmıyor. Eşitleme ucu satışta değişmedi (kayıt düzeyinde yama, koşullu yazma aynı). Giriş ekranında tarayıcıdaki eski veriye dokunulmuyor: yöneticinin ilk girişinde sunucuya aktarılıyor, sonra diskten siliniyor. Dosyadan açılan tek dosyalık sürüm eskisi gibi çalışıyor. Masaüstünde bağlantı yokken gösterilen son görülen listeler ayrı ve şifreli tutuluyor, değişmedi |
+| Bulunan hata | Duyurular, fiyat grupları ve bayi hedefleri ekran açılışında bir kez okunuyordu. Başka bir kullanıcı bunları değiştirince sayfa yenileniyor ama eski hâli çiziliyordu; bu arada kaydedilen bir değişiklik diğer kullanıcının değişikliğini geri alabiliyordu. Artık tablodalar ve yerinde güncelleniyorlar |
+| Doğrulama | 31 ekran durumunun yapı, metin ve stil görüntüsü adım 2 ile aynı (tek fark saatin saniyesi). ESLint ile birleşik betikte tanımsız ya da iki kez tanımlanan ad yok |
+| Testler | 164 test (`testler/satis-yapi.test.js` +3): bellekteki verinin yalnız veri modülünde tanımlı olması, iş verisinin diskte tutulmaması, başka kullanıcının duyuru değişikliğinin sayfa yenilenmeden gelmesi. Eski verinin ilk girişte aktarılması `gecis.test.js`'te |
+
+Sıradaki adım, satış ekranlarında okumaların sayfa sayfa REST'e geçmesi. Bayi sitesinde 2b-2'de yapıldığı gibi açılıştaki eşzamanlı veri isteği de bu adımda kalkacak.
 
 Kabul (Faz 3 geneli):
 - Faz 0 testlerinin satış kısmı geçiyor ✅.
@@ -566,7 +579,7 @@ Yollar `kaynak/` klasörüne göredir.
 | Senkron katmanı (iki uygulamada aynı) | `ortak/senkron.js` |
 | Şifre özeti `ozet()` (sunucusuz sürüm) | `bayi/cekirdek/oturum.js`, `satis/cekirdek/temel.js` |
 | Oturum (`sessionStorage`) | `bayi/cekirdek/oturum.js`, `satis/cekirdek/oturum.js` (sunucuda: `satis/ozellikler/sunucu-oturum.js`) |
-| Satış verisi ve canlı güncelleme | `satis/cekirdek/veri.js`, `satis/cekirdek/cari.js`, `satis/ozellikler/canli.js` |
+| Satış verisi ve canlı güncelleme | `satis/cekirdek/veri.js` (tek tablo: `DEPO`), `satis/ozellikler/canli.js`; bellek kipi `ortak/senkron.js` |
 | Kayıt ekleme/güncelleme (numara sunucuda; sunucusuz sürümde `yerelNo`) | `bayi/cekirdek/temel.js` |
 | Ödeme bildirimi / dekont | `bayi/ozellikler/odeme-bildirimi.js` |
 | İade/şikâyet ve fotoğraf küçültme | `bayi/ozellikler/belgeler.js` |

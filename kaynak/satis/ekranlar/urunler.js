@@ -1,6 +1,5 @@
 // Ekran: ürün ve fiyat yönetimi (bayi portalını yönetir).
 // ===== ürün ve fiyat yönetimi (bayi portalını yönetir) =====
-let FIYAT = oku('exs-fiyat', {}), GIZLI = oku('exs-gizli', []);
 // fiyat ve görünürlüğü kaydeder, bayi portalına yayınlar (değişikliği geçmişe yazan: urunYaz)
 const fiyatYayinla = () => { yaz('exs-fiyat', FIYAT); yaz('exb-fiyat', FIYAT); yaz('exs-gizli', GIZLI); yaz('exb-gizli', GIZLI); };
 fiyatYayinla();

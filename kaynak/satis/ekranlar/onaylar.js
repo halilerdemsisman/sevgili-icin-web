@@ -1,6 +1,5 @@
 // Ekran: onay bekleyenler.
 // ---------- 9. onay akışı
-let ONAY = oku('exs-onay-ayar', { iskonto: 15, tutar: 25000 });
 // Onay kuralı v2.7'de kaldırıldı (sadeleştirme): hiçbir sipariş yönetici onayına takılmaz. Kural ayarı (ONAY) ve
 // eski kayıtlar için "Onay bekleyenler" ekranı korunur.
 function onayGerekli() { return []; }
