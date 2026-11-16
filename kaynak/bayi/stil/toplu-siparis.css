@@ -1,0 +1,8 @@
+/* Toplu sipariş (Excel/CSV) ve kalem bazında termin */
+.c-toplu{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 20px;border-bottom:1px solid var(--cizgi);background:var(--yuzey2,#f8fafc);font-size:12px}
+.c-toplu b{margin-right:auto;font-size:12.5px}
+.c-toplu .btn{padding:6px 10px;font-size:12px}
+.c-termin{display:flex;justify-content:space-between;font-size:13px;margin:6px 0 10px;padding:8px 10px;border-radius:8px;background:#e7f6ee;color:#065f46}
+.c-termin.u{background:#fff7ed;color:#9a3412}
+[data-tema=koyu] .c-termin{background:#063b2c;color:#a7f3d0}
+[data-tema=koyu] .c-termin.u{background:#3b2410;color:#fed7aa}

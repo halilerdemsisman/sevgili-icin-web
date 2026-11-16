@@ -1,0 +1,22 @@
+/* Belgelerim ve iade/şikâyet */
+.bg-sek{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 16px}
+.bg-sek button{padding:8px 14px;border-radius:20px;border:1px solid var(--cizgi);background:#fff;cursor:pointer;font-weight:600;font-size:13px}
+.bg-sek button.on{background:var(--marka);color:#fff;border-color:var(--marka)}
+.bg-tab{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;font-size:13px}
+.bg-tab th,.bg-tab td{padding:10px 12px;border-bottom:1px solid var(--cizgi);text-align:left}
+.bg-tab th{font-size:11.5px;color:var(--soluk);text-transform:uppercase}
+.bg-tab .sag{text-align:right}
+.iade-d{padding:3px 9px;border-radius:12px;font-size:11.5px;font-weight:700}
+.iade-yeni{background:#e0f2fe;color:#075985}
+.iade-inceleme{background:#fef3c7;color:#92400e}
+.iade-onay{background:#dcfce7;color:#166534}
+.iade-red{background:#fee2e2;color:#991b1b}
+.iade-cozuldu{background:#e2e8f0;color:#334155}
+.ia-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ia-form label{font-size:12px;font-weight:600;display:block;margin-bottom:4px}
+.ia-form select,.ia-form input,.ia-form textarea{width:100%;box-sizing:border-box;padding:9px;border:1px solid var(--cizgi);border-radius:9px;font:inherit}
+.ia-tam{grid-column:1/-1}
+.ia-foto{display:flex;gap:6px;flex-wrap:wrap}
+.ia-foto img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--cizgi)}
+@media(max-width:640px){.bg-tab th:nth-child(3),.bg-tab td:nth-child(3){display:none}.bg-tab td b{white-space:nowrap}.bg-tab td .kucuk{display:none}}
+@media(max-width:640px){.ia-form{grid-template-columns:1fr}.bg-tab{font-size:12px}.bg-tab th,.bg-tab td{padding:8px 6px}}

@@ -1,0 +1,11 @@
+/* Müşteri kataloğu */
+.mk-p .pencere{max-width:640px;display:block;padding:24px}
+.mk-f input,.mk-f select{width:100%;padding:8px 10px;border:1px solid var(--cizgi);border-radius:8px;background:var(--girdi,#fff);color:var(--yazi);font-size:13px;box-sizing:border-box}
+.mk-f label{font-size:12px;font-weight:600;color:var(--yazi2,#475569);display:block;margin-bottom:3px}
+.mk-f{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mk-f .g{grid-column:1/-1}
+.mk-logo{display:flex;gap:10px;align-items:center}
+.mk-logo img{max-height:46px;max-width:140px;border:1px solid var(--cizgi);border-radius:6px;padding:4px;background:#fff}
+.mk-f .sec{display:flex;gap:14px;flex-wrap:wrap;font-size:13px}
+.mk-f .sec label{font-weight:400;color:var(--yazi);display:flex;gap:5px;align-items:center;margin:0}
+@media (max-width:700px){.mk-f{grid-template-columns:1fr}}

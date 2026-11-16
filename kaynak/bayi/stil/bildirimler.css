@@ -1,0 +1,7 @@
+/* Bildirimler */
+.bl-say{position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#dc2626;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px}
+#bnPanel{position:fixed;top:70px;right:16px;width:min(380px,calc(100vw - 32px));max-height:70vh;overflow:auto;background:#fff;border:1px solid var(--cizgi);border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.18);z-index:900}
+#bnPanel .bn-ust{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--cizgi);position:sticky;top:0;background:#fff}
+#bnPanel .bn{padding:10px 14px;border-bottom:1px solid var(--cizgi);cursor:pointer;font-size:13px}
+#bnPanel .bn.yeni{background:#fff7e6}
+#bnPanel .bn small{color:var(--soluk);display:block;margin-top:2px}

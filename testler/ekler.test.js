@@ -18,7 +18,7 @@ function ekTanimlari(klasorler) {
   }
   return T;
 }
-const BAYI_EK = ekTanimlari(['bayi/parcalar']), WEB_EK = ekTanimlari(['web']);
+const BAYI_EK = ekTanimlari(['bayi/cekirdek', 'bayi/ekranlar', 'bayi/ozellikler']), WEB_EK = ekTanimlari(['web']);
 
 test('sarmalama kalmadı; her çağrılan ekin tanımı var (araclar/sarmalama.mjs --denetle)', () => {
   const r = require('node:child_process').spawnSync(process.execPath, [path.join(KOK, 'araclar', 'sarmalama.mjs'), '--denetle'], { encoding: 'utf8' });

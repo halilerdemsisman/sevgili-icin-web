@@ -8,7 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>{{dahil ortak/tema-erken.js}}</script>
 <title>EXIT Garden · Bayi Sipariş</title>
-<style>{{dahil bayi/parcalar/02-ana.css}}</style>
+<style>{{dahil bayi/stil/ana.css}}</style>
 </head>
 <body>
 
@@ -188,8 +188,21 @@
   </div><div class="alt"><span>© 2026 BG Group · EXIT Innovative Solutions. Tüm hakları saklıdır.</span><span>Bayi Portalı v2.0</span></div></footer>
 </div>
 
-<script>{{dahil bayi/parcalar/03-ana.js}}</script>
-<style>{{dahil bayi/parcalar/04-v2.3-kurumsal-giris.css}}</style>
+<!-- Çekirdek ve ekranlar: dosyalar tek betikte çalışır (fonksiyonlar birbirini görür); web sitesinde tek dosya -->
+<!-- paket: cekirdek -->
+<script>{{dahil bayi/cekirdek/temel.js}}</script>
+<script>{{dahil bayi/cekirdek/fiyat.js}}</script>
+<script>{{dahil bayi/cekirdek/oturum.js}}</script>
+<script>{{dahil bayi/ekranlar/gezinme.js}}</script>
+<script>{{dahil bayi/ekranlar/katalog.js}}</script>
+<script>{{dahil bayi/ekranlar/urun.js}}</script>
+<script>{{dahil bayi/ekranlar/sepet.js}}</script>
+<script>{{dahil bayi/ekranlar/siparisler.js}}</script>
+<script>{{dahil bayi/ekranlar/cari.js}}</script>
+<script>{{dahil bayi/ekranlar/teknik.js}}</script>
+<script>{{dahil bayi/cekirdek/baslangic.js}}</script>
+
+<style>{{dahil bayi/stil/giris-kurumsal.css}}</style>
 <script>{{dahil ortak/giris-ikonlari.js}}</script>
 
 <style>{{dahil ortak/v2.4-sade-giris.css}}</style>
@@ -201,40 +214,67 @@
 <style>{{dahil ortak/v2.6-logo-animasyonu.css}}</style>
 <script>{{dahil ortak/v2.6-logo-animasyonu.js}}</script>
 
-<style>{{dahil bayi/parcalar/12-v2.6-hizli-siparis-stok-termin.css}}</style>
-<script>{{dahil bayi/parcalar/13-ortak-excel-xlsx-csv-okuma.js}}</script>
+<!-- Özelliklerin görünümü (sıra önemli: sonraki kural öncekini ezer) -->
+<!-- paket: ozellikler-stil -->
+<style>{{dahil bayi/stil/favoriler.css}}</style>
+<style>{{dahil bayi/stil/toplu-siparis.css}}</style>
+<style>{{dahil bayi/stil/tekrar-siparis.css}}</style>
+<style>{{dahil bayi/stil/formlar.css}}</style>
+<style>{{dahil bayi/stil/dil.css}}</style>
+<style>{{dahil bayi/stil/projeler.css}}</style>
+<style>{{dahil bayi/stil/renk-onizleme.css}}</style>
+<style>{{dahil bayi/stil/duyurular.css}}</style>
+<style>{{dahil bayi/stil/ust-cubuk.css}}</style>
+<style>{{dahil bayi/stil/karsilastirma.css}}</style>
+<style>{{dahil bayi/stil/set-olusturucu.css}}</style>
+<style>{{dahil bayi/stil/hatirlatmalar.css}}</style>
+<style>{{dahil bayi/stil/hedef-prim.css}}</style>
+<style>{{dahil bayi/stil/adres-defteri.css}}</style>
+<style>{{dahil bayi/stil/musteri-katalogu.css}}</style>
+<style>{{dahil bayi/stil/bildirimler.css}}</style>
+<style>{{dahil bayi/stil/sik-alinanlar.css}}</style>
+<style>{{dahil bayi/stil/belgeler.css}}</style>
+<style>{{dahil bayi/stil/kredi-limiti.css}}</style>
+<style>{{dahil bayi/stil/siparis-talep.css}}</style>
+<style>{{dahil bayi/stil/ozel-teklif.css}}</style>
+<style>{{dahil bayi/stil/online-odeme.css}}</style>
+<style>{{dahil bayi/stil/siparis-odeme.css}}</style>
 
-<style>{{dahil bayi/parcalar/14-v2.6-dil-secimi-tr-en.css}}</style>
+<!-- Özellikler: her biri kendi dosyasında; ekranlara EK.<ad> ile bağlanır (docs/SARMALAMA_HARITASI.md) -->
+<!-- paket: ozellikler -->
+<script>{{dahil bayi/ozellikler/yardimci.js}}</script>
+<script>{{dahil bayi/ozellikler/excel-csv.js}}</script>
+<script>{{dahil bayi/ozellikler/stok-termin.js}}</script>
+<script>{{dahil bayi/ozellikler/favoriler.js}}</script>
+<script>{{dahil bayi/ozellikler/tekrar-siparis.js}}</script>
+<script>{{dahil bayi/ozellikler/toplu-siparis.js}}</script>
 <script>{{dahil bayi/ozellikler/dil.js}}</script>
-
-<script>{{dahil bayi/parcalar/16-v2.6-telefona-kurulum-pwa-yalniz.js}}</script>
-<style>{{dahil bayi/parcalar/17-v2.8-proje-sepetleri-renk-onizleme.css}}</style>
-<script>{{dahil bayi/parcalar/18-v2.8-proje-sepetleri-renk-onizleme.js}}</script>
-
-<style>{{dahil bayi/parcalar/19-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.css}}</style>
-<script>{{dahil bayi/parcalar/20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js}}</script>
-
-<style>{{dahil bayi/parcalar/21-v3.0-hedef-prim-musteri-katalogu.css}}</style>
-<script>{{dahil bayi/parcalar/22-v3.0-hedef-prim-musteri-katalogu.js}}</script>
-
-<style>{{dahil bayi/parcalar/24-ek6.css}}</style>
-<script>{{dahil bayi/parcalar/25-ek6.js}}</script>
-<style>{{dahil bayi/parcalar/26-ek7.css}}</style>
-<script>{{dahil bayi/parcalar/27-ek7.js}}</script>
-<style>{{dahil bayi/parcalar/28-ek8.css}}</style>
+<script>{{dahil bayi/ozellikler/pwa.js}}</script>
+<script>{{dahil bayi/ozellikler/projeler.js}}</script>
+<script>{{dahil bayi/ozellikler/duyurular.js}}</script>
+<script>{{dahil bayi/ozellikler/odeme-bildirimi.js}}</script>
+<script>{{dahil bayi/ozellikler/numune.js}}</script>
+<script>{{dahil bayi/ozellikler/karsilastirma.js}}</script>
+<script>{{dahil bayi/ozellikler/set-olusturucu.js}}</script>
+<script>{{dahil bayi/ozellikler/hatirlatmalar.js}}</script>
+<script>{{dahil bayi/ozellikler/hedef-prim.js}}</script>
+<script>{{dahil bayi/ozellikler/adres-defteri.js}}</script>
+<script>{{dahil bayi/ozellikler/musteri-katalogu.js}}</script>
+<script>{{dahil bayi/ozellikler/belgeler.js}}</script>
+<script>{{dahil bayi/ozellikler/bildirimler.js}}</script>
+<script>{{dahil bayi/ozellikler/sik-alinanlar.js}}</script>
+<script>{{dahil bayi/ozellikler/kredi-limiti.js}}</script>
+<script>{{dahil bayi/ozellikler/siparis-talep.js}}</script>
 <script>{{dahil ortak/renk-onizleme.js}}</script>
 <script>{{dahil bayi/ozellikler/renk-onizleme.js}}</script>
-<!-- ek9: ürün fotoğrafı üzerinde gerçek renk değişimi (bölge maskeli) -->
-<style>.r-onizle:has(.r-foto) .on-izg.tek{display:none}.r-foto{position:relative;margin:6px 0 10px;border-radius:10px;overflow:hidden;background:#fff}.r-foto canvas{width:100%;display:block}.r-foto .n{position:absolute;left:8px;bottom:6px;font-size:11px;background:rgba(0,0,0,.55);color:#fff;padding:2px 7px;border-radius:8px}</style>
-<!-- ek10: bayiye özel ödeme linki ve takım (masa + sandalye) özel teklif talebi -->
-<style>{{dahil bayi/parcalar/32-ek10.css}}</style>
-<script>{{dahil bayi/parcalar/33-ek10.js}}</script>
-<!-- ek11: onaylanan siparişte iskontolu net tutarla "Ödeme bekleniyor" ve siparişe özel ödeme -->
-<style>.sk-ode{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:12px 14px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}.sk-ode.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}.sk-ode b{font-size:16px}.sk-ode .btn{margin-left:auto}</style>
-<script>{{dahil bayi/parcalar/35-ek11.js}}</script>
-<!-- ek12 (Faz 1a): giriş, kayıt ve çıkış sunucu üzerinden -->
-<script>{{dahil bayi/parcalar/36-ek12-sunucu-oturum.js}}</script>
+<script>{{dahil bayi/ozellikler/online-odeme.js}}</script>
+<script>{{dahil bayi/ozellikler/ozel-teklif.js}}</script>
+<script>{{dahil bayi/ozellikler/siparis-odeme.js}}</script>
+<script>{{dahil bayi/ozellikler/sunucu-oturum.js}}</script>
+
+<!-- Yalnız web sitesi: menü düzeni ve sayfa adresleri -->
 <style>{{web web/duzen.css}}</style>
+<!-- paket: web -->
 <script>{{web web/duzen.js}}</script>
 <script>{{web web/adres.js}}</script>
 </body>

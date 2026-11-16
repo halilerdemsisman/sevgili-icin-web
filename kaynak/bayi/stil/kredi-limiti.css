@@ -1,0 +1,4 @@
+/* Kredi limiti kartı */
+.lm-kart{border:1px solid var(--cizgi);border-radius:14px;padding:14px 16px;background:#fff;margin:14px 0}
+.lm-bar{height:10px;border-radius:5px;background:#eef2f7;overflow:hidden;margin:8px 0}
+.lm-bar i{display:block;height:100%;border-radius:5px}

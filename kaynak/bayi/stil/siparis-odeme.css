@@ -1,0 +1,5 @@
+/* Sipariş kartında ödeme durumu */
+.sk-ode{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:12px 14px;border-radius:10px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412}
+.sk-ode.ok{background:#f0fdf4;border-color:#bbf7d0;color:#166534}
+.sk-ode b{font-size:16px}
+.sk-ode .btn{margin-left:auto}

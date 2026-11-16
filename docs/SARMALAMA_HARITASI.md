@@ -14,23 +14,23 @@ içinde uygun yere `EK.yeniAd?.(…)` çağrısını yazın. Ekran fonksiyonunu 
 
 ## Bayi portalı
 
-Yükleme sırası: `erken.js` → `senkron.js` → `veri.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `13-ortak-excel-xlsx-csv-okuma.js` → `dil.js` → `16-v2.6-telefona-kurulum-pwa-yalniz.js` → `18-v2.8-proje-sepetleri-renk-onizleme.js` → `20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js` → `22-v3.0-hedef-prim-musteri-katalogu.js` → `25-ek6.js` → `27-ek7.js` → `renk-onizleme.js` → `renk-onizleme.js` → `33-ek10.js` → `35-ek11.js` → `36-ek12-sunucu-oturum.js` → `duzen.js` → `adres.js`
+Yükleme sırası: `erken.js` → `senkron.js` → `veri.js` → `tema-erken.js` → `temel.js` → `fiyat.js` → `oturum.js` → `gezinme.js` → `katalog.js` → `urun.js` → `sepet.js` → `siparisler.js` → `cari.js` → `teknik.js` → `baslangic.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `yardimci.js` → `excel-csv.js` → `stok-termin.js` → `favoriler.js` → `tekrar-siparis.js` → `toplu-siparis.js` → `dil.js` → `pwa.js` → `projeler.js` → `duyurular.js` → `odeme-bildirimi.js` → `numune.js` → `karsilastirma.js` → `set-olusturucu.js` → `hatirlatmalar.js` → `hedef-prim.js` → `adres-defteri.js` → `musteri-katalogu.js` → `belgeler.js` → `bildirimler.js` → `sik-alinanlar.js` → `kredi-limiti.js` → `siparis-talep.js` → `renk-onizleme.js` → `renk-onizleme.js` → `online-odeme.js` → `ozel-teklif.js` → `siparis-odeme.js` → `sunucu-oturum.js` → `duzen.js` → `adres.js`
 
 | Ekran fonksiyonu | Tanım | Ekler (çağrılma sırasıyla) |
 |---|---|---|
-| `girisYap` | 03-ana.js:145 | `girisDuyuru` (18-v2.8-proje-sepetleri-renk-onizleme.js:96) → `girisHatirlatma` (20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:210) → `girisAdres` (adres.js:127) |
-| `uygun` | 03-ana.js:162 | `favoriUygun` (13-ortak-excel-xlsx-csv-okuma.js:92) |
-| `katalog` | 03-ana.js:183 | `katalogFavori` (13-ortak-excel-xlsx-csv-okuma.js:95) → `katalogDuyuru` (18-v2.8-proje-sepetleri-renk-onizleme.js:87) → `katalogKarsilastirma` (20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:69) → `katalogAdres` (adres.js:37) |
-| `urunAc` | 03-ana.js:240 | `urunFavoriStok` (13-ortak-excel-xlsx-csv-okuma.js:121) → `urunRenkOnizleme` (renk-onizleme.js:9) → `urunNumune` (18-v2.8-proje-sepetleri-renk-onizleme.js:144) → `urunKarsilastir` (20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:70) → `urunOzelTeklif` (33-ek10.js:88) → `urunAdres` (adres.js:46) |
-| `sepetKaydet` | 03-ana.js:332 | `hatirlatmaRozeti` (20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:214) |
-| `siparisDosyasi` | 03-ana.js:367 | `siparisProje` (18-v2.8-proje-sepetleri-renk-onizleme.js:68) → `siparisTahminiTeslim` (13-ortak-excel-xlsx-csv-okuma.js:236) |
-| `siparisKarti` | 03-ana.js:399 | `siparisKartiTahmin` (13-ortak-excel-xlsx-csv-okuma.js:169) → `siparisKartiProje` (18-v2.8-proje-sepetleri-renk-onizleme.js:73) → `siparisKartiOdeme` (35-ek11.js:11) |
-| `siparislerim` | 03-ana.js:415 | `siparislerTekrar` (13-ortak-excel-xlsx-csv-okuma.js:164) → `siparislerNumune` (18-v2.8-proje-sepetleri-renk-onizleme.js:170) → `siparislerSikAlinan` (25-ek6.js:147) → `siparislerTalep` (27-ek7.js:38) |
-| `cariSayfa` | 03-ana.js:449 | `cariOdemeBildirimi` (18-v2.8-proje-sepetleri-renk-onizleme.js:131) → `cariHedef` (22-v3.0-hedef-prim-musteri-katalogu.js:23) → `cariAdresler` (22-v3.0-hedef-prim-musteri-katalogu.js:63) → `cariLimit` (25-ek6.js:155) → `cariOnlineOdeme` (33-ek10.js:40) |
-| `git` | 03-ana.js:463 | `projeler` (18-v2.8-proje-sepetleri-renk-onizleme.js:20) → `belgeler` (25-ek6.js:72) → `odemeSayfa` (33-ek10.js:17) → `teklifSayfa` (33-ek10.js:17) → `karsilastirmaCubugu` (20-v2.9-karsilastirma-set-olusturucu-hatirlatmalar.js:78) → `gitAdres` (adres.js:28) |
-| `katalogIndir` | 03-ana.js:480 | `katalogIndirDil` (dil.js:112) |
+| `girisYap` | oturum.js:34 | `girisKarsilama` (sunucu-oturum.js:8) → `girisDuyuru` (duyurular.js:23) → `girisHatirlatma` (hatirlatmalar.js:65) → `girisAdres` (adres.js:127) |
+| `git` | gezinme.js:5 | `projeler` (projeler.js:15) → `belgeler` (belgeler.js:18) → `odemeSayfa` (online-odeme.js:12) → `teklifSayfa` (ozel-teklif.js:18) → `karsilastirmaCubugu` (karsilastirma.js:74) → `gitAdres` (adres.js:28) |
+| `uygun` | katalog.js:4 | `favoriUygun` (favoriler.js:10) |
+| `katalog` | katalog.js:25 | `katalogFavori` (favoriler.js:13) → `katalogDuyuru` (duyurular.js:15) → `katalogNumune` (numune.js:15) → `katalogKarsilastirma` (karsilastirma.js:65) → `katalogAdres` (adres.js:37) |
+| `urunAc` | urun.js:12 | `urunFavoriStok` (favoriler.js:39) → `urunRenkOnizleme` (renk-onizleme.js:9) → `urunNumune` (numune.js:9) → `urunKarsilastir` (karsilastirma.js:66) → `urunOzelTeklif` (ozel-teklif.js:59) → `urunAdres` (adres.js:46) |
+| `sepetKaydet` | sepet.js:4 | `hatirlatmaRozeti` (hatirlatmalar.js:68) |
+| `siparisDosyasi` | sepet.js:39 | `siparisProje` (projeler.js:63) → `siparisTahminiTeslim` (stok-termin.js:26) |
+| `siparisKarti` | siparisler.js:16 | `siparisKartiTahmin` (stok-termin.js:22) → `siparisKartiProje` (projeler.js:68) → `siparisKartiOdeme` (siparis-odeme.js:11) |
+| `siparislerim` | siparisler.js:32 | `siparislerTekrar` (tekrar-siparis.js:19) → `siparislerNumune` (numune.js:39) → `siparislerSikAlinan` (sik-alinanlar.js:15) → `siparislerTalep` (siparis-talep.js:38) |
+| `cariSayfa` | cari.js:9 | `cariOdemeBildirimi` (odeme-bildirimi.js:37) → `cariHedef` (hedef-prim.js:20) → `cariAdresler` (adres-defteri.js:43) → `cariLimit` (kredi-limiti.js:7) → `cariOnlineOdeme` (online-odeme.js:35) |
+| `katalogIndir` | teknik.js:9 | `katalogIndirDil` (dil.js:112) |
 
-Toplam: 11 ekran fonksiyonu, 36 ek. Kalan sarmalama: yok.
+Toplam: 11 ekran fonksiyonu, 41 ek. Kalan sarmalama: yok.
 
 ## Satış paneli
 

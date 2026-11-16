@@ -1,0 +1,34 @@
+/* Ürün karşılaştırma */
+.kr-sec{position:absolute;left:10px;bottom:10px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.95);border:1px solid #e2e8f0;border-radius:20px;padding:5px 10px 5px 7px;font-size:11.5px;font-weight:600;color:#334155;cursor:pointer;box-shadow:0 2px 8px rgba(15,23,42,.12)}
+.kr-sec i{width:14px;height:14px;border:2px solid #94a3b8;border-radius:4px;display:inline-block;position:relative}
+.kr-sec.on{background:#111827;color:#fff;border-color:#111827}
+.kr-sec.on i{border-color:#fff;background:#fff}
+.kr-sec.on i::after{content:'';position:absolute;left:3px;top:0;width:4px;height:8px;border:solid #111827;border-width:0 2px 2px 0;transform:rotate(45deg)}
+#krBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;background:#111827;color:#fff;border-radius:14px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.3);max-width:calc(100vw - 32px)}
+#krBar .k-th{display:flex;gap:6px}
+#krBar .k-th span{width:38px;height:38px;border-radius:8px;background:#374151 center/cover;display:block;position:relative}
+#krBar .k-th span b{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;background:#ef4444;color:#fff;font-size:11px;line-height:18px;text-align:center;cursor:pointer}
+#krBar .btn{padding:8px 12px;font-size:13px}
+#krBar .btn.cizgi{background:transparent;color:#e5e7eb;border-color:#4b5563}
+#krBar .yz{font-size:12.5px;white-space:nowrap}
+.kr-p .pencere{max-width:1180px;display:block;padding:24px;width:100%}
+.kr-tb{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;table-layout:fixed}
+.kr-tb th{width:150px;text-align:left;font-size:12px;color:var(--yazi2,#475569);font-weight:600;vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--cizgi)}
+.kr-tb td{vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--cizgi)}
+.kr-tb tr.fark td{background:rgba(250,204,21,.12)}
+.kr-tb .f{height:150px;border-radius:10px;background:var(--yuzey2,#f1f5f9) center/contain no-repeat;margin-bottom:8px}
+.kr-tb .u-ad{display:flex;justify-content:space-between;gap:6px;align-items:flex-start}
+.kr-tb .u-ad b{font-size:15px}
+.kr-tb .u-ad button{border:0;background:none;color:var(--soluk,#94a3b8);font-size:18px;cursor:pointer;line-height:1}
+.kr-tb .eniyi{display:inline-block;font-size:10.5px;font-weight:700;background:#dcfce7;color:#166534;border-radius:20px;padding:1px 8px;margin-left:6px}
+.kr-tb ul{margin:0;padding-left:16px}
+.kr-tb li{margin:2px 0}
+.kr-tb .sec-l div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--cizgi);padding:3px 0}
+.kr-ust{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.kr-kay{overflow-x:auto}
+.kr-pbtn{margin-left:8px;font-size:12px;padding:6px 10px;vertical-align:middle}
+[data-tema=koyu] .kr-sec{background:rgba(17,24,39,.92);border-color:#374151;color:#e5e7eb}
+[data-tema=koyu] .kr-tb .eniyi{background:#064e3b;color:#a7f3d0}
+@media (max-width:900px){.kr-tb th{width:96px}}
+@media print{#krBar{display:none!important}}
+body:has(.perde) #krBar{display:none}

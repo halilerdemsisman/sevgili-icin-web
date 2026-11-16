@@ -1,0 +1,7 @@
+/* Üst çubuk: eklerin düğmeleri sığmazsa kısaltma (tek dosyalık sürüm; web sitesinde web/duzen.css) */
+header .logolar,header .logolar svg{flex:none}
+@media (max-width:1560px){header .h-btn{padding:9px 8px;gap:5px}header .ara{min-width:150px}}
+@media (max-width:1280px){header .h-btn[data-git=projeler] .y,header #hSepet .y{display:none}}
+@media (max-width:1700px){#hHat .y{display:none}}
+@media(max-width:1280px){header .h-btn[data-git=belgeler] .y{display:none}}
+@media(max-width:640px){header .h-sag{gap:0;overflow-x:auto;max-width:100%;scrollbar-width:none}header .h-sag::-webkit-scrollbar{display:none}header .h-btn{padding:8px 7px;flex:none}}

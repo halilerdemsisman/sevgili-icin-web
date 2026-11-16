@@ -32,7 +32,7 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 1b-2 | Veritabanı ve REST API | SQLite, kredi limiti sunucuda, anlık bildirim, yapay zekâ anahtarı sunucuda, REST v1; Faz 2–3'ün temeli |
 | 2a | Bayi web sitesi: temel | Ayrı dosyalar + WebP, sayfa adresleri, yeni menü ve telefon düzeni, XSS denetimi |
 | 2b-1 | Bayi web sitesi: veri | Kayıtlar REST ile (numara, fiyat sunucuda, sonuç beklenir), iş verisi tarayıcıda saklanmaz, çevrimdışı sipariş engeli |
-| 2b-2 | Bayi web sitesi: ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · ✅ adım 2a: okumalar REST'ten · kalan: parçaların özelliğe göre bölünmesi, renk önizleme ortak modülde, TR/EN dosyaları |
+| 2b-2 | Bayi web sitesi: ekranlar | ✅ sarmalama zincirleri birleşti · okumalar REST'ten · ekranlar ve özellikler ayrı dosyalarda · renk önizleme ortak modülde · İngilizce çeviriler dosyada |
 | 2c | Bayi web sitesi: yayın | Erişilebilirlik ve Lighthouse denetimi, alan adıyla pilot bayiler |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
 | 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
@@ -40,9 +40,9 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1, 3a ve 3b-1 tamamlandı. 2b-2 ve 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) ve bayi sitesinde okumaların REST'e geçmesi (2b-2 adım 2a) bitti.
+Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı. 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) bitti.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · 2b-2/3b-2 adım 1 ✅ · 2b-2 adım 2a ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve ekranların kalan adımları (bayi: parçaların özelliğe göre bölünmesi, renk önizleme, TR/EN; satış: tek veri modülü ve okumalar REST'e).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · 3b-2 adım 1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve satış ekranlarının kalan adımları (tek veri modülü, okumalar REST'e, dosyaların özelliğe göre bölünmesi); bayi sitesinde Faz 2c (erişilebilirlik, Lighthouse, alan adıyla pilot).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -122,7 +122,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ✅ 2b-2/3b-2 adım 1: sarmalama kalmadı; her ekran fonksiyonu eklerini kendi içinde çağırıyor, `araclar/sarmalama.mjs --denetle` testlerde |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-2 adım 2a (145 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2b-2 (151 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -201,9 +201,9 @@ Faz 0 sonunda repo (✅ = var, ⏳ = ilgili fazda eklenecek):
 
 ```
 uretim_planlama/
-├── kaynak/            ✅ Bugünkü uygulamaların kaynağı: bayi/ ve satis/ (sablon.html + parcalar/),
-│                         ortak/ (iki uygulamada aynı 9 blok), web/ (Faz 2a: yalnız web sitesine giren
-│                         düzen, adres ve service worker dosyaları + PWA dosyaları)
+├── kaynak/            ✅ Uygulamaların kaynağı: bayi/ (2b-2: cekirdek/, ekranlar/, ozellikler/, stil/, dil/en.json),
+│                         satis/ (sablon.html + parcalar/), ortak/ (iki uygulamada ortak bloklar, renk önizleme
+│                         motoru), web/ (yalnız web sitesine giren veri, düzen, adres, service worker, PWA dosyaları)
 ├── katalog/           ✅ urunler.json, gorsel/, webp/ (2a), kumas/, maske/ + maskeler.json
 ├── sunucu/            ✅ Faz 1a güvenli sunucu (sunucu.js + lib/: kimlik, kurallar, depo, dosya)
 │                         + lib/fiyat (1b-1) + lib/limit, lib/rest, SQLite depo (1b-2)
@@ -212,7 +212,6 @@ uretim_planlama/
 ├── testler/           ✅ Playwright uçtan uca testleri (node:test)
 ├── eski/              ✅ Orijinal paket (başvuru için, değiştirilmez)
 ├── docs/              ✅ Raporlar
-├── bayi-web/          ⏳ Faz 2b-2: modüllere bölünmüş bayi ekranları (dist/web'in yerini alır)
 ├── satis-masaustu/    ✅ Faz 3a: Electron uygulaması (satış panelini sunucudan yükler) · 3b-1: çevrimdışı görünüm, PILOT.md; ⏳ 3b-2: satış ekranları modüllere
 └── ortak/             ⏳ Faz 1–2: fiyat/iskonto hesabı, biçimler, durum adları, renk önizleme
                           motoru, API istemcisi, çeviriler (kaynak/ortak/ buraya taşınır)
@@ -377,13 +376,30 @@ Bayi web sitesi iş verisini artık REST uçlarından okuyor. Eşitleme ucu site
 
 Bilinçli olarak bırakılan: Ekranlar veriyi yine `oku('exb-…')` ile okuyor; yani ekranların içi henüz "kaynak" bilmiyor, anahtar biçimini biliyor. Bu, tek dosyalık sürümü ayrı bir kod yolu açmadan çalışır tutmak için seçildi. Parçalar özelliğe göre bölünürken (adım 2b) ekranlar okumalarını doğrudan veri modülünden yapacak biçime getirilebilir.
 
+#### Faz 2b-2 adım 2b: Ekranlar ve özellikler ayrı dosyalarda ✅ tamamlandı
+Bayi portalının kaynağı sürüm adlı parçalardan (`03-ana.js` 50 KB, `25-ek6.js`, `18-v2.8-proje-sepetleri-renk-onizleme.js`…) ekran ve özellik dosyalarına bölündü. Bir özelliği değiştirmek için artık tek dosyaya bakılıyor; hangi ekranın hangi özelliği hangi sırayla çağırdığı `docs/SARMALAMA_HARITASI.md`'de dosya adlarıyla görünüyor.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Yeni düzen (`kaynak/bayi/`) | `cekirdek/` (temel, fiyat, oturum, başlangıç) · `ekranlar/` (gezinme, katalog, ürün, sepet, siparişler, cari, teknik/PDF) · `ozellikler/` 28 dosya (favoriler, stok-termin, toplu sipariş, projeler, duyurular, numune, karşılaştırma, set oluşturucu, hatırlatmalar, belgeler, bildirimler, kredi limiti, online ödeme, özel teklif…) · `stil/` özellik başına 23 CSS dosyası · `dil/en.json`. Özellikler arasındaki birkaç gizli bağ (ör. hatırlatmaların karşılaştırma çubuğunu, bildirimlerin belgeler sayfasını çağırması) `EK` üzerinden açık bağlantıya çevrildi; her parçada ayrı kopyası olan pencere, simge, tarih, para yardımcıları tek dosyada |
+| Renk önizleme ortak modülde | `kaynak/ortak/renk-onizleme.js`: parça parça çizim ve gerçek fotoğrafı seçilen renklere boyama motoru, uygulamadan bağımsız (katalog verisi `kur()` ile). Üç kopya renk tablosu ve hiç görünmeyen eski çizim kaldırıldı; satış paneli de aynı motoru kullanabilir |
+| İngilizce çeviriler dosyada | `kaynak/bayi/dil/en.json`: bütün metinler ve desenler (özelliklerin dört ayrı sözlüğü dahil); kodda yalnız çeviri motoru ve kurala bağlı çeviriler (çoğul, tarih, liste). Eski ve yeni sürüm 1037 metinlik bir derlemde ve 10 sayfanın İngilizce metninde birebir aynı |
+| Paketler | Şablonda `<!-- paket: ad -->` ile işaretli dosyalar iki sürümde de tek betikte çalışır; web sitesinde tek dosya olur (betik dosyası 23'ten 10'a, stil dosyası 15'ten 8'e). Yalnız iç içe fonksiyondan oluşan özellik dosyaları `try/catch` ile sarılır: biri açılışta hata verirse diğerleri çalışır (önceden her parça ayrı betikti; bu ayrım korundu) |
+| İlk çizim eksiksiz | Oturum, bütün özellik dosyaları yüklendikten sonra açılır. Önceden tek dosyalık sürümde oturum özelliklerden önce açılıyordu; web sitesinde ise verinin ne zaman geldiğine göre önce ya da sonra açılabiliyordu. Bu yüzden katalog bazen ilk çizimde favori kalbi, karşılaştırma ve duyuru bandı olmadan açılıp sonra yeniden çiziliyordu; yavaş 4G ölçümünün iki kipli (3,0 / 5,0 sn) çıkmasının sebebi buydu |
+| Doğrulama | Bölmeden önce ve sonra 19 sayfa/pencere durumunun (katalog, ürün, sepet, siparişler, cari, belgeler, ödeme, özel teklif, projeler, karşılaştırma, set oluşturucu, numune ve ödeme formları, hatırlatma ve bildirim panelleri, telefon görünümü) her öğesinin yapısı, metni ve hesaplanan stili karşılaştırıldı: fark yok. ESLint ile tanımsız ad taraması yapıldı |
+| Açılış süresi | Yavaş 4G (150 ms, 1,6 Mbit/s), 4 kat yavaş işlemci, 40 siparişli bayi: katalog ekranda ~2,9 sn (değişmedi), ama artık her açılışta ilk çizim eksiksiz ve süre kararlı (önceden 2,7–3,7 sn arası oynuyordu) |
+| Bulunan hatalar | (1) Bildirim panelinde yeni duyuruya tıklamak hiçbir şey açmıyordu: bildirim kodu başka bir parçadaki yerel fonksiyona bakıyordu (eskiden beri). (2) Kayıttan sonraki "Kaydınız oluşturuldu, hoş geldiniz" mesajı çıkmıyordu: sayfa yüklenirken oturuma bakıyordu, adım 2a'dan beri oturum veri gelince açıldığı için boş buluyordu (2a'da benim yol açtığım hata). İkisi de düzeltildi ve test edildi |
+| Testler | 151 test (önceki 145 + `testler/bayi-yapi.test.js` 6): dosya yapısı ve paketler, ilk çizimde eklerin hazır olması (web ve tek dosya), hata veren özelliğin diğerlerini durdurmaması, karşılama mesajı, duyuru bildirimi. SQLite ve JSON depoyla geçiyor |
+
+Bilinçli olarak bırakılan: Satış panelinin parçaları (`kaynak/satis/parcalar/`) henüz bölünmedi; satışın tek veri modülüne ve REST okumalarına geçişiyle (3b-2) birlikte aynı yolla yapılacak. Rapordaki eski bölümlerde (Faz 0 analizi) geçen `parcalar/03-ana.js` gibi yollar o günkü durumu anlatır.
+
 #### Faz 2b-2: Ekranlar (≈2 hafta)
 1. ✅ (adım 1) Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 7, `git` 5, `cariSayfa` 5 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
 2. ✅ (adım 2a) Okumalar REST'e geçer (katalog fiyatları, siparişler, cari); eşitleme ucu bayi sitesinde yalnız kişisel anahtarlar için kalır.
-3. Renk önizleme motoru `ortak/` modülüne taşınır.
-4. TR/EN çevirileri `tr.json` / `en.json` dosyalarına.
+3. ✅ (adım 2b) Renk önizleme motoru `ortak/` modülüne taşınır.
+4. ✅ (adım 2b) TR/EN çevirileri dosyaya: `kaynak/bayi/dil/en.json` (Türkçe metin anahtar olduğu için ayrı bir `tr.json` gerekmedi).
 
-Kabul: Faz 0 testlerinin bayi kısmı modüllere bölünmüş ekranlarda geçiyor; sarmalama haritasında bayi tarafında sarılan fonksiyon kalmıyor.
+Kabul ✅: Faz 0 testlerinin bayi kısmı modüllere bölünmüş ekranlarda geçiyor; sarmalama haritasında bayi tarafında sarılan fonksiyon kalmıyor.
 
 #### Faz 2c: Yayın (≈1 hafta)
 1. Erişilebilirlik ve Lighthouse denetimi (hedef: telefonda performans ≥ 85).
@@ -505,12 +521,14 @@ Yollar `kaynak/` klasörüne göredir.
 | Konu | Yer |
 |---|---|
 | Senkron katmanı (iki uygulamada aynı) | `ortak/senkron.js` |
-| Şifre özeti `ozet()` | `bayi/parcalar/03-ana.js:44`, `satis/parcalar/03-ana.js:18` |
-| Oturum (`sessionStorage`) | `bayi/parcalar/03-ana.js:88`, `satis/parcalar/03-ana.js:77` |
-| Sipariş no üretimi | `bayi/parcalar/03-ana.js:294` |
-| Ödeme bildirimi / dekont | `bayi/parcalar/18-v2.8-proje-sepetleri-renk-onizleme.js:156–174` |
-| İade no üretimi ve fotoğraf küçültme | `bayi/parcalar/25-ek6.js:112–129` |
-| Teklif/online ödeme no (ek10) | `bayi/parcalar/33-ek10.js:5` |
+| Şifre özeti `ozet()` (sunucusuz sürüm) | `bayi/cekirdek/oturum.js`, `satis/parcalar/03-ana.js` |
+| Oturum (`sessionStorage`) | `bayi/cekirdek/oturum.js`, `satis/parcalar/03-ana.js` |
+| Kayıt ekleme/güncelleme (numara sunucuda; sunucusuz sürümde `yerelNo`) | `bayi/cekirdek/temel.js` |
+| Ödeme bildirimi / dekont | `bayi/ozellikler/odeme-bildirimi.js` |
+| İade/şikâyet ve fotoğraf küçültme | `bayi/ozellikler/belgeler.js` |
+| Online ödeme, özel teklif | `bayi/ozellikler/online-odeme.js`, `bayi/ozellikler/ozel-teklif.js` |
+| Renk önizleme motoru | `ortak/renk-onizleme.js` |
+| İngilizce çeviriler | `bayi/dil/en.json` (motor: `bayi/ozellikler/dil.js`) |
 | Varsayılan `satis/1234` | `satis/sablon.html:83`, `satis/parcalar/03-ana.js:73` ve `:386` |
 | Claude API çağrısı | `satis/parcalar/03-ana.js:299` |
 | Örnek veri | `satis/parcalar/03-ana.js:363` |

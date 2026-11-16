@@ -1,0 +1,17 @@
+/* Renk önizleme (çizim ve boyanmış fotoğraf) */
+.r-onizle{margin-top:12px;border:1px solid var(--cizgi);border-radius:10px;padding:10px 12px;background:var(--yuzey2,#f8fafc)}
+.r-onizle .b{display:flex;justify-content:space-between;font-size:12px;font-weight:600;margin-bottom:4px}
+.r-onizle .b span{font-weight:400;color:var(--soluk,#94a3b8)}
+.r-onizle svg{width:100%;height:auto;display:block}
+.on-izg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:6px}
+.on-izg.tek{grid-template-columns:1fr}
+.on-p{background:#fff;border:1px solid var(--cizgi);border-radius:10px;padding:6px 8px 8px;text-align:center}
+.on-p svg{width:100%;height:auto;display:block}
+.on-p b{display:block;font-size:12px;margin-top:2px}
+.on-p span{font-size:11px;color:var(--soluk,#94a3b8)}
+.on-izg.tek .on-p{border:0;background:transparent;padding:0}
+.on-izg.tek .on-p svg{max-height:260px}
+.r-onizle:has(.r-foto) .on-izg.tek{display:none}
+.r-foto{position:relative;margin:6px 0 10px;border-radius:10px;overflow:hidden;background:#fff}
+.r-foto canvas{width:100%;display:block}
+.r-foto .n{position:absolute;left:8px;bottom:6px;font-size:11px;background:rgba(0,0,0,.55);color:#fff;padding:2px 7px;border-radius:8px}

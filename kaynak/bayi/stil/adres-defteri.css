@@ -1,0 +1,16 @@
+/* Teslimat adres defteri */
+.ad-sat{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.ad-sat select{flex:1;padding:7px 8px;border:1px solid var(--cizgi);border-radius:8px;background:var(--girdi,#fff);color:var(--yazi);font-size:12.5px;min-width:0}
+.ad-sat button{font-size:12px;padding:6px 9px;border:1px solid var(--cizgi);border-radius:8px;background:var(--yuzey,#fff);color:var(--yazi);cursor:pointer;white-space:nowrap}
+.ad-p .pencere{max-width:640px;display:block;padding:24px}
+.ad-l{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.ad-k{border:1px solid var(--cizgi);border-radius:10px;padding:10px 12px;font-size:13px;display:flex;gap:10px;justify-content:space-between}
+.ad-k b{display:block}
+.ad-k .kucuk{white-space:pre-line}
+.ad-k .d{display:flex;gap:4px;flex-wrap:wrap;align-items:flex-start}
+.ad-k .d button{font-size:11.5px;padding:4px 8px;border:1px solid var(--cizgi);border-radius:7px;background:var(--yuzey,#fff);color:var(--yazi);cursor:pointer}
+.ad-f{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ad-f .g{grid-column:1/-1}
+.ad-f input,.ad-f textarea{width:100%;padding:8px 10px;border:1px solid var(--cizgi);border-radius:8px;background:var(--girdi,#fff);color:var(--yazi);font-size:13px;box-sizing:border-box}
+.ad-f label{font-size:12px;font-weight:600;color:var(--yazi2,#475569);display:block;margin-bottom:3px}
+@media (max-width:700px){.ad-f{grid-template-columns:1fr}}

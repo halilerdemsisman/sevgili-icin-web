@@ -1,0 +1,7 @@
+/* Sık aldıklarım */
+.sa-izgara{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:10px 0 22px}
+.sa-k{border:1px solid var(--cizgi);border-radius:12px;padding:10px 12px;background:#fff;display:flex;flex-direction:column;gap:6px;font-size:13px}
+.sa-k b{font-size:13.5px}
+.sa-k .sa-alt{display:flex;gap:6px;align-items:center;margin-top:auto}
+.sa-k input{width:56px;padding:6px;border:1px solid var(--cizgi);border-radius:8px;text-align:right}
+#saBlok>h3{display:inline-block;background:var(--yuzey,#fff);padding:5px 14px;border-radius:999px;box-shadow:0 1px 4px rgba(15,23,42,.12)}

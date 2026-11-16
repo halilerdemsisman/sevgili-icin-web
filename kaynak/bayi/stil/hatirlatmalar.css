@@ -1,0 +1,20 @@
+/* Hatırlatmalar */
+.hat-p .cekmece{max-width:440px}
+.hat-g{padding:12px 20px;border-bottom:1px solid var(--cizgi)}
+.hat-g h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--yazi2,#475569)}
+.hat{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px dashed var(--cizgi);font-size:13px}
+.hat:last-child{border-bottom:0}
+.hat .n{width:9px;height:9px;border-radius:50%;margin-top:5px;flex:none;background:#2563eb}
+.hat.kirmizi .n{background:#dc2626}
+.hat.sari .n{background:#d97706}
+.hat.yesil .n{background:#059669}
+.hat .m{flex:1}
+.hat .m small{display:block;color:var(--soluk,#94a3b8);font-size:11.5px;margin-top:2px}
+.hat .a{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.hat .a button{font-size:11.5px;padding:4px 9px;border-radius:8px;border:1px solid var(--cizgi);background:var(--yuzey,#fff);color:var(--yazi);cursor:pointer}
+.hat .a button.ana{background:#111827;color:#fff;border-color:#111827}
+.hat-ekle{display:flex;gap:6px;flex-wrap:wrap}
+.hat-ekle input{padding:8px;border:1px solid var(--cizgi);border-radius:8px;background:var(--girdi,#fff);color:var(--yazi);font-size:13px}
+.hat-ekle input[type=text]{flex:1;min-width:160px}
+.hat-bos{font-size:12.5px;color:var(--soluk,#94a3b8)}
+[data-tema=koyu] .hat .a button.ana{background:var(--marka);color:#111;border-color:var(--marka)}

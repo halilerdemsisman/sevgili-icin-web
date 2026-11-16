@@ -13,6 +13,13 @@
 //
 // Şablonda {{web yol}} işaretli satırlar yalnız web sitesine girer; tek dosyalık sürümden çıkarılır.
 //
+// Paketler (Faz 2b-2): şablonda <!-- paket: ad --> satırından hemen sonra art arda gelen <script>{{dahil …}}</script>
+// (ya da <style>) satırları iki sürümde de tek betikte birleşir; web sitesinde tek dosya olur (js/ad.<özet>.js).
+//   • Kod dosyalara bölünse de tek betikte çalışır: fonksiyon bildirimleri paket içinde birbirini görür
+//     (ör. ekran dosyaları; bölünmeden önce tek dosyaydı).
+//   • Yalnız iç içe fonksiyondan oluşan dosyalar (en solda const/let/function yok) try/catch ile sarılır: birinin
+//     açılış hatası paketteki diğer özellikleri durdurmaz (önceden her parça ayrı <script> idi).
+//
 // Kullanım:
 //   node araclar/derle.mjs               derler
 //   node araclar/derle.mjs --dogrula     derler ve HTML'leri eski/ ile byte byte karşılaştırır
@@ -72,10 +79,30 @@ function parcaOku(uyg, yol, web) {
   icerik = icerik.replace(/\/\*@json ([^*]+)\*\/null/g, (_, j) => JSON.stringify(JSON.parse(fs.readFileSync(path.join(KAYNAK, j.trim()), 'utf8'))));
   return icerik;
 }
+// <!-- paket: ad --> + art arda dahil satırları → {{paket ad yol1,yol2,…}}
+function paketIsaretle(sablon) {
+  return sablon.replace(/<!-- paket: ([\w-]+) -->\n((?:<(?:script|style)>\{\{dahil [^}]+\}\}<\/(?:script|style)>\n)+)/g, (m, ad, satirlar) => {
+    const L = [...satirlar.matchAll(/^<(script|style)>\{\{dahil ([^}]+)\}\}/gm)];
+    if (new Set(L.map(x => x[1])).size > 1) throw new Error(`paket ${ad}: script ve style aynı pakette olamaz`);
+    return `<${L[0][1]}>{{paket ${ad} ${L.map(x => x[2]).join(',')}}}</${L[0][1]}>\n`;
+  });
+}
+function paketOku(uyg, yollar, web, tur) {
+  if (tur === 'style') return yollar.map(y => `/* ---- ${y} ---- */\n` + parcaOku(uyg, y, web)).join('\n');
+  return yollar.map(y => {
+    const c = parcaOku(uyg, y, web), sarilir = !/^(const|let|var|function|async function|class)\b/m.test(c);
+    return `/* ---- ${y} ---- */\n` + (sarilir ? `try {\n${c}\n} catch (e) { console.error(${JSON.stringify(y)}, e); }` : c);
+  }).join('\n;\n');
+}
+const paketDoldur = (uyg, html, web, dosya) => html.replace(/<(script|style)>\{\{paket ([\w-]+) ([^}]+)\}\}<\/\1>/g, (_, tur, ad, yollar) => {
+  const icerik = paketOku(uyg, yollar.split(','), web, tur);
+  if (!dosya) return `<${tur}>${icerik}</${tur}>`;
+  return tur === 'script' ? `<script src="${dosya(ad + '.js', icerik)}"></script>` : `<link rel="stylesheet" href="${dosya(ad + '.css', icerik)}">`;
+});
 function sablonuDoldur(uyg) {
-  const sablon = fs.readFileSync(path.join(KAYNAK, uyg, 'sablon.html'), 'utf8')
-    .replace(/^.*\{\{web [^}]+\}\}.*\n/gm, '');
-  return sablon.replace(/\{\{dahil ([^}]+)\}\}/g, (_, yol) => parcaOku(uyg, yol, false));
+  const sablon = paketIsaretle(fs.readFileSync(path.join(KAYNAK, uyg, 'sablon.html'), 'utf8')
+    .replace(/^.*\{\{web [^}]+\}\}.*\n/gm, ''));
+  return paketDoldur(uyg, sablon, false).replace(/\{\{dahil ([^}]+)\}\}/g, (_, yol) => parcaOku(uyg, yol, false));
 }
 
 // Web sitesi: satır içi <script>/<style> parçaları içerik özetli ayrı dosyalara çıkar (tarayıcı
@@ -88,8 +115,8 @@ function webDerle(uyg, hedef) {
     const uzanti = path.extname(yol), cikti = `${uzanti.slice(1)}/${ad}.${ozet(icerik)}${uzanti}`;
     yaz(path.join(hedef, cikti), icerik); dosyalar.push(cikti); return '/' + cikti;
   };
-  let html = fs.readFileSync(path.join(KAYNAK, uyg, 'sablon.html'), 'utf8')
-    .replace(/\{\{web ([^}]+)\}\}/g, '{{dahil $1}}')
+  let html = paketDoldur(uyg, paketIsaretle(fs.readFileSync(path.join(KAYNAK, uyg, 'sablon.html'), 'utf8')
+    .replace(/\{\{web ([^}]+)\}\}/g, '{{dahil $1}}')), true, dosya)
     .replace(/<script>\{\{dahil ([^}]+)\}\}<\/script>/g, (_, yol) => `<script src="${dosya(yol, parcaOku(uyg, yol, true))}"></script>`)
     .replace(/<style>\{\{dahil ([^}]+)\}\}<\/style>/g, (_, yol) => `<link rel="stylesheet" href="${dosya(yol, parcaOku(uyg, yol, true))}">`)
     .replace(/\{\{dahil ([^}]+)\}\}/g, (_, yol) => parcaOku(uyg, yol, true));
