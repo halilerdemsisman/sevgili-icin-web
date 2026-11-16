@@ -12,6 +12,7 @@
 //   klasörler electron-builder çıktısıdır (EXIT-Satis-Kurulum-<sürüm>.exe, .blockmap, latest.yml).
 //   Önce: node araclar/derle.mjs (test sunucusu dist/'ten açılır).
 import fs from 'node:fs';
+import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { spawn, spawnSync, execFileSync } from 'node:child_process';
@@ -31,7 +32,7 @@ fs.mkdirSync(CIKTI, { recursive: true });
 const bekle = ms => new Promise(r => setTimeout(r, ms));
 async function kosul(f, sure, ad) { const b = Date.now() + sure; let son; while (Date.now() < b) { try { son = await f(); } catch (e) { son = null; } if (son) return son; await bekle(250); } throw new Error(ad + ' sağlanmadı (' + Math.round(sure / 1000) + ' sn)'); }
 const surumOku = k => { const y = fs.readFileSync(path.join(k, 'latest.yml'), 'utf8'); return { surum: y.match(/^version:\s*(.+)$/m)[1].trim(), dosya: y.match(/^path:\s*(.+)$/m)[1].trim() }; };
-const ps = (komut, env = {}) => execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', '[Console]::OutputEncoding=[Text.Encoding]::UTF8; ' + komut], { env: { ...process.env, ...env }, encoding: 'utf8' }).trim();
+const ps = (komut, env = {}) => execFileSync('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', '[Console]::OutputEncoding=[Text.Encoding]::UTF8; ' + komut], { env: { ...process.env, ...env }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const dosyaSurumu = exe => ps('(Get-Item -LiteralPath $env:P).VersionInfo.ProductVersion', { P: exe });
 function ekranGoruntusu(ad) {
   const yer = path.join(CIKTI, ad + '.png');
@@ -61,12 +62,31 @@ const MASAUSTU = path.join(os.homedir(), 'Desktop'), BASLAT = path.join(process.
 const kisayol = k => fs.existsSync(k) ? fs.readdirSync(k).filter(f => /^EXIT Sat.*\.lnk$/i.test(f)) : [];
 let EXE = null, s = null, no = null;
 
+// Uygulama sunucuya bir TCP aktarıcısı üzerinden bağlanır: "sunucuya ulaşılamıyor" adımında yalnız aktarıcı
+// kapatılır; adres aynı kalır (son görülen veriler yalnız aynı sunucu adresi için gösterilir) ve sunucu,
+// güncelleme turu için verisi ve oturumuyla çalışmaya devam eder.
+const aktarici = { port: 0, sunucu: null, baglar: new Set() };
+async function aktariciAc() {
+  aktarici.sunucu = net.createServer(c => {
+    const u = net.connect(s.port, '127.0.0.1');
+    const bitir = () => { c.destroy(); u.destroy(); aktarici.baglar.delete(c); aktarici.baglar.delete(u); };
+    aktarici.baglar.add(c).add(u);
+    c.on('error', bitir).on('close', bitir); u.on('error', bitir).on('close', bitir);
+    c.pipe(u).pipe(c);
+  });
+  await new Promise((ok, red) => { aktarici.sunucu.once('error', red); aktarici.sunucu.listen(aktarici.port, '127.0.0.1', ok); });
+  aktarici.port = aktarici.sunucu.address().port;
+}
+const aktariciKapat = () => new Promise(ok => { aktarici.sunucu.close(() => ok()); for (const b of aktarici.baglar) b.destroy(); });
+const ADRES = () => `http://127.0.0.1:${aktarici.port}`;
+
 const ortam = ek => { const e = { ...process.env, EXIT_TEST: '1', EXIT_VERI_KLASORU: VERI, EXIT_TEST_INDIR: path.join(VERI, 'indirilen'), ELECTRON_DISABLE_SECURITY_WARNINGS: '1', ...ek }; delete e.NODE_OPTIONS; return e; };
-const ac = (ek = {}) => _electron.launch({ executablePath: EXE, env: ortam({ EXIT_SUNUCU_ADRESI: s.url, ...ek }), timeout: 60000 });
+const ac = (ek = {}) => _electron.launch({ executablePath: EXE, env: ortam({ EXIT_SUNUCU_ADRESI: ADRES(), ...ek }), timeout: 60000 });
 const kayit = (app, k) => app.evaluate((e, k) => JSON.parse(JSON.stringify(global.__exitTest[k])), k);
 
 console.log(`EXIT Satış Windows denemesi: ${eski.surum} → ${yeni.surum}\n`);
 s = await sunucuBaslat({ ortam: { MASAUSTU_KLASORU: GUNCELLEME } });
+await aktariciAc();
 // güncelleme klasöründe şimdilik kurulu sürüm: açılışta "güncel" denetimi
 for (const f of fs.readdirSync(ESKI)) if (/\.(exe|blockmap|yml)$/.test(f) && !/builder-debug/.test(f)) fs.copyFileSync(path.join(ESKI, f), path.join(GUNCELLEME, f));
 
@@ -91,7 +111,7 @@ if (EXE) {
   let app = null, w = null;
   await adim('Kurulu uygulama açılır, sunucuya bağlanır, giriş yapılır', async () => {
     app = await ac(); w = await app.firstWindow();
-    await w.waitForURL(s.url + '/satis', { timeout: 30000 }); await w.locator('#gKul').waitFor({ timeout: 30000 });
+    await w.waitForURL(ADRES() + '/satis', { timeout: 30000 }); await w.locator('#gKul').waitFor({ timeout: 30000 });
     await w.fill('#gKul', 'satis'); await w.fill('#gSif', YONETICI_SIFRE); await w.click('#fGiris button.btn.marka');
     await w.locator('#uyg:not(.gizli)').waitFor({ timeout: 30000 });
     const sur = await w.locator('aside .durum-cubugu .ds-surum').textContent();
@@ -132,7 +152,8 @@ if (EXE) {
   });
   await app?.close().catch(() => {}); await surecleriKapat(EXE);
   await adim('Sunucuya ulaşılamazsa son görülen veriler salt okunur', async () => {
-    const a = await ac({ EXIT_SUNUCU_ADRESI: 'http://127.0.0.1:1' });
+    await aktariciKapat();
+    const a = await ac();
     try {
       const p = await a.firstWindow();
       await p.locator('h1', { hasText: 'Sunucuya ulaşılamıyor' }).waitFor({ timeout: 30000 });
@@ -140,7 +161,7 @@ if (EXE) {
       const t = await p.locator('#sgGovde').textContent();
       if (!t.includes(no)) throw new Error('bekleyen işlerde sipariş yok');
       return (await p.locator('.sg-etiket').textContent()).trim() + ' · ' + ekranGoruntusu('3-baglanti-yok');
-    } finally { await a.close().catch(() => {}); await surecleriKapat(EXE); }
+    } finally { await a.close().catch(() => {}); await surecleriKapat(EXE); await aktariciAc(); }
   });
 
   // ---------- güncelleme turu ----------
@@ -149,7 +170,7 @@ if (EXE) {
     for (const f of fs.readdirSync(YENI)) if (/\.(exe|blockmap|yml)$/.test(f) && !/builder-debug/.test(f)) fs.copyFileSync(path.join(YENI, f), path.join(GUNCELLEME, f));
     const gunluk = fs.openSync(path.join(CIKTI, 'guncelleme-gunlugu.txt'), 'w'), t0 = Date.now();
     // Playwright'sız açılır: uygulama güncellemeyi kurmak için kendini kapatır
-    const p = spawn(EXE, [], { env: ortam({ EXIT_SUNUCU_ADRESI: s.url, EXIT_TEST_GUNCELLE: '1' }), stdio: ['ignore', gunluk, gunluk], detached: true });
+    const p = spawn(EXE, [], { env: ortam({ EXIT_SUNUCU_ADRESI: ADRES(), EXIT_TEST_GUNCELLE: '1' }), stdio: ['ignore', gunluk, gunluk], detached: true });
     p.unref();
     await kosul(() => dosyaSurumu(EXE).startsWith(yeni.surum), 240000, 'yeni sürümün kurulması');
     const sure = Math.round((Date.now() - t0) / 1000);
@@ -190,7 +211,7 @@ if (EXE) {
 s.kapat();
 
 const ozet = [`## EXIT Satış · Windows denemesi (${eski.surum} → ${yeni.surum})`, '', `${os.version()} · ${os.release()}`, '', '| | Adım | Sonuç | Süre |', '|---|---|---|---|',
-  ...sonuc.map(x => `| ${x.ok ? '✅' : '❌'} | ${x.ad} | ${String(x.ayrinti).replace(/\|/g, '/').replace(/\r?\n/g, ' ')} | ${(x.sure / 1000).toFixed(1)} sn |`), ''].join('\n');
+  ...sonuc.map(x => `| ${x.ok ? '✅' : '❌'} | ${x.ad} | ${String(x.ayrinti).replace(/\u001b\[\d+m/g, '').replace(/\|/g, '/').replace(/\r?\n/g, ' ')} | ${(x.sure / 1000).toFixed(1)} sn |`), ''].join('\n');
 fs.writeFileSync(path.join(CIKTI, 'sonuc.md'), ozet);
 if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, ozet);
 console.log('\n' + ozet);
