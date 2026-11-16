@@ -529,20 +529,22 @@ Pilotta görülecek maddelerin makineyle denenebilenleri, her değişiklikte Git
 
 | Denenen | Sonuç |
 |---|---|
-| Sessiz kurulum | 15 sn, 115 MB; `EXIT Satış.exe` 1.0.0.0; masaüstü ve Başlat menüsü kısayolu |
+| Sessiz kurulum | 15–23 sn, 115 MB; `EXIT Satış.exe` 1.0.0.0; masaüstü ve Başlat menüsü kısayolu |
 | İlk açılış | Sunucu adresi sorulur; yazılan adres kaydedilir, giriş ekranı açılır |
 | Giriş | Satış paneli açılır; durum çubuğunda "Masaüstü 1.0.0" |
 | Bildirim | Bayi siparişinden Windows bildirimine 0,5–0,8 sn; görev çubuğu sayacı 1, başlık "EXIT Satış (1)"; bildirime tıklayınca sipariş açılır |
 | Son görülen veriler | DPAPI ile şifreli (dosyada düz metin yok) |
 | Bağlantı kesilince | "Sunucuya ulaşılamıyor" sayfasında son görülen siparişler salt okunur; sunucu dönünce "Yeniden dene" satış paneline döner |
 | Güncelleme turu | 1.0.0 sunucudaki 1.0.1'i buldu, indirdi, kurdu ve kendiliğinden yeniden açıldı (12 sn); 1.0.1 yeniden güncelleme aramadı |
-| Kaldırma | Sessiz kaldırma başarılı |
+| Kaldırma | Sessiz kaldırma; program klasörü ve kısayollar silinir |
 
 | Yapılan | Ayrıntı |
 |---|---|
 | Bulunan hata | Uygulama Windows'ta kendi sayfalarını tanımıyordu: `file:///C:/…` adresinin yolu `/C:/…` olarak karşılaştırılıyordu. Bu yüzden Windows'ta ilk açılışta yazılan sunucu adresi **kaydedilemiyordu** (gerçek kullanıcı uygulamayı kuramazdı), "Yeniden dene" ve son görülen veriler çalışmıyordu. Linux testlerinde görünmüyordu. `ana.js`'te adres `fileURLToPath` ile Windows yoluna çevriliyor; sürücü harfi büyük/küçük, benzer adlı klasör, başka sürücü durumları denetlendi |
 | Deneme paketi | "EXIT-Deneme-Windows" (Actions › "Masaüstü paketi" › Artifacts): sunucu, masaüstü kurulum dosyası ve Node tek klasörde, kurulum gerekmez. `BASLAT.bat`'a çift tıklanır: ilk açılışta yönetici şifresi sorulur, sunucu açılır, satış paneli tarayıcıda açılır; pencerede satış, bayi ve masaüstü adresleri ile aynı ağdaki bilgisayarlar için adres yazar (`dagitim/windows/`, `araclar/deneme-paketi.mjs`). VPS hazır olmadan şirket ağında pilot bununla yapılabilir |
 | İmzalama hazırlığı | `satis-masaustu/IMZALAMA.md`. Haziran 2023'ten beri kod imzalama anahtarı donanımda (USB anahtar veya kuruluşun bulut HSM'i) tutulmak zorunda; ilk plandaki `.pfx` gizlisi bu yüzden mümkün değil. EV sertifika 2024'ten beri SmartScreen'de OV'den farklı muamele görmüyor. Azure Artifact Signing Türkiye'deki şirkete açık değil. Öneri: pilot imzasız (uyarı yalnız ilk kurulumda, güncellemelerde yok); ekibin tamamından önce OV sertifika + bulut imzalama (GitHub'da otomatik). Yapılandırmadaki `signExecutable: false` kaldırıldı (sertifika tanımlansa bile imzalamayı kapatıyordu); iş akışı imza durumunu yazıyor |
+
+Son çalıştırmada 11 adımın tamamı geçti (toplam ~75 sn).
 
 Kalan (karar bekleniyor): imzalama sertifikası (B seçeneği), gerçek kullanıcı ve şirket bilgisayarıyla pilot (`PILOT.md`: Windows bildirim ayarları, şirket güvenlik yazılımı, vekil sunucu, bir haftalık kullanım).
 
