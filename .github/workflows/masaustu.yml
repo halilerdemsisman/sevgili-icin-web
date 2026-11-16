@@ -83,7 +83,7 @@ jobs:
           npx electron-builder --win nsis --x64 --publish never
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npm version patch --no-git-tag-version
-          npx electron-builder --win nsis --x64 --publish never -c.directories.output=cikti-yeni
+          npx electron-builder --win nsis --x64 --publish never '--config.directories.output=cikti-yeni'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Windows denemesi
         run: node araclar/windows-dene.mjs satis-masaustu/cikti satis-masaustu/cikti-yeni cikti-dene
