@@ -21,7 +21,7 @@ Yalnız Windows'ta görülebilenler aşağıdaki listededir.
 | # | Adım | Beklenen | Sonuç |
 |---|---|---|---|
 | 1 | Satış panelini tarayıcıda açın, sol alttaki "Masaüstü uygulaması" bağlantısına tıklayın | Kurulum dosyası iner | |
-| 2 | Kurulum dosyasını çalıştırın | İmzasızsa "Windows kişisel bilgisayarınızı korudu" uyarısı çıkar. "Ek bilgi › Yine de çalıştır" ile geçin. Kod imzalama sertifikası alınınca bu uyarı çıkmaz | |
+| 2 | Kurulum dosyasını çalıştırın | İmzasızsa "Windows kişisel bilgisayarınızı korudu" uyarısı çıkar. "Ek bilgi › Yine de çalıştır" ile geçin. Uyarı yalnız ilk kurulumda çıkar, güncellemelerde çıkmaz (bkz. `IMZALAMA.md`) | |
 | 3 | Kurulum sihirbazını tamamlayın | Masaüstünde ve Başlat menüsünde "EXIT Satış" kısayolu oluşur | |
 | 4 | Uygulamayı açın, sunucu adresini yazın (`https://<alan adı>`) | Adres kabul edilir, giriş ekranı açılır | |
 | 5 | Giriş yapın | Satış paneli açılır. Sol altta "Sunucuya bağlı" ve "Masaüstü 1.0.0" görünür | |
