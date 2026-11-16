@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script>{{dahil ortak/tema-erken.js}}</script>
 <title>EXIT Garden · Satış Paneli</title>
-<style>{{dahil satis/parcalar/02-ana.css}}</style>
+<style>{{dahil satis/stil/ana.css}}</style>
 </head>
 <body>
 <div id="giris" class="tek">
@@ -133,8 +133,31 @@
 </div>
 <input type="file" id="dosya" accept=".json,application/json" multiple class="gizli">
 
-<script>{{dahil satis/parcalar/03-ana.js}}</script>
-<style>{{dahil satis/parcalar/04-v2.3-kurumsal-giris.css}}</style>
+<!-- Çekirdek ve ekranlar: dosyalar tek betikte çalışır (fonksiyonlar birbirini görür); sıra önemli -->
+<!-- paket: cekirdek -->
+<script>{{dahil satis/cekirdek/temel.js}}</script>
+<script>{{dahil satis/cekirdek/veri.js}}</script>
+<script>{{dahil satis/cekirdek/kur.js}}</script>
+<script>{{dahil satis/cekirdek/oturum.js}}</script>
+<script>{{dahil satis/cekirdek/gezinme.js}}</script>
+<script>{{dahil satis/ekranlar/siparisler.js}}</script>
+<script>{{dahil satis/ekranlar/musteriler.js}}</script>
+<script>{{dahil satis/ekranlar/analiz.js}}</script>
+<script>{{dahil satis/ekranlar/yapay-zeka.js}}</script>
+<script>{{dahil satis/ekranlar/ayarlar.js}}</script>
+<script>{{dahil satis/cekirdek/cari.js}}</script>
+<script>{{dahil satis/ekranlar/musteri-karti.js}}</script>
+<script>{{dahil satis/ekranlar/raporlar.js}}</script>
+<script>{{dahil satis/ekranlar/kampanyalar.js}}</script>
+<script>{{dahil satis/ekranlar/urunler.js}}</script>
+<script>{{dahil satis/cekirdek/roller.js}}</script>
+<script>{{dahil satis/ekranlar/onaylar.js}}</script>
+<script>{{dahil satis/ekranlar/fiyat-gecmisi.js}}</script>
+<script>{{dahil satis/ekranlar/bayi-bildirim.js}}</script>
+<script>{{dahil satis/ekranlar/hedefler.js}}</script>
+<script>{{dahil satis/cekirdek/baslangic.js}}</script>
+
+<style>{{dahil satis/stil/giris-kurumsal.css}}</style>
 <script>{{dahil ortak/giris-ikonlari.js}}</script>
 
 <style>{{dahil ortak/v2.4-sade-giris.css}}</style>
@@ -142,7 +165,7 @@
 <style>{{dahil ortak/v2.5-tema.css}}</style>
 <script>{{dahil ortak/v2.5-tema.js}}</script>
 
-<style>{{dahil satis/parcalar/09-v2.5-duzeltmeler-kontrol-turu.css}}</style>
+<style>{{dahil satis/stil/duzeltmeler.css}}</style>
 <script>
 document.addEventListener('click', e => { const m = document.getElementById('menu'); if (m && m.classList.contains('acik') && !m.contains(e.target) && !e.target.closest('#mMenu')) m.classList.remove('acik'); });
 </script>
@@ -153,27 +176,42 @@ document.addEventListener('click', e => { const m = document.getElementById('men
 
 
 
-<script>{{dahil satis/parcalar/14-v2.7-sadelestirme-onay-akisi-ve.js}}</script>
-<style>{{dahil satis/parcalar/15-v2.8-odeme-bildirimleri-numune-talepleri.css}}</style>
-<script>{{dahil satis/parcalar/16-v2.8-odeme-bildirimleri-numune-talepleri.js}}</script>
+<!-- Özelliklerin görünümü (sıra önemli: sonraki kural öncekini ezer) -->
+<!-- paket: ozellikler-stil -->
+<style>{{dahil satis/stil/odeme-numune-duyuru.css}}</style>
+<style>{{dahil satis/stil/karne-fiyat-hatirlatma.css}}</style>
+<style>{{dahil satis/stil/bayi-hedef-prim.css}}</style>
+<style>{{dahil satis/stil/yonetim.css}}</style>
+<style>{{dahil satis/stil/tahsilat-analiz-teklif.css}}</style>
+<style>{{dahil satis/stil/masaustu.css}}</style>
 
-<style>{{dahil satis/parcalar/17-v2.9-bayi-karnesi-excel-ile.css}}</style>
-<script>{{dahil satis/parcalar/18-v2.9-bayi-karnesi-excel-ile.js}}</script>
-
-<style>{{dahil satis/parcalar/19-v3.0-bayi-hedef-ve-prim.css}}</style>
-<script>{{dahil satis/parcalar/20-v3.0-bayi-hedef-ve-prim.js}}</script>
-
-<style>{{dahil satis/parcalar/21-ek6.css}}</style>
-<script>{{dahil satis/parcalar/22-ek6.js}}</script>
-<script>{{dahil satis/parcalar/23-ek7.js}}</script>
-<!-- ek8: bayi ödeme linkleri ve net tahsilat, ürün/renk analizi ve stok planı, bayi özel teklif onayı -->
-<style>{{dahil satis/parcalar/24-ek8.css}}</style>
-<script>{{dahil satis/parcalar/25-ek8.js}}</script>
-<script>{{dahil satis/parcalar/26-ek9.js}}</script>
-<!-- ek10 (Faz 1a): giriş ve çıkış sunucu üzerinden -->
-<script>{{dahil satis/parcalar/27-ek10-sunucu-oturum.js}}</script>
-<style>{{dahil satis/parcalar/28-masaustu.css}}</style>
-<script>{{dahil satis/parcalar/28-masaustu.js}}</script>
-<script>{{dahil satis/parcalar/29-canli.js}}</script>
+<!-- Özellikler: her biri kendi dosyasında; ekranlara EK.<ad> ile bağlanır (docs/SARMALAMA_HARITASI.md).
+     Ortak yardımcılar yardimci.js'te; sunucu-oturum: giriş ve çıkış sunucu üzerinden; masaustu: durum çubuğu, hızlı arama, masaüstü uygulaması; canli: çok kullanıcılı canlı veri -->
+<!-- paket: ozellikler -->
+<script>{{dahil satis/ozellikler/yardimci.js}}</script>
+<script>{{dahil satis/ozellikler/sadelestirme.js}}</script>
+<script>{{dahil satis/ozellikler/odeme-bildirimleri.js}}</script>
+<script>{{dahil satis/ozellikler/numune-talepleri.js}}</script>
+<script>{{dahil satis/ozellikler/duyurular.js}}</script>
+<script>{{dahil satis/ozellikler/excel-csv.js}}</script>
+<script>{{dahil satis/ozellikler/bayi-karnesi.js}}</script>
+<script>{{dahil satis/ozellikler/fiyat-excel.js}}</script>
+<script>{{dahil satis/ozellikler/hatirlatmalar.js}}</script>
+<script>{{dahil satis/ozellikler/bayi-hedef-prim.js}}</script>
+<script>{{dahil satis/ozellikler/temsilci-gorunurluk.js}}</script>
+<script>{{dahil satis/ozellikler/kredi-limiti.js}}</script>
+<script>{{dahil satis/ozellikler/fiyat-gruplari.js}}</script>
+<script>{{dahil satis/ozellikler/iadeler.js}}</script>
+<script>{{dahil satis/ozellikler/ziyaretler.js}}</script>
+<script>{{dahil satis/ozellikler/gosterge-paneli.js}}</script>
+<script>{{dahil satis/ozellikler/kullanicilar.js}}</script>
+<script>{{dahil satis/ozellikler/siparis-talepleri.js}}</script>
+<script>{{dahil satis/ozellikler/tahsilat.js}}</script>
+<script>{{dahil satis/ozellikler/urun-analizi.js}}</script>
+<script>{{dahil satis/ozellikler/ozel-teklifler.js}}</script>
+<script>{{dahil satis/ozellikler/odeme-bekleniyor.js}}</script>
+<script>{{dahil satis/ozellikler/sunucu-oturum.js}}</script>
+<script>{{dahil satis/ozellikler/masaustu.js}}</script>
+<script>{{dahil satis/ozellikler/canli.js}}</script>
 </body>
 </html>

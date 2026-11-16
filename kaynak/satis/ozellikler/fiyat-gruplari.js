@@ -1,0 +1,21 @@
+// Fiyat grupları (v3.1): grubun iskontosu gruptaki bayilere uygulanır.
+(function () {
+  menuEkle('gruplar', 'Fiyat grupları', '<path d="M3 7h18M3 12h18M3 17h10"/>', 'limit');
+  let GR = oku('exs-fiyat-grup', []);
+  const grYaz = () => yaz('exs-fiyat-grup', GR);
+  function grupUygula(g) { Object.values(MUS).forEach(m => { if (m && m.grup === g.id) { ISK[m.kul] = { ...(ISK[m.kul] || {}), oran: g.iskonto, grup: g.id }; } }); yaz('exs-iskonto', ISK); }
+  S6.gruplar = function () {
+    $('#baslik').textContent = 'Fiyat grupları';
+    const M = Object.values(MUS).filter(m => m && m.kul).sort((a, b) => (a.firma || a.kul).localeCompare(b.firma || b.kul, 'tr'));
+    $('#icerik').innerHTML = `<div class="izgara2"><div class="kart"><h3>Gruplar</h3><div class="alt">Her grubun iskontosu, gruptaki tüm bayilerin siparişlerine otomatik uygulanır. Grubun iskontosunu değiştirdiğinizde üyelerin hepsi güncellenir. Ürün liste fiyatlarını toplu güncellemek için Ürünler ve fiyatlar › Excel'den yükle kullanılır.</div>
+      <table class="tablo"><tr><th>Grup</th><th class="sag-hiza">İskonto %</th><th class="sag-hiza">Bayi</th><th></th></tr>${GR.map(g => `<tr><td><input class="s6-in" data-gad="${g.id}" value="${esc(g.ad)}"></td><td class="sag-hiza"><input class="s6-in" style="width:70px;text-align:right" data-gis="${g.id}" value="${g.iskonto}"></td><td class="sag-hiza">${M.filter(m => m.grup === g.id).length}</td><td class="sag-hiza"><button class="btn kucuk cizgi" data-gsil="${g.id}">Sil</button></td></tr>`).join('') || '<tr><td colspan="4" class="kucuk">Henüz grup yok. Örnek: A grubu %12, B grubu %8, Proje %15.</td></tr>'}</table>
+      <div style="display:flex;gap:8px;margin-top:10px"><input class="s6-in" id="gYAd" placeholder="Grup adı" style="flex:1"><input class="s6-in" id="gYIs" placeholder="%" style="width:70px"><button class="btn" id="gYEk">Ekle</button></div></div>
+      <div class="kart"><h3>Bayi atamaları</h3><div class="alt">Grubu olmayan bayide müşteriye özel iskonto (Müşteriler ve cari) geçerlidir.</div>
+      <table class="tablo"><tr><th>Bayi</th><th>Grup</th><th class="sag-hiza">Geçerli iskonto</th></tr>${M.map(m => `<tr><td><b>${esc(m.firma || m.kul)}</b></td><td><select class="s6-in" data-gm="${esc(m.kul)}"><option value="">— Grup yok —</option>${GR.map(g => `<option value="${g.id}" ${m.grup === g.id ? 'selected' : ''}>${esc(g.ad)} (%${g.iskonto})</option>`).join('')}</select></td><td class="sag-hiza">${yuzde(musIsk(m.kul))}</td></tr>`).join('')}</table></div></div>`;
+    $('#gYEk').onclick = () => { const ad = $('#gYAd').value.trim(), is = sayiTR($('#gYIs').value); if (!ad || !(is >= 0 && is < 100)) return toast('Grup adı ve 0–99 arası iskonto girin.'); GR.push({ id: 'g' + Date.now().toString(36), ad, iskonto: is }); grYaz(); islemKaydi('Fiyat grubu eklendi', `${ad} %${is}`); S6.gruplar(); };
+    $$('[data-gad]').forEach(i => i.onchange = () => { const g = GR.find(x => x.id === i.dataset.gad); g.ad = i.value.trim() || g.ad; grYaz(); S6.gruplar(); });
+    $$('[data-gis]').forEach(i => i.onchange = () => { const g = GR.find(x => x.id === i.dataset.gis), v = sayiTR(i.value); if (!(v >= 0 && v < 100)) return toast('0–99 arası girin.'); const e = g.iskonto; g.iskonto = v; grYaz(); grupUygula(g); islemKaydi('Grup iskontosu', `${g.ad}: %${e} → %${v}`); toast(`${g.ad} üyelerine %${v} uygulandı.`); S6.gruplar(); });
+    $$('[data-gsil]').forEach(b => b.onclick = () => { const g = GR.find(x => x.id === b.dataset.gsil); Object.values(MUS).forEach(m => { if (m && m.grup === g.id) { delete m.grup; if (ISK[m.kul] && ISK[m.kul].grup === g.id) delete ISK[m.kul].grup; } }); GR = GR.filter(x => x !== g); grYaz(); yaz('exs-musteriler', MUS); yaz('exs-iskonto', ISK); islemKaydi('Fiyat grubu silindi', g.ad); S6.gruplar(); });
+    $$('[data-gm]').forEach(s => s.onchange = () => { const m = MUS[s.dataset.gm], g = GR.find(x => x.id === s.value); if (g) { m.grup = g.id; ISK[m.kul] = { ...(ISK[m.kul] || {}), oran: g.iskonto, grup: g.id }; } else { delete m.grup; if (ISK[m.kul]) delete ISK[m.kul].grup; } yaz('exs-musteriler', MUS); yaz('exs-iskonto', ISK); islemKaydi('Bayi grubu', `${m.firma || m.kul} → ${g ? g.ad : 'grupsuz'}`); S6.gruplar(); });
+  };
+})();

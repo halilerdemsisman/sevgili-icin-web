@@ -36,13 +36,13 @@ Bu nedenle plan, ekranları baştan yazmak yerine **önce sunucuyu gerçek bir A
 | 2c | Bayi web sitesi: yayın | ✅ denetim: telefonda Lighthouse performansı 95–99, erişilebilirlik 100 (WCAG 2.1 AA) · kalan: alan adıyla pilot bayiler (alan adı ve VPS kararı bekleniyor) |
 | 3a | Satış masaüstü uygulaması | Electron uygulaması, Windows kurulumu, otomatik güncelleme, bildirim/sayaç/ayrı pencere/kısayollar |
 | 3b-1 | Satış: çok kullanıcılı çalışma ve pilot hazırlığı | Kayıt düzeyinde yazma (V3), çifte karar engeli, canlı veri, çevrimdışı salt okunur görünüm, güncelleme turunun denenmesi, pilot rehberi |
-| 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · kalan: kod imzalama, Windows'ta pilot, tek veri modülü ve okumalar REST'e |
+| 3b-2 | Satış masaüstü: pilot ve ekranlar | ✅ adım 1: sarmalama zincirleri birleşti · ✅ adım 2: ekranlar ve özellikler ayrı dosyalarda · kalan: kod imzalama, Windows'ta pilot, tek veri modülü ve okumalar REST'e |
 | 4 | Entegrasyonlar | Online ödeme doğrulama, MRP/ERP aktarımı, e-posta/SMS bildirimleri |
 | 5 | Canlıya geçiş ve işletme | Veri göçü, yedek, izleme, KVKK, eğitim |
 
-Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı; 2c'nin denetim adımı bitti. 3b-2'nin ilk adımı (sarmalama zincirlerinin birleşmesi) bitti.
+Faz 1, 2a, 2b-1, 2b-2, 3a ve 3b-1 tamamlandı; 2c'nin denetim adımı bitti. 3b-2'nin ilk iki adımı (sarmalama zincirlerinin birleşmesi, dosyaların ekran ve özelliğe göre bölünmesi) bitti.
 
-**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · Faz 2c denetim ✅ · 3b-2 adım 1 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve satış ekranlarının kalan adımları (tek veri modülü, okumalar REST'e, dosyaların özelliğe göre bölünmesi); bayi sitesinde alan adıyla pilot (Faz 2c adım 2).
+**Durum:** Faz 0 ✅ · Faz 1a ✅ · Faz 1b-1 ✅ · Faz 1b-2 ✅ · Faz 2a ✅ · Faz 2b-1 ✅ · Faz 3a ✅ · Faz 3b-1 ✅ · Faz 2b-2 ✅ · Faz 2c denetim ✅ · 3b-2 adım 1–2 ✅ (bkz. bölüm 5) · **canlıya alma:** canlı verinin VPS'e taşınması (`dagitim/TASINMA.md`; alan adı, VPS ve MRP kararları bekleniyor) · **sıradaki:** Windows pilotu (`satis-masaustu/PILOT.md`; kod imzalama sertifikası kararı bekleniyor) ve satış ekranlarının kalan adımları (tek veri modülü, okumalar REST'e); bayi sitesinde alan adıyla pilot (Faz 2c adım 2).
 
 **Verilen kararlar (12 Kasım 2026):**
 - Sunucu VPS'te olacak.
@@ -122,7 +122,7 @@ Sunucu verinin anlamını bilmiyor; her anahtar bütün halinde (ör. tüm sipar
 | K1 | 🟠 | Tek dosya, kaynak üretici (`build.py`) kayıp. Görseller kodun içinde; her düzenlemede 3 MB'lık dosya açılıyor, git farkları okunamıyor. | ✅ 0 |
 | K2 | 🟠 | "ek" modülleri global fonksiyonları sarmalayarak ekleniyor: bayi portalında 11 fonksiyon 34 kez (`urunAc` 6, `cariSayfa` 5, `git` 4), satış panelinde 14 fonksiyon 31 kez (`git` 8, `durumYaz` 5) sarılmış. Sıra bağımlı, hatası zor bulunur. Tam liste: `docs/SARMALAMA_HARITASI.md`. | ✅ 2b-2/3b-2 adım 1: sarmalama kalmadı; her ekran fonksiyonu eklerini kendi içinde çağırıyor, `araclar/sarmalama.mjs --denetle` testlerde |
 | K3 | 🟡 | `telefon/index.html` elle kopyalanıyor; unutulursa telefon sürümü geride kalır. | ✅ 0 (derleme üretir) |
-| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 2c (158 test) |
+| K4 | 🟡 | Otomatik test yok. | ✅ 0 → 3b-2 (161 test) |
 
 ### 3.4 Arayüz (ekran görüntülerinden)
 | # | Önem | Sorun | Durum |
@@ -202,7 +202,7 @@ Faz 0 sonunda repo (✅ = var, ⏳ = ilgili fazda eklenecek):
 ```
 uretim_planlama/
 ├── kaynak/            ✅ Uygulamaların kaynağı: bayi/ (2b-2: cekirdek/, ekranlar/, ozellikler/, stil/, dil/en.json),
-│                         satis/ (sablon.html + parcalar/), ortak/ (iki uygulamada ortak bloklar, renk önizleme
+│                         satis/ (3b-2: aynı düzen), ortak/ (iki uygulamada ortak bloklar, renk önizleme
 │                         motoru), web/ (yalnız web sitesine giren veri, düzen, adres, service worker, PWA dosyaları)
 ├── katalog/           ✅ urunler.json, gorsel/, webp/ (2a), kumas/, maske/ + maskeler.json
 ├── sunucu/            ✅ Faz 1a güvenli sunucu (sunucu.js + lib/: kimlik, kurallar, depo, dosya)
@@ -391,7 +391,7 @@ Bayi portalının kaynağı sürüm adlı parçalardan (`03-ana.js` 50 KB, `25-e
 | Bulunan hatalar | (1) Bildirim panelinde yeni duyuruya tıklamak hiçbir şey açmıyordu: bildirim kodu başka bir parçadaki yerel fonksiyona bakıyordu (eskiden beri). (2) Kayıttan sonraki "Kaydınız oluşturuldu, hoş geldiniz" mesajı çıkmıyordu: sayfa yüklenirken oturuma bakıyordu, adım 2a'dan beri oturum veri gelince açıldığı için boş buluyordu (2a'da benim yol açtığım hata). İkisi de düzeltildi ve test edildi |
 | Testler | 151 test (önceki 145 + `testler/bayi-yapi.test.js` 6): dosya yapısı ve paketler, ilk çizimde eklerin hazır olması (web ve tek dosya), hata veren özelliğin diğerlerini durdurmaması, karşılama mesajı, duyuru bildirimi. SQLite ve JSON depoyla geçiyor |
 
-Bilinçli olarak bırakılan: Satış panelinin parçaları (`kaynak/satis/parcalar/`) henüz bölünmedi; satışın tek veri modülüne ve REST okumalarına geçişiyle (3b-2) birlikte aynı yolla yapılacak. Rapordaki eski bölümlerde (Faz 0 analizi) geçen `parcalar/03-ana.js` gibi yollar o günkü durumu anlatır.
+Satış panelinin parçaları da 3b-2 adım 2'de aynı yolla bölündü (bkz. Faz 3b-2). Rapordaki eski bölümlerde (Faz 0 analizi) geçen `parcalar/03-ana.js` gibi yollar o günkü durumu anlatır.
 
 #### Faz 2b-2: Ekranlar (≈2 hafta)
 1. ✅ (adım 1) Ekranlar modüllere bölünür, sarmalama zincirleri (K2: `urunAc` 7, `git` 5, `cariSayfa` 5 kat) tek fonksiyonda birleşir. 2a'nın `adres.js` ve `duzen.js` dosyaları sayfa geçişinin asıl parçası olur.
@@ -483,7 +483,19 @@ Bu sorunlar ekranlar yeniden yazılmadan, eşitleme katmanında ve sunucuda çö
 #### Faz 3b-2: Pilot ve satış ekranları (≈2 hafta, 2b-2 ile birlikte)
 1. Kod imzalama sertifikası (SmartScreen uyarısı kalksın); GitHub'a `WIN_CSC_LINK` / `WIN_CSC_KEY_PASSWORD` gizlileri.
 2. Pilot (`satis-masaustu/PILOT.md`): satış yöneticisi + 1 temsilci, Windows'ta kurulum ve bir güncelleme turu; sonra tüm ekip.
-3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir (✅ adım 1). Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur. Okumalar sayfa sayfa REST'e geçer.
+3. Satış ekranları modüllere bölünür; 17 parçadaki sarmalama zincirleri (`git` 8 kat) birleşir (✅ adım 1); dosyalar ekran ve özelliğe göre (✅ adım 2). Bellekteki kopyalar yerine her ekran veriyi tek bir veri modülünden okur. Okumalar sayfa sayfa REST'e geçer.
+
+#### Faz 3b-2 adım 2: Satış ekranları ve özellikleri ayrı dosyalarda ✅ tamamlandı
+Satış panelinin kaynağı, bayi portalında 2b-2'de yapıldığı gibi, sürüm adlı parçalardan (`03-ana.js` 112 KB, `22-ek6.js`, `25-ek8.js`, `18-v2.9-bayi-karnesi-excel-ile.js`…) ekran ve özellik dosyalarına bölündü.
+
+| Yapılan | Ayrıntı |
+|---|---|
+| Yeni düzen (`kaynak/satis/`) | `cekirdek/` 8 dosya (temel, veri, kur, oturum, gezinme, cari, roller, başlangıç) · `ekranlar/` 13 dosya (siparişler, müşteriler, müşteri kartı, analiz, yapay zekâ, raporlar, kampanyalar, ürünler, onaylar, fiyat geçmişi, bayiye bildirim, hedefler, ayarlar) · `ozellikler/` 25 dosya · `stil/` 9 dosya. Çok özellikli parçalar (ödeme bildirimi + numune + duyuru; karne + Excel ile fiyat + hatırlatmalar; temsilci görünürlüğü + kredi limiti + fiyat grupları + iadeler + ziyaretler + gösterge paneli + kullanıcılar; tahsilat + ürün analizi + özel teklifler) özellik başına ayrıldı |
+| Ortak yardımcılar | `ozellikler/yardimci.js`: pencere, menü düğmesi, firma adı, para (2 hane), Türkçe sayı, CSV, tarih-saat, işlem kaydı. Önceden parçalarda ayrı kopyalar vardı (pencere 4, firma adı 3, menü düğmesi 4 kopya). Excel/CSV okuma ve stok-termin hesabı `ozellikler/excel-csv.js`'te. Bir özelliğin başka bir özelliğe bağlılığı `EK` üzerinden (`EK.gorur`, `EK.iadeRozet`, `EK.rozetler`, `EK.hatirlatmaYenile`…) |
+| Paketler | Çekirdek ve ekranlar tek betikte (sıra önceki dosyadakiyle aynı), özellikler tek betikte, özelliklerin stilleri tek stilde. Bir özellik açılışta hata verirse diğerleri çalışır |
+| Doğrulama | Bölmeden önce ve sonra 31 durumun (menüdeki 25 sayfa, sipariş penceresi, müşteri kartı, kampanya formu, hızlı arama, 1280×720 pencere, koyu tema) her öğesinin yapısı, metni ve hesaplanan stili karşılaştırıldı: fark yok, menü sırası aynı. ESLint ile birleşik betikte tanımsız ya da iki kez tanımlanan ad yok |
+| Bulunan hata | Ziyaret kaydına "sonraki görüşme" tarihi girilince oluşan hatırlatma, menüdeki Hatırlatmalar rozetine sayfa açılana kadar yansımıyordu (kod başka parçadaki yerel listeyi güncellemeye çalışıyor, yanlışlıkla genel bir değişken oluşturuyordu) |
+| Testler | 161 test (önceki 158 + `testler/satis-yapi.test.js` 3): dosya yapısı ve paketler, hata veren özelliğin diğerlerini durdurmaması, ziyaret hatırlatmasının rozete yansıması |
 
 Kabul (Faz 3 geneli):
 - Faz 0 testlerinin satış kısmı geçiyor ✅.
@@ -552,15 +564,16 @@ Yollar `kaynak/` klasörüne göredir.
 | Konu | Yer |
 |---|---|
 | Senkron katmanı (iki uygulamada aynı) | `ortak/senkron.js` |
-| Şifre özeti `ozet()` (sunucusuz sürüm) | `bayi/cekirdek/oturum.js`, `satis/parcalar/03-ana.js` |
-| Oturum (`sessionStorage`) | `bayi/cekirdek/oturum.js`, `satis/parcalar/03-ana.js` |
+| Şifre özeti `ozet()` (sunucusuz sürüm) | `bayi/cekirdek/oturum.js`, `satis/cekirdek/temel.js` |
+| Oturum (`sessionStorage`) | `bayi/cekirdek/oturum.js`, `satis/cekirdek/oturum.js` (sunucuda: `satis/ozellikler/sunucu-oturum.js`) |
+| Satış verisi ve canlı güncelleme | `satis/cekirdek/veri.js`, `satis/cekirdek/cari.js`, `satis/ozellikler/canli.js` |
 | Kayıt ekleme/güncelleme (numara sunucuda; sunucusuz sürümde `yerelNo`) | `bayi/cekirdek/temel.js` |
 | Ödeme bildirimi / dekont | `bayi/ozellikler/odeme-bildirimi.js` |
 | İade/şikâyet ve fotoğraf küçültme | `bayi/ozellikler/belgeler.js` |
 | Online ödeme, özel teklif | `bayi/ozellikler/online-odeme.js`, `bayi/ozellikler/ozel-teklif.js` |
 | Renk önizleme motoru | `ortak/renk-onizleme.js` |
 | İngilizce çeviriler | `bayi/dil/en.json` (motor: `bayi/ozellikler/dil.js`) |
-| Varsayılan `satis/1234` | `satis/sablon.html:83`, `satis/parcalar/03-ana.js:73` ve `:386` |
-| Claude API çağrısı | `satis/parcalar/03-ana.js:299` |
-| Örnek veri | `satis/parcalar/03-ana.js:363` |
+| Varsayılan `satis/1234` (yalnız sunucusuz sürüm) | `satis/cekirdek/oturum.js`, `satis/cekirdek/baslangic.js` |
+| Claude API çağrısı | `satis/ekranlar/yapay-zeka.js` |
+| Örnek veri | `satis/ekranlar/ayarlar.js` |
 | Fonksiyon sarmalamaları | `docs/SARMALAMA_HARITASI.md` |

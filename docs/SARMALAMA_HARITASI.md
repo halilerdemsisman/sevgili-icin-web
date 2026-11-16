@@ -34,18 +34,20 @@ Toplam: 11 ekran fonksiyonu, 41 ek. Kalan sarmalama: yok.
 
 ## Satış paneli
 
-Yükleme sırası: `senkron.js` → `tema-erken.js` → `03-ana.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `14-v2.7-sadelestirme-onay-akisi-ve.js` → `16-v2.8-odeme-bildirimleri-numune-talepleri.js` → `18-v2.9-bayi-karnesi-excel-ile.js` → `20-v3.0-bayi-hedef-ve-prim.js` → `22-ek6.js` → `23-ek7.js` → `25-ek8.js` → `26-ek9.js` → `27-ek10-sunucu-oturum.js` → `28-masaustu.js` → `29-canli.js`
+Yükleme sırası: `senkron.js` → `tema-erken.js` → `temel.js` → `veri.js` → `kur.js` → `oturum.js` → `gezinme.js` → `siparisler.js` → `musteriler.js` → `analiz.js` → `yapay-zeka.js` → `ayarlar.js` → `cari.js` → `musteri-karti.js` → `raporlar.js` → `kampanyalar.js` → `urunler.js` → `roller.js` → `onaylar.js` → `fiyat-gecmisi.js` → `bayi-bildirim.js` → `hedefler.js` → `baslangic.js` → `giris-ikonlari.js` → `v2.5-tema.js` → `v2.6-logo-animasyonu.js` → `yardimci.js` → `sadelestirme.js` → `odeme-bildirimleri.js` → `numune-talepleri.js` → `duyurular.js` → `excel-csv.js` → `bayi-karnesi.js` → `fiyat-excel.js` → `hatirlatmalar.js` → `bayi-hedef-prim.js` → `temsilci-gorunurluk.js` → `kredi-limiti.js` → `fiyat-gruplari.js` → `iadeler.js` → `ziyaretler.js` → `gosterge-paneli.js` → `kullanicilar.js` → `siparis-talepleri.js` → `tahsilat.js` → `urun-analizi.js` → `ozel-teklifler.js` → `odeme-bekleniyor.js` → `sunucu-oturum.js` → `masaustu.js` → `canli.js`
 
 | Ekran fonksiyonu | Tanım | Ekler (çağrılma sırasıyla) |
 |---|---|---|
-| `durumYaz` | 03-ana.js:40 | `durumLimit` (22-ek6.js:32) → `durumYayinla` (20-v3.0-bayi-hedef-ve-prim.js:40) → `durumIslem` (22-ek6.js:44) → `durumNet` (26-ek9.js:8) |
-| `ac` | 03-ana.js:102 | `acOnce` (22-ek6.js:24) → `acHatirlatma` (18-v2.9-bayi-karnesi-excel-ile.js:285) → `acSonra` (22-ek6.js:25) → `masaustuIsler` (28-masaustu.js:125) |
-| `git` | 03-ana.js:122 | `sayfa6` (22-ek6.js:195) → `rozetler` (16-v2.8-odeme-bildirimleri-numune-talepleri.js:99) → `hatirlatmaRozeti` (18-v2.9-bayi-karnesi-excel-ile.js:282) |
-| `siparisAc` | 03-ana.js:186 | `siparisFiyatUyarisi` (27-ek10-sunucu-oturum.js:39) |
-| `ayarlar` | 03-ana.js:391 | `ayarlarSunucu` (27-ek10-sunucu-oturum.js:48) |
-| `faturaKes` | 03-ana.js:474 | `faturaIslem` (22-ek6.js:45) |
-| `urunler` | 03-ana.js:679 | `urunlerExcel` (18-v2.9-bayi-karnesi-excel-ile.js:213) |
-| `S6.kullanicilar6` | 22-ek6.js:170 | `kullanicilarSifre` (27-ek10-sunucu-oturum.js:21) |
-| `S6.tahsilat` | 25-ek8.js:14 | `tahsilatSiparisler` (26-ek9.js:11) |
+| `durumYaz` | veri.js:14 | `durumLimit` (temsilci-gorunurluk.js:25) → `durumYayinla` (bayi-hedef-prim.js:40) → `durumIslem` (temsilci-gorunurluk.js:37) → `durumNet` (odeme-bekleniyor.js:7) |
+| `ac` | oturum.js:15 | `acOnce` (temsilci-gorunurluk.js:17) → `acHatirlatma` (hatirlatmalar.js:71) → `acSonra` (temsilci-gorunurluk.js:18) → `masaustuIsler` (masaustu.js:125) |
+| `git` | gezinme.js:10 | `sayfa6` (yardimci.js:5) → `rozetler` (odeme-bildirimleri.js:48) → `hatirlatmaRozeti` (hatirlatmalar.js:66) |
+| `siparisAc` | siparisler.js:56 | `siparisFiyatUyarisi` (sunucu-oturum.js:39) |
+| `ayarlar` | ayarlar.js:3 | `ayarlarSunucu` (sunucu-oturum.js:48) |
+| `faturaKes` | cari.js:15 | `faturaIslem` (temsilci-gorunurluk.js:38) |
+| `urunler` | urunler.js:15 | `urunlerExcel` (fiyat-excel.js:45) |
+| `S6.ziyaret` | ziyaretler.js:4 | `gorur` (temsilci-gorunurluk.js:39) → `hatirlatmaYenile` (hatirlatmalar.js:68) |
+| `S6.panel` | gosterge-paneli.js:4 | `iadeListesi` (iadeler.js:35) |
+| `S6.kullanicilar6` | kullanicilar.js:4 | `islemListesi` (temsilci-gorunurluk.js:39) → `atamaVar` (temsilci-gorunurluk.js:39) → `kullanicilarSifre` (sunucu-oturum.js:21) |
+| `S6.tahsilat` | tahsilat.js:5 | `tahsilatSiparisler` (odeme-bekleniyor.js:10) |
 
-Toplam: 9 ekran fonksiyonu, 18 ek. Kalan sarmalama: yok.
+Toplam: 11 ekran fonksiyonu, 24 ek. Kalan sarmalama: yok.

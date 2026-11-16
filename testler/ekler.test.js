@@ -150,7 +150,7 @@ describe('Bayi tek dosyalık sürüm: ekler', () => {
   });
 });
 
-const SATIS_EK = ekTanimlari(['satis/parcalar']);
+const SATIS_EK = ekTanimlari(['satis/cekirdek', 'satis/ekranlar', 'satis/ozellikler']);
 
 describe('Satış paneli: ekler', () => {
   let s, b, p, H, bayiC, no;
@@ -172,7 +172,7 @@ describe('Satış paneli: ekler', () => {
 
   test('bütün parçalar eklerini tanımladı; menüdeki her sayfa açılır', async () => {
     const tanimli = await p.evaluate(() => Object.keys(EK));
-    // 28-masaustu.js yalnız masaüstü uygulamasında çalışır (testler/masaustu.test.js)
+    // ozellikler/masaustu.js yalnız masaüstü uygulamasında çalışır (testler/masaustu.test.js)
     for (const [ad, f] of Object.entries(SATIS_EK)) if (!/masaustu/.test(f)) assert.ok(tanimli.includes(ad), `EK.${ad} tanımlı değil`);
     const menu = await p.$$eval('aside button.m[data-s]', L => L.map(x => x.dataset.s));
     for (const sayfa of ['siparisler', 'musteriler', 'kampanyalar', 'urunler', 'analiz', 'ai', 'hedefler', 'raporlar', 'ayarlar', 'bayihedef', 'talepler', 'odemeler', 'numuneler', 'karne', 'limit', 'tahsilat', 'kullanicilar6'])

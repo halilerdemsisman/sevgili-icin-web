@@ -1,0 +1,22 @@
+// Temsilciler, bayi atama ve işlem kaydı (v3.1; yalnız yönetici).
+(function () {
+  menuEkle('kullanicilar6', 'Temsilciler ve işlem kaydı', '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', 'ayarlar', true);
+  S6.kullanicilar6 = function () {
+    $('#baslik').textContent = 'Temsilciler ve işlem kaydı';
+    if (!yonetici()) { $('#icerik').innerHTML = '<div class="kart">Bu ekran yalnız yöneticiler içindir.</div>'; return; }
+    const U = Object.values(KUL).filter(u => u && u.kul), T = U.filter(u => rolu(u) === 'temsilci'), M = Object.values(MUS).filter(m => m && m.kul).sort((a, b) => (a.firma || a.kul).localeCompare(b.firma || b.kul, 'tr'));
+    const IF = S6.if || (S6.if = { kim: '', q: '' }), IL = EK.islemListesi().slice().reverse().filter(x => (!IF.kim || x.kim === IF.kim) && (!IF.q || (x.olay + ' ' + x.detay).toLocaleLowerCase('tr').includes(IF.q.toLocaleLowerCase('tr'))));
+    $('#icerik').innerHTML = `<div class="izgara2"><div class="kart"><h3>Kullanıcı rolleri</h3><div class="alt">Yönetici her şeyi görür. Satış temsilcisi yalnız kendisine atanmış bayilerin sipariş, müşteri, iade ve görüşmelerini görür; limit aşan siparişi onaylayamaz. Yeni kullanıcı Ayarlar ekranından eklenir.</div>
+      <table class="tablo">${U.map(u => `<tr><td><b>${esc(u.ad || u.kul)}</b><div class="kucuk">${esc(u.kul)}</div></td><td><select class="s6-in" data-rol="${esc(u.kul)}" ${u.kul === ben.kul ? 'disabled title="Kendi rolünüzü değiştiremezsiniz"' : ''}><option value="yonetici" ${rolu(u) === 'yonetici' ? 'selected' : ''}>Yönetici</option><option value="temsilci" ${rolu(u) === 'temsilci' ? 'selected' : ''}>Satış temsilcisi</option></select></td><td class="sag-hiza kucuk">${M.filter(m => m.temsilci === u.kul).length} bayi</td></tr>`).join('')}</table></div>
+      <div class="kart"><h3>Bayi – temsilci ataması</h3><div class="alt">${EK.atamaVar() ? 'Atanmamış bayileri yalnız yöneticiler görür.' : 'Henüz atama yok; atama yapılana kadar temsilciler tüm bayileri görür.'}</div>
+      <div style="max-height:380px;overflow:auto"><table class="tablo">${M.map(m => `<tr><td>${esc(m.firma || m.kul)}</td><td><select class="s6-in" data-tm="${esc(m.kul)}"><option value="">— Atanmamış —</option>${T.map(u => `<option value="${esc(u.kul)}" ${m.temsilci === u.kul ? 'selected' : ''}>${esc(u.ad || u.kul)}</option>`).join('')}</select></td></tr>`).join('')}</table></div>${T.length ? '' : '<p class="kucuk">Atama için önce bir kullanıcıyı “Satış temsilcisi” yapın.</p>'}</div></div>
+      <div class="kart"><h3>İşlem kaydı</h3><div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px"><select class="s6-in" id="ifK"><option value="">Tüm kullanıcılar</option>${U.map(u => `<option value="${esc(u.kul)}" ${IF.kim === u.kul ? 'selected' : ''}>${esc(u.ad || u.kul)}</option>`).join('')}</select><input class="s6-in" id="ifQ" placeholder="Ara…" value="${esc(IF.q)}"><button class="btn cizgi" id="ifCsv">Excel'e aktar</button><span class="kucuk" style="align-self:center">${IL.length} kayıt</span></div>
+      <div style="max-height:460px;overflow:auto"><table class="tablo"><tr><th>Zaman</th><th>Kullanıcı</th><th>İşlem</th><th>Ayrıntı</th></tr>${IL.slice(0, 400).map(x => `<tr><td style="white-space:nowrap" class="kucuk">${new Date(x.t).toLocaleString('tr-TR')}</td><td>${esc((KUL[x.kim] || {}).ad || x.kim)}</td><td><b>${esc(x.olay)}</b></td><td class="kucuk">${esc(x.detay)}</td></tr>`).join('') || '<tr><td class="kucuk" colspan="4">Kayıt yok.</td></tr>'}</table></div></div>`;
+    $$('[data-rol]').forEach(s => s.onchange = () => { const u = KUL[s.dataset.rol]; u.rol = s.value; yaz('exs-kullanicilar', KUL); islemKaydi('Rol değişti', `${u.kul} → ${ROL_AD[s.value]}`); S6.kullanicilar6(); });
+    $$('[data-tm]').forEach(s => s.onchange = () => { const m = MUS[s.dataset.tm]; if (s.value) m.temsilci = s.value; else delete m.temsilci; yaz('exs-musteriler', MUS); islemKaydi('Temsilci ataması', `${m.firma || m.kul} → ${s.value || 'atanmamış'}`); S6.kullanicilar6(); });
+    $('#ifK').onchange = e => { IF.kim = e.target.value; S6.kullanicilar6(); }; $('#ifQ').onchange = e => { IF.q = e.target.value; S6.kullanicilar6(); };
+    $('#ifCsv').onclick = () => csvTablo('exit_islem_kaydi.csv', [['Zaman', 'Kullanıcı', 'İşlem', 'Ayrıntı']].concat(IL.map(x => [new Date(x.t).toLocaleString('tr-TR'), (KUL[x.kim] || {}).ad || x.kim, x.olay, x.detay])));
+      EK.kullanicilarSifre?.();
+};
+  $$('aside button.m[data-s]').forEach(b => b.onclick = () => git(b.dataset.s));
+})();
