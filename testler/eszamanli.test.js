@@ -100,7 +100,7 @@ describe('Eşzamanlı yazma (Faz 3b)', () => {
       const [ad, deger] = cerez.split('=');
       await c.addCookies([{ name: ad, value: deger, url: s.url }]);
       const p = await c.newPage(); await p.goto(s.url + '/satis');
-      await p.waitForFunction(() => window.EXIT_OTURUM && typeof window.git === 'function');
+      await p.waitForFunction(() => window.EXIT_OTURUM && typeof window.git === 'function' && !!document.querySelector('#uyg:not(.gizli)'));
       await p.locator('#uyg').waitFor({ state: 'visible' });
       return p;
     };

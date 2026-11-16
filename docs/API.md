@@ -112,20 +112,25 @@ Bayi kendi özetini görür; satış `?bayi=kul` ile seçer.
 `risk = bakiye + onaylanmış ama faturası kesilmemiş siparişlerin iskontolu neti`. Bu hesap, temsilcinin onay yetkisini sınırlayan kredi limiti denetimiyle aynıdır.
 
 ### Bayi web sitesi nasıl okur (Faz 2b-2)
-Site açılışta yukarıdaki kaynakları paralel okur (`kaynak/web/veri.js`): `ben`, `katalog`, `siparisler`, `odemeler`, `iadeler`, `numuneler`, `teklifler`, `hatirlatmalar`, `cari?hareket=tum`, `duyurular`, `hedef`, `odeme-linki`, `stok`. Listeler 200'lük sayfalarla okunur.
+Site açılışta yukarıdaki kaynakları paralel okur (`kaynak/ortak/rest-veri.js`): `ben`, `katalog`, `siparisler`, `odemeler`, `iadeler`, `numuneler`, `teklifler`, `hatirlatmalar`, `cari?hareket=tum`, `duyurular`, `hedef`, `odeme-linki`, `stok`. Listeler 200'lük sayfalarla okunur.
 
 Bayinin okuduğu her yanıt **imzasıyla** gelir (`ETag`; liste uçlarında sayfadan bağımsız olarak bütün listenin imzası). Sunucuda bir kaynağı etkileyen veri değişince anlık bildirimin ardından gelen `GET /api/degisen?son=…&kapsam=kisisel` yanıtı etkilenen kaynakların yeni imzasını taşır: `kaynaklar: [["siparisler", "\"…\""], ["cari", "\"…\""]]`. Site yalnız imzası elindekinden farklı olan kaynağı yeniden okur; başka bir bayinin siparişi değişince bu bayinin sipariş imzası değişmez.
 
+### Satış paneli nasıl okur (Faz 3b-2 adım 4)
+Satış paneli bayilerin oluşturduğu kayıt listelerini aynı modülle liste uçlarından okur: `siparisler`, `odemeler`, `iadeler`, `numuneler`, `teklifler`, `hatirlatmalar` (temsilci: yalnız atandığı bayilerinki; yönetici: hepsi). Süzgeçsiz liste isteği (`?durum=` ve `?bayi=` olmadan) bütün listenin imzasını `ETag`'de verir. Satışın kendi verisi (fiyat, kampanya, cari, müşteri kartları, hedefler…) ve bütün yazmaları (bu listelere yazmalar da: yama, koşullu karar) eşitleme ucunda kaldı.
+
+Eşitleme ucu satışta `?kapsam=rest` ile kullanılır: `GET /api/veri` ve `/api/degisen` bu altı listeyi göndermez; değiştiklerinde `/api/degisen` yanıtı `kaynaklar` ile yeni imzalarını taşır. Temsilcinin imzası müşteri ataması (`exs-musteriler`) değişince de yeniden gönderilir; kapsamı dışındaki bayinin kaydı değişince değişmez.
+
 ## Eşitleme (mevcut uygulamalar)
 
-Bayi web sitesi eşitleme ucunu `?kapsam=kisisel` ile kullanır: `GET /api/veri` ve `/api/degisen` yalnız bayinin kişisel anahtarlarını (`exb-sepet-<kul>`, `exb-fav-`, `exb-proje-`, `exb-adres-`, `exb-hat-`, `exb-hat-gizli-`, `exb-bildirim-`, `exb-gorulen-`, `exb-duyuru-okundu-`, `exb-mkat-`) verir, `POST /api/veri` yalnız bunları kabul eder (diğerleri `reddedilen`: "iş verisi REST ile yazılır"). Kapsamsız kullanım (satış paneli, tek dosyalık portal, eski istemciler) değişmedi.
+Bayi web sitesi eşitleme ucunu `?kapsam=kisisel` ile kullanır: `GET /api/veri` ve `/api/degisen` yalnız bayinin kişisel anahtarlarını (`exb-sepet-<kul>`, `exb-fav-`, `exb-proje-`, `exb-adres-`, `exb-hat-`, `exb-hat-gizli-`, `exb-bildirim-`, `exb-gorulen-`, `exb-duyuru-okundu-`, `exb-mkat-`) verir, `POST /api/veri` yalnız bunları kabul eder (diğerleri `reddedilen`: "iş verisi REST ile yazılır"). Satış paneli `?kapsam=rest` ile bağlanır (yukarıda). Kapsamsız kullanım (tek dosyalık portal, eski istemciler) değişmedi.
 
 | Uç | Açıklama |
 |---|---|
 | `GET /api/veri` | Oturuma göre süzülmüş tüm anahtarlar: `{zaman, veri, oturum}` |
 | `GET /api/degisen?son=ZAMAN` | `son`'dan sonra değişen anahtarlar |
 | `POST /api/veri` | `{degisen: [[anahtar, değer|null], …], yama?: [[anahtar, yama], …], kosul?: […]}` → `{birlesen, reddedilen}`. Okuma/yazma kuralları `sunucu/lib/kurallar.js` dosyasında. Yama ve koşul aşağıda |
-| `POST /api/numara` | `{on: EXG|IAD|OL|OT|OB|NMN}` → `{no}` |
+| `POST /api/numara` | `{on: EXG|IAD|OL|OT|OB|NMN}` → `{no}`. Güncel uygulamalar kullanmıyor (numarayı REST kayıt uçları verir); eski istemciler için duruyor |
 | `GET /api/olaylar` | Anlık bildirim (Server-Sent Events). Her yazma turunda `data: <zaman>` gönderir; veri içermez, istemci `/api/degisen` ile çeker |
 | `GET /api/dosya/<kimlik>.<uzantı>` | Dekont, fotoğraf, logo. Sahibi olan bayi ve satış görür |
 

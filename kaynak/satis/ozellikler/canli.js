@@ -9,24 +9,8 @@
 window.kosullu = (kosul, f) => window.EXIT_KOSULLU ? window.EXIT_KOSULLU(kosul, f) : (f(), Promise.resolve({ ok: true }));
 (function () {
   if (!window.EXIT_SUNUCU) return;
-  const J = JSON.stringify, nesne = x => x && typeof x === 'object' && !Array.isArray(x);
-  const ham = x => x && typeof x.toJSON === 'function' ? x.toJSON() : x; // temsilci süzgeci (Proxy) → asıl nesne
-  // Değişen girdiler yerinde güncellenir: açık pencerelerin tuttuğu nesne başvuruları geçerli kalır
-  function sozluk(hedef, yeni) {
-    const t = ham(hedef); if (!nesne(t) || !nesne(yeni)) return false; let d = false;
-    for (const a of Object.keys(t)) if (!(a in yeni)) { delete t[a]; d = true; }
-    for (const [a, v] of Object.entries(yeni)) {
-      const e = t[a]; if (J(e) === J(v)) continue; d = true;
-      if (nesne(e) && nesne(v)) { for (const b of Object.keys(e)) if (!(b in v)) delete e[b]; Object.assign(e, v); } else t[a] = v;
-    }
-    return d;
-  }
-  const liste = (hedef, yeni) => { if (!Array.isArray(hedef) || !Array.isArray(yeni) || J(hedef) === J(yeni)) return false; hedef.splice(0, hedef.length, ...yeni); return true; };
   // bellekteki kopyalar: tek veri modülündeki tablo (cekirdek/veri.js, DEPO); sözlük yerinde, liste baştan güncellenir
-  const BAG = Object.fromEntries(DEPO.map(([k, al, , sonra]) => [k, () => {
-    const h = al(), y = oku(k, null) ?? depoBos(k), d = Array.isArray(ham(h)) ? liste(ham(h), y) : sozluk(h, y);
-    if (d && sonra) sonra(); return d;
-  }]));
+  const BAG = Object.fromEntries(DEPO.map(([k]) => [k, () => depoGuncelle(k)]));
   // bayi kayıtları ekranlarda her çizimde yeniden okunur; yalnız sayfa yenilenir
   const YENILE = /^exb-(siparisler|odeme|numune|teklif|iade|hatirlat)$|^exs-(islem)$/;
   let zam = null, bekleyen = false;
@@ -44,6 +28,8 @@ window.kosullu = (kosul, f) => window.EXIT_KOSULLU ? window.EXIT_KOSULLU(kosul, 
       if (BAG[k]) { try { d = BAG[k]() || d; } catch (x) { /* ekran henüz yüklenmedi */ } }
       else if (YENILE.test(k)) d = true;
     }
-    if (d) { bekleyen = true; clearTimeout(zam); zam = setTimeout(yenile, 300); }
+    // oturum henüz açılmadıysa (açılışta REST'ten gelen listeler) yenilenecek sayfa yok: ac() güncel veriyle çizer
+    const acik = $('#uyg') && !$('#uyg').classList.contains('gizli');
+    if (d && acik) { bekleyen = true; clearTimeout(zam); zam = setTimeout(yenile, 300); }
   });
 })();

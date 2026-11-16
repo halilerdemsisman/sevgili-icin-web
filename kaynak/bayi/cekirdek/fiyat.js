@@ -8,7 +8,7 @@ const kmpGecerli = k => k.aktif !== false && (!k.bas || k.bas <= bugunStr()) && 
 function kmpBul(u) { let en = null; KMP.filter(kmpGecerli).filter(k => !(k.bayiler || []).length || (benKul() && k.bayiler.includes(benKul()))).forEach(k => { const uy = k.kapsam === 'tumu' || (k.kapsam === 'kategori' && (k.hedef || []).includes(u.kategori)) || (k.kapsam === 'urun' && (k.hedef || []).includes(u.ad)); if (uy && (!en || k.oran > en.oran)) en = k; }); return en; }
 function kampanyaUygula() {
   if (!VERI._tum) VERI._tum = VERI.urunler.slice();
-  // web sitesi: liste fiyatı, kampanyalı fiyat ve gizli ürünler sunucuda hesaplanır (GET /api/v1/katalog, web/veri.js);
+  // web sitesi: liste fiyatı, kampanyalı fiyat ve gizli ürünler sunucuda hesaplanır (GET /api/v1/katalog, ortak/rest-veri.js);
   // sipariş fiyatını belirleyen hesapla (sunucu/lib/fiyat.js) aynı yerden geldiği için tarayıcıda ikinci bir hesap yok
   const SK = window.EXIT_VERI && EXIT_VERI.katalog;
   if (SK) {

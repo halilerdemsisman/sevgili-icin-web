@@ -6,15 +6,16 @@
   // kayıttan sonraki ilk oturum açılışında karşılama (önceden sayfa yüklenirken bakılıyordu; web sitesinde oturum
   // veri gelince açıldığı için mesaj çoğu zaman çıkmıyordu)
   EK.girisKarsilama = function () { try { if (sessionStorage.getItem('exb-yeni-kayit')) { sessionStorage.removeItem('exb-yeni-kayit'); toast('Kaydınız oluşturuldu, hoş geldiniz.'); } } catch (x) {} };
-  // Faz 2b: web sitesi sunucuya ulaşamadıysa giriş ve kayıt kapalı (yerelde hesap/sipariş oluşmasın)
-  if (window.EXIT_CEVRIMDISI) {
+  // Faz 2b: web sitesi sunucuya ulaşamadıysa giriş ve kayıt kapalı (yerelde hesap/sipariş oluşmasın). Bu, açılıştaki
+  // veri isteği bitince bilinir (3b-2 adım 4: EXIT_HAZIR); sayfa sunucudan açıldığı için önce sunucu kipi kurulur.
+  const cevrimdisi = () => {
     const m = 'Sunucuya ulaşılamıyor. İnternet bağlantınızı kontrol edin; bağlantı gelince sayfa kendiliğinden yenilenir.';
     ['#fGiris', '#fKayit'].forEach(s => { const f = $(s); if (!f) return; f.onsubmit = e => { e.preventDefault(); };
       f.querySelectorAll('button[type=submit], button.marka').forEach(b => { b.disabled = true; }); });
     ['#gHata', '#kHata'].forEach(s => { const h = $(s); if (h) h.textContent = m; });
     document.body.classList.add('cevrimdisi');
-    return;
-  }
+  };
+  if (window.EXIT_HAZIR) EXIT_HAZIR.then(() => { if (window.EXIT_CEVRIMDISI) cevrimdisi(); });
   if (!window.EXIT_SUNUCU) return;
   const bekle = (form, acik) => { const b = form.querySelector('button[type=submit], button.marka'); if (b) b.disabled = !acik; };
   $('#fGiris').onsubmit = async e => {

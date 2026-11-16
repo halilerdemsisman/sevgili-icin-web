@@ -24,6 +24,8 @@
 //   GET   /api/v1/{duyurular|hedef|odeme-linki|stok}   bayiye yayınlanan duyurular, yıllık hedef, ödeme linki, stok/termin özeti
 // Bayinin okuduğu her kaynak ETag (imza) ile döner. Sunucuda bir kaynağı etkileyen anahtar değişince
 // /api/degisen yanıtında kaynakların yeni imzası gelir ([[ad, imza]]); site yalnız imzası değişen kaynağı yeniden okur.
+// Faz 3b-2 (adım 4): satış paneli de kayıt listelerini (siparisler, odemeler, iadeler, numuneler, teklifler,
+// hatirlatmalar) bu uçlardan okur: süzgeçsiz liste isteği ETag ile döner; /api/degisen?kapsam=rest imzaları taşır.
 const crypto = require('crypto');
 const imzala = o => '"' + crypto.createHash('sha1').update(JSON.stringify(o)).digest('base64url').slice(0, 16) + '"';
 const coz = (s, v) => { try { return s == null ? v : JSON.parse(s); } catch (e) { return v; } };
@@ -97,11 +99,12 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
   };
   for (const [ad, k] of Object.entries(LISTELER)) KAYNAK[ad] = { k: [k], oku: ot => tumu(k, ot) };
   const imza = (ad, ot) => imzala(KAYNAK[ad].oku(ot));
-  // /api/degisen için: değişen anahtarların etkilediği kaynakların yeni imzası (yalnız bayi)
+  // /api/degisen için: değişen anahtarların etkilediği kaynakların yeni imzası (bayi: bütün kaynakları; satış: kayıt
+  // listeleri). Temsilci listesi müşteri atamasına (exs-musteriler) bağlıdır: atama değişince de imza gider.
   function imzalar(ot, anahtarlar) {
-    if (!ot || ot.tur !== 'bayi') return [];
-    const A = new Set(anahtarlar);
-    return Object.keys(KAYNAK).filter(ad => KAYNAK[ad].k.some(k => A.has(k))).map(ad => [ad, imza(ad, ot)]);
+    if (!ot) return [];
+    const A = new Set(anahtarlar), adlar = ot.tur === 'bayi' ? Object.keys(KAYNAK) : Object.keys(LISTELER);
+    return adlar.filter(ad => KAYNAK[ad].k.some(k => A.has(k)) || (ot.tur === 'satis' && A.has('exs-musteriler'))).map(ad => [ad, imza(ad, ot)]);
   }
 
   function katalog(ot) {
@@ -169,7 +172,7 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
       if (bayi && ot.tur === 'satis') { if (!gorebilir(ot, bayi)) return js(r, { hata: 'Bu bayiyi göremezsiniz.' }, 403); K = bayi; }
       const adet = Math.min(200, Math.max(1, +sp.get('adet') || 50)), sayfa = Math.max(1, +sp.get('sayfa') || 1);
       const { toplam, kayitlar } = depo.kayitlar('exb-siparisler', { kul: K, durum: sp.get('durum') || undefined, sinir: adet, atla: (sayfa - 1) * adet });
-      return js(r, { toplam, sayfa, adet, siparisler: kayitlar }, 200, ot.tur === 'bayi' ? { ETag: imza('siparisler', ot) } : {});
+      return js(r, { toplam, sayfa, adet, siparisler: kayitlar }, 200, !bayi && !sp.get('durum') ? { ETag: imza('siparisler', ot) } : {});
     }
 
     const m = yol.match(/^\/siparisler\/([A-Z]+-\d{4}-\d+)$/);
@@ -198,7 +201,7 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
     if (mt && q.method === 'GET') {
       const adet = Math.min(200, Math.max(1, +sp.get('adet') || 50)), sayfa = Math.max(1, +sp.get('sayfa') || 1);
       const { toplam, kayitlar } = depo.kayitlar(LISTELER[mt[1]], { kul: kapsam(ot), durum: sp.get('durum') || undefined, sinir: adet, atla: (sayfa - 1) * adet });
-      return js(r, { toplam, sayfa, adet, kayitlar }, 200, ot.tur === 'bayi' ? { ETag: imza(mt[1], ot) } : {});
+      return js(r, { toplam, sayfa, adet, kayitlar }, 200, !sp.get('durum') ? { ETag: imza(mt[1], ot) } : {});
     }
     if (mt && q.method === 'POST' && TURLER[mt[1]]) {
       if (ot.tur !== 'bayi') return js(r, { hata: 'Bu kayıt bayi hesabıyla oluşturulur.' }, 403);
@@ -252,4 +255,4 @@ function restKur({ depo, kurallar, fiyatlar, limitler, js, govde, uygula, islem,
   return rest;
 }
 
-module.exports = { restKur };
+module.exports = { restKur, LISTELER };

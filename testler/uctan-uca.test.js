@@ -28,8 +28,9 @@ async function sunucudaBekle(anahtar, kosul, sure = 8000) {
   assert.fail(`${anahtar} beklenen duruma gelmedi. Son değer: ${JSON.stringify(son)?.slice(0, 500)}`);
 }
 const siparis = L => L.find(o => o.no === NO);
-// Diğer kullanıcının değişikliğini hemen almak için sayfayı yenile (oturum sessionStorage'da kalır)
-const yenile = async (p, git) => { await p.reload(); await p.waitForSelector('#uyg:not(.gizli), #uyg', { state: 'attached' }); if (git) await p.evaluate(g => window.git(g), git); };
+// Diğer kullanıcının değişikliğini hemen almak için sayfayı yenile (oturum sessionStorage'da kalır); veri gelip
+// oturum açılınca devam edilir (3b-2 adım 4: açılış eşzamansız)
+const yenile = async (p, git) => { await p.reload(); await p.waitForSelector('#uyg:not(.gizli)'); if (git) await p.evaluate(g => window.git(g), git); };
 
 describe('Bayi portalı + satış paneli: uçtan uca akış', () => {
   before(async () => {
@@ -59,7 +60,7 @@ describe('Bayi portalı + satış paneli: uçtan uca akış', () => {
     await bayi.check('#kKvkk');
     await bayi.click('#fKayit button[type=submit]');
     // kayıt sunucuda yapılır, sayfa yenilenir ve oturum çerezle açılır
-    await bayi.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'denizbahce');
+    await bayi.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'denizbahce' && !!document.querySelector('#uyg:not(.gizli)'));
     await bayi.locator('#uyg').waitFor({ state: 'visible' });
     await bayi.locator('#izgara .kart').first().waitFor();
     const K = await sunucudaBekle('exb-kullanicilar', K => !!K.denizbahce);
@@ -94,7 +95,7 @@ describe('Bayi portalı + satış paneli: uçtan uca akış', () => {
     await satis.fill('#gKul', 'satis'); await satis.fill('#gSif', YONETICI_SIFRE);
     await satis.click('#fGiris button.btn.marka');
     // giriş sunucuda yapılır, sayfa yenilenir; yeni sayfa sunucudaki son veriyle açılır
-    await satis.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis');
+    await satis.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis' && !!document.querySelector('#uyg:not(.gizli)'));
     await satis.evaluate(() => window.git('siparisler'));
     await satis.locator(`tr[data-no="${NO}"]`).waitFor({ timeout: 8000 });
   });

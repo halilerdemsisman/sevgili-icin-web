@@ -29,7 +29,8 @@
 const http = require('http'), fs = require('fs'), path = require('path'), os = require('os');
 const { depoAc, HANE } = require('./lib/depo');
 const { Limitler } = require('./lib/limit');
-const { restKur } = require('./lib/rest');
+const { restKur, LISTELER } = require('./lib/rest');
+const REST_LISTE = new Set(Object.values(LISTELER));
 const { Kurallar, KISISEL } = require('./lib/kurallar');
 const { Dosyalar, dosyaAlanlariniTemizle } = require('./lib/dosya');
 const { Fiyatlar } = require('./lib/fiyat');
@@ -176,10 +177,15 @@ const YEREL = /^(exb-dil|exb-oturum|exs-oturum|exs-ai-anahtar|exit-tema|exb-kars
 // anahtarlarını (sepet, favori, proje, adres…) alır ve yazar.
 const kisiselMi = (ot, k) => { const m = k.match(KISISEL); return !!m && m[2] === ot.kul; };
 const kisiselKapsam = (ot, u) => !!ot && ot.tur === 'bayi' && u.searchParams.get('kapsam') === 'kisisel';
-function gorunurVeri(ot, kisisel) {
+// rest (Faz 3b-2 adım 4): satış paneli bayi kayıt listelerini (siparişler, ödemeler…) REST'ten okur; eşitleme ucu bu
+// kipte onları göndermez (değişince kaynak imzası gider). Satışın yazmaları değişmedi (bu anahtarlar da yazılabilir).
+const restKapsam = (ot, u) => !!ot && ot.tur === 'satis' && u.searchParams.get('kapsam') === 'rest';
+// eşitleme ucunun bu istekte göndermeyeceği anahtar (okuma)
+const gizliMi = (ot, u) => kisiselKapsam(ot, u) ? k => !kisiselMi(ot, k) : restKapsam(ot, u) ? k => REST_LISTE.has(k) : () => false;
+function gorunurVeri(ot, gizli) {
   const veri = {}; if (!ot) return veri;
   for (const k of depo.anahtarlar()) {
-    if (kisisel && !kisiselMi(ot, k)) continue; const v = kurallar.oku(k, depo.al(k), ot); if (v !== undefined) veri[k] = v; }
+    if (gizli(k)) continue; const v = kurallar.oku(k, depo.al(k), ot); if (v !== undefined) veri[k] = v; }
   return veri;
 }
 
@@ -295,20 +301,20 @@ async function api(q, r, u, p, ip) {
     return js(r, { ok: true, gecici });
   }
 
-  if (p === '/api/veri' && q.method === 'GET') { const ot = oturum(q, tur); return js(r, { zaman: depo.zaman, veri: gorunurVeri(tamOturum(ot), kisiselKapsam(ot, u)), oturum: oturumOzeti(ot) }); }
+  if (p === '/api/veri' && q.method === 'GET') { const ot = oturum(q, tur); return js(r, { zaman: depo.zaman, veri: gorunurVeri(tamOturum(ot), gizliMi(ot, u)), oturum: oturumOzeti(ot) }); }
 
   if (p === '/api/degisen') {
     const ot0 = oturum(q, tur), ot = tamOturum(ot0), son = +u.searchParams.get('son') || 0;
     if (!ot) return js(r, { zaman: depo.zaman, degisen: [], oturum: oturumOzeti(ot0) });
-    const degisen = [], kisisel = kisiselKapsam(ot, u), D = depo.degisenler(son);
+    const degisen = [], gizli = gizliMi(ot, u), kaynakli = kisiselKapsam(ot, u) || restKapsam(ot, u), D = depo.degisenler(son);
     for (const k of D) {
-      if (kisisel && !kisiselMi(ot, k)) continue;
+      if (gizli(k)) continue;
       const ham = depo.al(k);
       if (ham == null) { const m = k.match(KISISEL); if (ot.tur === 'satis' || (m && m[2] === ot.kul) || (!m && !k.startsWith('exs-'))) degisen.push([k, null]); continue; }
       const v = kurallar.oku(k, ham, ot); if (v !== undefined) degisen.push([k, v]);
     }
-    // iş verisi değiştiyse REST kaynaklarının yeni imzası: site yalnız imzası değişeni yeniden okur
-    return js(r, { zaman: depo.zaman, degisen, ...(kisisel ? { kaynaklar: rest.imzalar(ot, D) } : {}), oturum: oturumOzeti(ot) });
+    // iş verisi değiştiyse REST kaynaklarının yeni imzası: istemci yalnız imzası değişeni yeniden okur
+    return js(r, { zaman: depo.zaman, degisen, ...(kaynakli ? { kaynaklar: rest.imzalar(ot, D) } : {}), oturum: oturumOzeti(ot) });
   }
 
   if (p === '/api/veri' && q.method === 'POST') {

@@ -1,7 +1,7 @@
 // Ekran: kampanya ve sezon indirimleri.
 // ===== kampanya ve sezon indirimleri =====
 const kmpYaz = () => { yaz('exs-kampanya', KMP); yaz('exb-kampanya', KMP); };
-yaz('exb-kampanya', KMP);
+veriHazir(() => yaz('exb-kampanya', KMP)); // bayilere yayınlanan kopya güncel kalsın
 const bugun = () => new Date().toISOString().slice(0, 10);
 const kmpDurum = k => k.aktif === false ? ['Durduruldu', 'd-iptal'] : k.bas && k.bas > bugun() ? ['Planlandı', 'd-yeni'] : k.bit && k.bit < bugun() ? ['Sona erdi', 'd-iptal'] : ['Yayında', 'd-onay'];
 function kmpPerf(k) {

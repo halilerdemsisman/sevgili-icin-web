@@ -2,7 +2,7 @@
 // ===== ürün ve fiyat yönetimi (bayi portalını yönetir) =====
 // fiyat ve görünürlüğü kaydeder, bayi portalına yayınlar (değişikliği geçmişe yazan: urunYaz)
 const fiyatYayinla = () => { yaz('exs-fiyat', FIYAT); yaz('exb-fiyat', FIYAT); yaz('exs-gizli', GIZLI); yaz('exb-gizli', GIZLI); };
-fiyatYayinla();
+veriHazir(fiyatYayinla);
 const fiyatAl = (u, s) => { const f = (FIYAT[u.ad] || {})[s.ad]; return f != null && f !== '' ? +f : s.fiyat; };
 const aktifKmp = u => KMP.filter(k => kmpDurum(k)[0] === 'Yayında' && (k.kapsam === 'tumu' || (k.hedef || []).includes(k.kapsam === 'kategori' ? u.kategori : u.ad))).sort((a, b) => b.oran - a.oran);
 const PF = { ara: '', kat: '', sinif: '', durum: '' }, SEC = new Set();

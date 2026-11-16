@@ -35,6 +35,36 @@ let SIP = depoIlk('exs-siparisler'), MUS = depoIlk('exs-musteriler'), ISK = depo
   KMP = depoIlk('exs-kampanya'), ONAY = depoIlk('exs-onay-ayar'), FGEC = depoIlk('exs-fiyat-gecmis'), FSUR = depoIlk('exs-fiyat-surum'),
   BLD = depoIlk('exs-bildirim'), HDF = depoIlk('exs-hedef'), HT = depoIlk('exs-hatirlatma'), DY = depoIlk('exs-duyuru'),
   GR = depoIlk('exs-fiyat-grup'), BH = depoIlk('exs-bayi-hedef');
+// Bellekteki kopyayı anahtarın son hâline getirir: sözlük yerinde (açık pencerelerin tuttuğu nesne başvuruları geçerli
+// kalır), liste baştan. Değiştiyse satırın "değişince" işi çalışır. Başkasının değişikliği (ozellikler/canli.js) ve
+// açılışta sunucudan gelen veri (depoTazele) bunu kullanır.
+const _ham = x => x && typeof x.toJSON === 'function' ? x.toJSON() : x; // temsilci süzgeci (Proxy) → asıl nesne
+const _nesne = x => x && typeof x === 'object' && !Array.isArray(x), _J = JSON.stringify;
+function depoGuncelle(k) {
+  const [, al, , sonra] = depoSatir(k), h = _ham(al()), y = oku(k, null) ?? depoBos(k);
+  let d = false;
+  if (Array.isArray(h)) { if (Array.isArray(y) && _J(h) !== _J(y)) { h.splice(0, h.length, ...y); d = true; } }
+  else if (_nesne(h) && _nesne(y)) {
+    for (const a of Object.keys(h)) if (!(a in y)) { delete h[a]; d = true; }
+    for (const [a, v] of Object.entries(y)) {
+      const e = h[a]; if (_J(e) === _J(v)) continue; d = true;
+      if (_nesne(e) && _nesne(v)) { for (const b of Object.keys(e)) if (!(b in v)) delete e[b]; Object.assign(e, v); } else h[a] = v;
+    }
+  }
+  if (d && sonra) sonra();
+  return d;
+}
+// Sunucudan açılınca veri sayfa açıldıktan sonra gelir (ortak/senkron.js EXIT_HAZIR, kayıt listeleri ortak/rest-veri.js):
+// veriYukle() gelmesini bekler, bellekteki kopyaları tazeler ve veriye bağlı açılış işlerini (veriHazir) çalıştırır.
+// Sunucusuz (dosyadan açılan) sürümde veri baştan yerelde olduğu için işler hemen çalışır.
+const _hazirIsler = [];
+const veriHazir = f => { if (window.EXIT_HAZIR) _hazirIsler.push(f); else f(); };
+async function veriYukle() {
+  if (!window.EXIT_HAZIR) return;
+  await EXIT_HAZIR; if (window.EXIT_VERI) await EXIT_VERI.hazir;
+  DEPO.forEach(([k]) => depoGuncelle(k));
+  _hazirIsler.splice(0).forEach(f => { try { f(); } catch (e) { console.error(e); } });
+}
 
 // Siparişler: müşteri uygulaması aynı tarayıcıdaysa doğrudan okunur; değilse müşterinin indirdiği sipariş dosyaları içe aktarılır.
 function birlestir() {

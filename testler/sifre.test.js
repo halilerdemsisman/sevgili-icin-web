@@ -19,7 +19,7 @@ describe('Şifre sıfırlama ve fiyat uyarısı (tarayıcı)', () => {
   test('yönetici geçici şifre üretir, bayi ilk girişte yeni şifresini belirler', async () => {
     await satis.goto(s.url + '/satis');
     await satis.fill('#gKul', 'satis'); await satis.fill('#gSif', YONETICI_SIFRE); await satis.click('#fGiris button.btn.marka');
-    await satis.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis');
+    await satis.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis' && !!document.querySelector('#uyg:not(.gizli)'));
     await satis.evaluate(() => window.git('kullanicilar6'));
     await satis.selectOption('#ssKim', 'bayi|ayse');
     await satis.click('#ssBtn');
@@ -32,7 +32,7 @@ describe('Şifre sıfırlama ve fiyat uyarısı (tarayıcı)', () => {
     assert.equal(await bayi.locator('#uyg').isVisible(), false, 'şifre değişmeden uygulama açılmaz');
     await bayi.fill('#exSifEski', gecici); await bayi.fill('#exSifYeni', 'AyseYeni2026'); await bayi.fill('#exSifYeni2', 'AyseYeni2026');
     await bayi.click('#exSifPerde button[type=submit]');
-    await bayi.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'ayse' && !window.EXIT_OTURUM.sifreDegistir);
+    await bayi.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'ayse' && !window.EXIT_OTURUM.sifreDegistir && !!document.querySelector('#uyg:not(.gizli)'));
     await bayi.locator('#izgara .kart').first().waitFor();
     assert.equal(await bayi.locator('#exSifPerde').count(), 0);
   });
@@ -44,7 +44,7 @@ describe('Şifre sıfırlama ve fiyat uyarısı (tarayıcı)', () => {
     await bayi.click('#exSifPerde button[type=submit]');
     await bayi.locator('#exSifHata', { hasText: 'aynı değil' }).waitFor();
     await bayi.fill('#exSifYeni2', 'AyseDaha2027'); await bayi.click('#exSifPerde button[type=submit]');
-    await bayi.waitForFunction(() => document.readyState === 'complete' && !document.getElementById('exSifPerde') && window.EXIT_OTURUM);
+    await bayi.waitForFunction(() => document.readyState === 'complete' && !document.getElementById('exSifPerde') && window.EXIT_OTURUM && !!document.querySelector('#uyg:not(.gizli)'));
     await s.giris('bayi', 'ayse', 'AyseDaha2027');
   });
 

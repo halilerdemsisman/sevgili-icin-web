@@ -7,6 +7,7 @@ button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}
 .logolar{display:flex;align-items:center;gap:12px}.logolar svg{height:34px;width:auto;display:block}.logolar svg[aria-label="bg group"]{height:27px}
 .logolar .logo-sep{width:1px;align-self:stretch;background:rgba(148,163,184,.4);margin:4px 0}
 /* giriş */
+html.oturum-aciliyor #giris{visibility:hidden} /* kayıtlı oturum açılırken (veri gelene kadar) giriş formu görünmesin */
 #giris{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(1000px 600px at 20% 10%,#1f2937,#0b1120);padding:20px}
 .g-kutu{width:100%;max-width:380px;background:#fff;border-radius:20px;padding:30px;box-shadow:0 30px 80px rgba(0,0,0,.4)}
 .g-kutu h1{font-size:20px;margin:18px 0 4px;text-align:center}.g-kutu p{text-align:center;margin:0 0 20px;color:var(--soluk);font-size:13px}

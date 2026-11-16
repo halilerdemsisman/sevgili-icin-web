@@ -17,7 +17,7 @@ async function bayiKaydol(kul) {
   const v = { kFirma: kul + ' Ltd.', kAd: kul, kTel: '05550000000', kMail: kul + '@ornek.com', kSehir: 'İzmir', kKul: kul, kSif: 'Sifre123' };
   for (const [k, x] of Object.entries(v)) await p.fill('#' + k, x);
   await p.check('#kKvkk'); await p.click('#fKayit button[type=submit]');
-  await p.waitForFunction(k => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === k, kul);
+  await p.waitForFunction(k => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === k && !!document.querySelector('#uyg:not(.gizli)'), kul);
   await p.locator('#izgara .kart').first().waitFor();
   return p;
 }
@@ -86,7 +86,7 @@ describe('Bilinen sorunlar (Faz 1a\'da kapatıldı)', () => {
     // satış yöneticisi olarak aç (bayi kendisine ait olmayan ödemeleri zaten görmez)
     const c = await tarayici.newContext(); const p = await c.newPage();
     await c.addCookies([{ name: 'exit_s', value: decodeURIComponent(s.yoneticiCerez.split('=')[1]), url: s.url }]);
-    await p.goto(s.url + '/satis');
+    await p.goto(s.url + '/satis'); await p.locator('#uyg:not(.gizli)').waitFor(); // veri eşzamansız gelir (3b-2 adım 4)
     const durum = await p.evaluate(() => ({ bagli: window.EXIT_SUNUCU === true, odeme: !!localStorage.getItem('exb-odeme'), cari: !!localStorage.getItem('exs-cari') }));
     const odeme = await p.evaluate(() => localStorage.getItem('exb-odeme') || '');
     await c.close();

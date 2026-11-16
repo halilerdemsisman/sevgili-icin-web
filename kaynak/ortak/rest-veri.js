@@ -1,19 +1,25 @@
-/* Faz 2b-2 (adım 2) · bayi web sitesinin veri modülü. Yalnız web sitesine girer.
-   İş verisi (siparişler, cari, fiyatlar ve kampanyalar, ödemeler, teklifler, duyurular, mesajlar…) REST uçlarından
-   okunur (GET /api/v1/…; docs/API.md). Eşitleme ucu (api/veri) sitede yalnız bayinin kişisel anahtarları (sepet,
-   favori, proje, adres…) için kalır (senkron.js, ?kapsam=kisisel).
-   Ekranlar veriyi yine oku('exb-…') ile, bellekteki kopyadan okur; bu modül kopyayı REST yanıtından doldurur.
-   Böylece ekranların okuma biçimi tek dosyalık (sunucusuz) sürümle aynı kalır.
+/* REST veri modülü (iki uygulamada ortak). Faz 2b-2 (adım 2): bayi web sitesi · Faz 3b-2 (adım 4): satış paneli.
+   İş verisi REST uçlarından okunur (GET /api/v1/…; docs/API.md):
+     • bayi web sitesi: bütün iş verisi (siparişler, cari, fiyatlar ve kampanyalar, ödemeler, teklifler, duyurular,
+       mesajlar…). Eşitleme ucu (api/veri) sitede yalnız bayinin kişisel anahtarları (sepet, favori, proje…) için kalır.
+     • satış paneli: bayilerin oluşturduğu kayıt listeleri (siparişler, ödeme bildirimleri, iadeler, numuneler, özel
+       teklifler, satış mesajları), temsilcinin kapsamındaki bayilerinki. Satışın kendi verisi (fiyat, kampanya, cari,
+       müşteri kartları…) ve bütün yazmalar eşitleme ucunda kaldı (kayıt düzeyinde yama, koşullu karar).
+   Ekranlar veriyi yine oku('exb-…') ile, bellekteki kopyadan okur; bu modül kopyayı REST yanıtından doldurur
+   (EXIT_BELLEK_KOY: yama tabanı da olur). Böylece tek dosyalık (sunucusuz) sürüm aynı ekran koduyla çalışır.
    Güncel tutma: her kaynak imzasıyla (ETag) gelir. Sunucuda bir kaynağı etkileyen veri değişince anlık bildirimin
    ardından gelen /api/degisen yanıtı kaynakların yeni imzasını taşır (senkron.js → 'exit-kaynak' olayı); yalnız
    imzası değişen kaynak yeniden okunur.
-   EXIT_VERI.hazir: ilk yükleme bitince çözülür (girişten önce beklenir; 03-ana.js kurulum). */
+   EXIT_VERI.hazir: oturum bilinip (EXIT_HAZIR) ilk yükleme bitince çözülür; uygulamalar oturumu bundan sonra açar
+   (bayi: cekirdek/oturum.js kurulum, satış: cekirdek/veri.js veriYukle). Oturum yoksa EXIT_VERI kaldırılır. */
 (function () {
-  const O = window.EXIT_OTURUM;
-  if (!window.EXIT_WEB || !window.EXIT_SUNUCU || !O || O.tur !== 'bayi' || O.sifreDegistir || !window.EXIT_BELLEK_KOY) return;
-  const kul = O.kul, ADET = 200;
+  if (!window.EXIT_HAZIR || !window.EXIT_BELLEK_KOY) return;
+  const UYG = window.EXIT_UYG;
+  if (UYG === 'bayi' && !window.EXIT_WEB) return; // tek dosyalık portal sunucudan açılırsa eşitleme ucuyla okur
+  const ADET = 200;
+  let kul = null, acik = false;
   const getir = async yol => {
-    const r = await fetch('api/v1/' + yol, { cache: 'no-store', headers: { 'X-Exit-Uyg': 'bayi' } });
+    const r = await fetch('api/v1/' + yol, { cache: 'no-store', headers: { 'X-Exit-Uyg': UYG } });
     if (!r.ok) throw new Error(yol + ': ' + r.status);
     return { j: await r.json(), imza: r.headers.get('ETag') };
   };
@@ -26,15 +32,18 @@
   };
   const tek = (yol, f) => async () => { const x = await getir(yol); return { imza: x.imza, v: f(x.j) }; };
   // kaynak → [bellekteki anahtar (ekranların okuduğu), okuyucu]
-  const KAYNAK = {
-    ben: ['exb-kullanicilar', tek('ben', j => ({ [kul]: { ...j, kul } }))],
-    katalog: [null, tek('katalog', j => j)],
+  const LISTELER = {
     siparisler: ['exb-siparisler', liste('siparisler', 'siparisler')],
     odemeler: ['exb-odeme', liste('odemeler')],
     iadeler: ['exb-iade', liste('iadeler')],
     numuneler: ['exb-numune', liste('numuneler')],
     teklifler: ['exb-teklif', liste('teklifler')],
     hatirlatmalar: ['exb-hatirlat', liste('hatirlatmalar')],
+  };
+  const KAYNAK = UYG === 'satis' ? LISTELER : {
+    ben: ['exb-kullanicilar', tek('ben', j => ({ [kul]: { ...j, kul } }))],
+    katalog: [null, tek('katalog', j => j)],
+    ...LISTELER,
     cari: ['exb-cari', tek('cari?hareket=tum', j => j.tanimli ? { [kul]: { vade: j.vade ?? 60, limit: j.limit, hareket: j.hareketler || [] } } : {})],
     duyurular: ['exb-duyuru', tek('duyurular', j => j.duyurular || [])],
     hedef: ['exb-bayi-hedef', tek('hedef', j => j.hedef ? { [kul]: j.hedef } : {})],
@@ -58,10 +67,17 @@
     })();
     return surec[ad];
   }
-  V.hazir = Promise.all(Object.keys(KAYNAK).map(oku));
+  V.hazir = EXIT_HAZIR.then(() => {
+    const O = window.EXIT_OTURUM;
+    if (!window.EXIT_SUNUCU || !O || O.tur !== UYG || O.sifreDegistir) { if (window.EXIT_VERI === V) delete window.EXIT_VERI; return; }
+    kul = O.kul; acik = true;
+    return Promise.all(Object.keys(KAYNAK).map(oku));
+  });
   // sunucuda değişen kaynaklar (yeni imza): yalnız farklı olanlar yeniden okunur
-  addEventListener('exit-kaynak', e => (e.detail || []).forEach(([ad, i]) => { if (KAYNAK[ad] && (imza[ad] !== i || surec[ad])) oku(ad); }));
+  addEventListener('exit-kaynak', e => { if (acik) (e.detail || []).forEach(([ad, i]) => { if (KAYNAK[ad] && (imza[ad] !== i || surec[ad])) oku(ad); }); });
   // kampanyaların geçerliliği güne bağlı: gün değişince fiyatlar yeniden okunur
-  let gun = new Date().toISOString().slice(0, 10);
-  setInterval(() => { const g = new Date().toISOString().slice(0, 10); if (g !== gun) { gun = g; oku('katalog'); } }, 60000);
+  if (KAYNAK.katalog) {
+    let gun = new Date().toISOString().slice(0, 10);
+    setInterval(() => { const g = new Date().toISOString().slice(0, 10); if (acik && g !== gun) { gun = g; oku('katalog'); } }, 60000);
+  }
 })();

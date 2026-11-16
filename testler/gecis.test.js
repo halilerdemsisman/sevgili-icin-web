@@ -34,7 +34,7 @@ describe('Eski sürümden geçiş', () => {
       await p.reload();
       assert.ok(await p.evaluate(() => !!localStorage.getItem('exs-siparisler')), 'giriş ekranında yerel veri silinmemeli');
       await p.fill('#gKul', 'satis'); await p.fill('#gSif', YONETICI_SIFRE); await p.click('#fGiris button.btn.marka');
-      await p.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis');
+      await p.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis' && !!document.querySelector('#uyg:not(.gizli)'));
       const V = s.veri().veri;
       assert.ok(JSON.parse(V['exs-siparisler'])['EXG-2025-0007'], 'eski sipariş sunucuya aktarıldı');
       assert.ok(JSON.parse(V['exs-musteriler']).eskibayi);

@@ -24,7 +24,7 @@ describe('Ayarlar, yapay zekâ ve anlık bildirim (tarayıcı)', () => {
     await p.addInitScript(() => { if (!sessionStorage.getItem('t-ilk')) { sessionStorage.setItem('t-ilk', '1'); localStorage.setItem('exs-ai-anahtar', 'sk-ant-eski-tarayici-anahtari'); } });
     await p.goto(s.url + '/satis');
     await p.fill('#gKul', 'satis'); await p.fill('#gSif', YONETICI_SIFRE); await p.click('#fGiris button.btn.marka');
-    await p.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis');
+    await p.waitForFunction(() => window.EXIT_OTURUM && window.EXIT_OTURUM.kul === 'satis' && !!document.querySelector('#uyg:not(.gizli)'));
   });
   after(async () => { await tarayici?.close(); s?.kapat(); sahte?.close(); });
 

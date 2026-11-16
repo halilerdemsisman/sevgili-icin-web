@@ -165,7 +165,7 @@ describe('Satış paneli: ekler', () => {
     await c.addCookies([{ name: k, value: v, url: s.url }]);
     p = await c.newPage(); H = hataTopla(p); p.on('dialog', d => d.accept());
     await p.goto(s.url + '/satis');
-    await p.waitForFunction(n => window.EXIT_OTURUM && typeof window.git === 'function' && typeof SIP !== 'undefined' && SIP[n], no);
+    await p.waitForFunction(n => window.EXIT_OTURUM && typeof window.git === 'function' && typeof SIP !== 'undefined' && SIP[n] && !!document.querySelector('#uyg:not(.gizli)'), no);
     await p.locator('#uyg').waitFor({ state: 'visible' });
   });
   after(async () => { await b?.close(); s?.kapat(); });

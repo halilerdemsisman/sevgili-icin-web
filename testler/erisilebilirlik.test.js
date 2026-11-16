@@ -120,6 +120,8 @@ describe('Bayi web sitesi: hız (Lighthouse bulguları)', () => {
   test('girişli bayi açılışta giriş formunu görmez; girişsiz ziyaretçi görür', async () => {
     const IZLE = () => { window.__giris = []; const bak = () => { const g = document.getElementById('giris'); if (g && document.body) window.__giris.push(g.checkVisibility({ visibilityProperty: true }) && !g.classList.contains('gizli')); if (!document.querySelector('#izgara .kart') || window.__giris.length < 5) requestAnimationFrame(bak); }; requestAnimationFrame(bak); };
     const ctx = await b.newContext(); const [k, v] = cerez.split('='); await ctx.addCookies([{ name: k, value: v, url: s.url }]);
+    // kayıtlı oturum: bayi bu tarayıcıda daha önce girmiş (3b-2 adım 4: veri eşzamansız gelir; oturum ipucu girişte yazılır)
+    { const p0 = await ctx.newPage(); await p0.goto(s.url + '/katalog'); await p0.locator('#izgara .kart').first().waitFor(); await p0.close(); }
     await ctx.addInitScript(IZLE);
     const p = await ctx.newPage(), H = hataTopla(p);
     await p.goto(s.url + '/katalog'); await p.locator('#izgara .kart').first().waitFor();
