@@ -15,6 +15,7 @@
 'use strict';
 const { app, BrowserWindow, Menu, Tray, Notification, ipcMain, shell, dialog, session, nativeImage, net, safeStorage } = require('electron');
 const path = require('path');
+const { fileURLToPath } = require('url');
 const fs = require('fs');
 
 if (process.env.EXIT_VERI_KLASORU) app.setPath('userData', path.resolve(process.env.EXIT_VERI_KLASORU));
@@ -39,7 +40,16 @@ function adresDuzelt(a) {
   return u.origin;
 }
 const sunucudanMi = url => { try { return !!ayar.sunucu && new URL(url).origin === ayar.sunucu; } catch (e) { return false; } };
-const yerelSayfaMi = url => { try { const u = new URL(url); return u.protocol === 'file:' && path.normalize(decodeURIComponent(u.pathname)).startsWith(path.normalize(SAYFALAR)); } catch (e) { return false; } };
+// Uygulamanın kendi sayfası mı (sayfalar/ altında bir dosya)? Adres işletim sisteminin yoluna çevrilerek denetlenir:
+// Windows'ta file:///C:/… adresinin pathname'i "/C:/…" olur ve doğrudan karşılaştırılamaz (3b-2'de Windows
+// denemesinde bulundu: kurulum sayfası adresi kaydedemiyordu). path.relative Windows'ta büyük/küçük harfe duyarsızdır.
+const yerelSayfaMi = url => {
+  try {
+    const u = new URL(url); if (u.protocol !== 'file:') return false;
+    const g = path.relative(SAYFALAR, fileURLToPath(u));
+    return !!g && !g.startsWith('..') && !path.isAbsolute(g);
+  } catch (e) { return false; }
+};
 
 // ---------- pencereler ----------
 let anaPen = null, tepsi = null, cikiyor = false, rozetSayi = 0;

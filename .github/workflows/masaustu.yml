@@ -8,6 +8,8 @@
 #   sayacı, şifreli son görülen veriler, güncelleme turu ve kaldırma denenir (araclar/windows-dene.mjs).
 #   Masaüstü uygulaması, sunucu veya bu dosya değişince ve her elle çalıştırmada çalışır. Sonuç işin özetinde,
 #   ekran görüntüleri "Artifacts" bölümünde (exit-satis-windows-deneme).
+#   Aynı iş "EXIT-Deneme-Windows" paketini de üretir: sunucu, masaüstü kurulum dosyası ve Node tek klasörde;
+#   bir Windows bilgisayarda zip açılıp BASLAT.bat'a çift tıklanır (dagitim/windows/BENIOKU.txt).
 name: Masaüstü paketi
 on:
   workflow_dispatch:
@@ -20,6 +22,8 @@ on:
       - 'kaynak/satis/**'
       - 'kaynak/ortak/**'
       - 'araclar/windows-dene.mjs'
+      - 'araclar/deneme-paketi.mjs'
+      - 'dagitim/windows/**'
       - '.github/workflows/masaustu.yml'
 permissions:
   contents: read
@@ -85,6 +89,13 @@ jobs:
           npm version patch --no-git-tag-version
           npx electron-builder --win nsis --x64 --publish never '--config.directories.output=cikti-yeni'
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Deneme paketi (sunucu + masaüstü kurulum dosyası + Node; BASLAT.bat)
+        run: node araclar/deneme-paketi.mjs satis-masaustu/cikti EXIT-Deneme
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EXIT-Deneme-Windows
+          path: EXIT-Deneme/
+          if-no-files-found: error
       - name: Windows denemesi
         run: node araclar/windows-dene.mjs satis-masaustu/cikti satis-masaustu/cikti-yeni cikti-dene
       - uses: actions/upload-artifact@v4

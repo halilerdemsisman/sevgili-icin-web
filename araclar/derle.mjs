@@ -181,7 +181,7 @@ const SUNUCU_VERISI = /^(veri|mrp_veri|oturumlar|gizli)\.json|^veri\.sqlite|^(ye
 // Canlı veriyi yedekleyip özetleyen araç pakete de girer (sunucuda: node araclar/veri_incele.mjs /var/lib/exit/veri.json)
 yaz(path.join(DIST, 'araclar', 'veri_incele.mjs'), fs.readFileSync(path.join(KOK, 'araclar', 'veri_incele.mjs')));
 // VPS kurulum dosyaları
-if (fs.existsSync(path.join(KOK, 'dagitim'))) kopyala(path.join(KOK, 'dagitim'), path.join(DIST, 'dagitim'));
+if (fs.existsSync(path.join(KOK, 'dagitim'))) kopyala(path.join(KOK, 'dagitim'), path.join(DIST, 'dagitim'), f => f === 'windows'); // windows/: deneme paketi (araclar/deneme-paketi.mjs)
 // Sunucunun fiyat denetimi için görselsiz katalog
 {
   const V = JSON.parse(fs.readFileSync(path.join(KATALOG, 'urunler.json'), 'utf8'));

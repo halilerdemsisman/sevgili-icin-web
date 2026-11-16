@@ -1,9 +1,10 @@
 // Faz 3b-2: Windows'ta kurulum ve güncelleme denemesi (pilottan önce, GitHub Actions'ın Windows makinesinde).
 // Pilot rehberindeki (satis-masaustu/PILOT.md) makineyle yapılan adımların otomatikleştirilebilenleri:
 //   1. Kurulum dosyası sessiz kurulur (/S); program klasörü, Başlat menüsü ve masaüstü kısayolu, dosya sürümü.
-//   2. Kurulan uygulama gerçek bir test sunucusuna bağlanır: giriş, durum çubuğunda sürüm, bayi siparişi →
+//   2. İlk açılışta sunucu adresi kurulum sayfasına yazılır ve kaydedilir. Kurulan uygulama gerçek bir test
+//      sunucusuna bağlanır: giriş, durum çubuğunda sürüm, bayi siparişi →
 //      Windows bildirimi ve görev çubuğu sayacı (2 sn kabul ölçütü), bildirime tıklayınca sipariş açılır,
-//      son görülen veriler DPAPI ile şifreli, sunucuya ulaşılamazsa salt okunur görünüm.
+//      son görülen veriler DPAPI ile şifreli, sunucuya ulaşılamazsa salt okunur görünüm ve "Yeniden dene".
 //   3. Güncelleme turu: sunucunun /masaustu/guncelleme/ klasörüne yeni sürüm konur; kurulu eski sürüm onu bulur,
 //      indirir (sha512), kapanıp yeni sürümü kurar; yeniden açılışta yeni sürüm çalışır ve yeniden güncelleme aramaz.
 //   4. Kaldırma (/S): program klasörü ve kısayollar silinir.
@@ -109,6 +110,21 @@ await adim('Başlat menüsü ve masaüstü kısayolu', async () => {
 
 if (EXE) {
   let app = null, w = null;
+  // ilk açılış: adres EXIT_SUNUCU_ADRESI ile verilmez, kullanıcı gibi kurulum sayfasına yazılır (ayrı veri klasörü)
+  await adim('İlk açılış: sunucu adresi sorulur, yazılan adres kaydedilir', async () => {
+    const v = path.join(TABAN, 'veri-ilk');
+    const a = await _electron.launch({ executablePath: EXE, env: ortam({ EXIT_VERI_KLASORU: v }), timeout: 60000 });
+    try {
+      const p = await a.firstWindow();
+      await p.locator('#adres').waitFor({ timeout: 30000 });
+      const g = ekranGoruntusu('0-ilk-acilis');
+      await p.fill('#adres', ADRES()); await p.click('#baglan');
+      await p.waitForURL(ADRES() + '/satis', { timeout: 30000 });
+      const k = JSON.parse(fs.readFileSync(path.join(v, 'ayarlar.json'), 'utf8')).sunucu;
+      if (k !== ADRES()) throw new Error('kaydedilen adres: ' + k);
+      return 'kaydedilen adres ' + k + ', satış paneli açıldı · ' + g;
+    } finally { await a.close().catch(() => {}); await surecleriKapat(EXE); }
+  });
   await adim('Kurulu uygulama açılır, sunucuya bağlanır, giriş yapılır', async () => {
     app = await ac(); w = await app.firstWindow();
     await w.waitForURL(ADRES() + '/satis', { timeout: 30000 }); await w.locator('#gKul').waitFor({ timeout: 30000 });
@@ -160,8 +176,12 @@ if (EXE) {
       await p.locator('#sonGorulen').waitFor({ timeout: 10000 });
       const t = await p.locator('#sgGovde').textContent();
       if (!t.includes(no)) throw new Error('bekleyen işlerde sipariş yok');
-      return (await p.locator('.sg-etiket').textContent()).trim() + ' · ' + ekranGoruntusu('3-baglanti-yok');
-    } finally { await a.close().catch(() => {}); await surecleriKapat(EXE); await aktariciAc(); }
+      const e = (await p.locator('.sg-etiket').textContent()).trim() + ' · ' + ekranGoruntusu('3-baglanti-yok');
+      // bağlantı gelince "Yeniden dene" satış paneline döner
+      await aktariciAc(); await p.click('#dene');
+      await p.waitForURL(u => String(u).startsWith(ADRES() + '/satis'), { timeout: 30000 });
+      return e + ' · "Yeniden dene" ile panele dönüldü';
+    } finally { await a.close().catch(() => {}); await surecleriKapat(EXE); if (!aktarici.sunucu.listening) await aktariciAc(); }
   });
 
   // ---------- güncelleme turu ----------

@@ -1,0 +1,46 @@
+EXIT Garden · Windows deneme paketi
+===================================
+
+Bu paket bayi sitesini, satış panelini ve satış ekibinin masaüstü uygulamasını
+tek bir Windows bilgisayarda çalıştırır. Kurulum, alan adı veya VPS gerekmez.
+Node.js pakettedir; ayrıca bir şey kurmanız gerekmez.
+
+BAŞLATMA
+1. Zip dosyasını bir klasöre açın (örn. C:\EXIT). Zip'in içinden çalıştırmayın.
+2. BASLAT.bat dosyasına çift tıklayın.
+   Windows "Bilinmeyen yayımcı" ya da "Windows kişisel bilgisayarınızı korudu"
+   derse "Ek bilgi > Yine de çalıştır" / "Çalıştır" ile geçin.
+3. İlk açılışta satış yöneticisi ("satis") için bir şifre belirleyin (en az 8 karakter).
+4. Sunucu açılınca satış paneli tarayıcıda açılır. Kullanıcı adı: satis
+   Siyah pencere açık kaldıkça sistem çalışır; kapatınca durur.
+
+ADRESLER (bu bilgisayarda)
+  Satış paneli        : http://localhost:8080/satis
+  Bayi sitesi         : http://localhost:8080/   ("Kayıt ol" ile bayi hesabı açılır)
+  Masaüstü uygulaması : http://localhost:8080/masaustu/indir
+
+MASAÜSTÜ UYGULAMASI (EXIT Satış)
+1. http://localhost:8080/masaustu/indir adresinden kurulum dosyasını indirip çalıştırın
+   (imzasız olduğu için "Ek bilgi > Yine de çalıştır").
+2. Uygulama ilk açılışta sunucu adresini sorar: http://localhost:8080
+3. "satis" ve belirlediğiniz şifreyle girin.
+Bayi sitesinden sipariş verince uygulamada Windows bildirimi ve görev çubuğu sayacı çıkar.
+
+AYNI AĞDAKİ DİĞER BİLGİSAYARLAR
+Siyah pencerede "Ağdan: http://192.168.x.x:8080/" satırı görünür. Diğer bilgisayarlar
+bu adresi kullanır (masaüstü uygulamasında da bu adres yazılır). Windows Güvenlik
+Duvarı izin isterse "Özel ağlar" için izin verin. İnternetten (şirket dışından)
+erişim için sunucunun VPS'e kurulması gerekir: dagitim/TASINMA.md.
+
+VERİ
+Tüm veri "veri" klasöründedir (veri.sqlite, dosyalar, kayıtlar). Yedek için sunucu
+kapalıyken bu klasörü kopyalayın. Paketi yeni sürümle değiştirirken "veri" klasörünü
+yeni pakete taşıyın.
+
+SORUNLAR
+- "8080 portu kullanılıyor": sunucu zaten açık olabilir. Değilse başka bir program
+  kullanıyordur; komut isteminde:  set PORT=8090 & BASLAT.bat
+- Şifreyi unuttunuz: "veri\.yonetici-sifresi-ayarlandi" dosyasını silip BASLAT.bat'ı
+  yeniden çalıştırın; yeni şifre sorulur (veriler silinmez).
+
+Bu bir deneme paketidir. Ayrıntılı kurulum: uygulama\sunucu\KURULUM.md
