@@ -72,49 +72,7 @@
   };
   EK.siparisKartiProje = function (o, h) { if (o.proje) h = h.replace(`<b>${o.no}</b>`, `<b>${o.no}</b> <span class="pr-etiket">${esc(o.proje)}</span>`); return h; };
 
-  // ================= 5. canlı renk önizleme =================
-  const RENKHEX = { Granit: '#76766f', Seramik: '#d9d3c6', 'RAL 1013': '#EAE6CA', 'RAL 9016': '#F6F6F2', 'RAL 7006': '#75695C', 'RAL 7016': '#383E42', 'RAL 9005': '#0E0E10' };
-  const FILEHEX = { 'Terra 01': ['#f4f4f0', '#d6d6cf'], 'Terra 05': ['#1c1c1c', '#3d3d3d'], 'Terra 02': ['#e8dec8', '#c9bc9f'], 'Terra 03': ['#8c7b66', '#6a5c4b'], 'Terra 04': ['#41464a', '#2a2e31'], 'Crome': ['#d8dde1', '#8e959b'] };
-  window.onizleSvg = (...a) => onizleSvg(...a);
-  function onizleSvg(kat, isk, fl, km, ft) {
-    const fr = RENKHEX[isk] || '#9aa3ad', kumasUrl = km && VERI.kumas[km], fitilUrl = ft && VERI.kumas[ft];
-    const dolgu = kumasUrl ? 'url(#pKm)' : fl ? 'url(#pFl)' : '#e2e8f0', fitil = fitilUrl ? 'url(#pFt)' : fr;
-    const fh = FILEHEX[fl] || ['#e5e7eb', '#cbd5e1'];
-    const defs = `<defs><pattern id="pFl" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="${fh[0]}"/><rect width="2" height="6" fill="${fh[1]}"/></pattern>
-      ${kumasUrl ? `<pattern id="pKm" width="60" height="60" patternUnits="userSpaceOnUse"><image href="${kumasUrl}" width="60" height="60" preserveAspectRatio="xMidYMid slice"/></pattern>` : ''}
-      ${fitilUrl ? `<pattern id="pFt" width="30" height="30" patternUnits="userSpaceOnUse"><image href="${fitilUrl}" width="30" height="30" preserveAspectRatio="xMidYMid slice"/></pattern>` : ''}</defs>`;
-    const z = '<ellipse cx="120" cy="150" rx="95" ry="6" fill="rgba(15,23,42,.12)"/>';
-    let g;
-    if (/Şezlong/.test(kat)) g = `<path d="M30 112 L150 112 L205 62" fill="none" stroke="${dolgu}" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/><path d="M28 112 L150 112 L205 60" fill="none" stroke="${fr}" stroke-width="4" stroke-linejoin="round"/>
-      <path d="M40 112 L36 146 M140 112 L146 146 M60 112 L62 146" stroke="${fr}" stroke-width="5" stroke-linecap="round"/>${km ? `<path d="M30 104 L150 104 L200 58" fill="none" stroke="${fitil}" stroke-width="3"/>` : ''}`;
-    else if (/Oturma|Aile|Bank/.test(kat)) g = `<rect x="22" y="58" width="196" height="52" rx="8" fill="${fr}"/><rect x="34" y="40" width="172" height="44" rx="10" fill="${dolgu}" stroke="${fitil}" stroke-width="3"/><rect x="34" y="84" width="84" height="26" rx="8" fill="${dolgu}" stroke="${fitil}" stroke-width="3"/><rect x="122" y="84" width="84" height="26" rx="8" fill="${dolgu}" stroke="${fitil}" stroke-width="3"/>
-      <rect x="14" y="66" width="22" height="50" rx="6" fill="${fr}"/><rect x="204" y="66" width="22" height="50" rx="6" fill="${fr}"/><path d="M30 116 V146 M210 116 V146" stroke="${fr}" stroke-width="7" stroke-linecap="round"/>`;
-    else if (/Masa|Sehpa/.test(kat)) { const h = /Bar/.test(kat) ? 30 : /Sehpa/.test(kat) ? 92 : 60; g = `<rect x="26" y="${h}" width="188" height="12" rx="3" fill="#a87b55"/><rect x="26" y="${h + 12}" width="188" height="6" fill="${fr}"/><path d="M44 ${h + 18} V146 M196 ${h + 18} V146" stroke="${fr}" stroke-width="8" stroke-linecap="round"/>`; }
-    else { const b = /Bar/.test(kat) ? 34 : 0, y = 30 - b / 2, o = 'rgba(15,23,42,.35)';
-      g = `<g stroke-linecap="round" stroke-linejoin="round"><rect x="78" y="${y}" width="84" height="${62 - b / 2}" rx="8" fill="${dolgu}" stroke="${o}" stroke-width="7"/><rect x="78" y="${y}" width="84" height="${62 - b / 2}" rx="8" fill="${dolgu}" stroke="${fr}" stroke-width="4"/>
-      <path d="M80 ${108 - b} L74 146 M160 ${108 - b} L166 146 M98 ${108 - b} L100 140 M142 ${108 - b} L140 140" stroke="${o}" stroke-width="8"/><path d="M80 ${108 - b} L74 146 M160 ${108 - b} L166 146 M98 ${108 - b} L100 140 M142 ${108 - b} L140 140" stroke="${fr}" stroke-width="5"/>
-      <rect x="70" y="${92 - b}" width="100" height="16" rx="6" fill="${dolgu}" stroke="${o}" stroke-width="7"/><rect x="70" y="${92 - b}" width="100" height="16" rx="6" fill="${dolgu}" stroke="${km ? fitil : fr}" stroke-width="4"/>${b ? `<path d="M78 122 H162" stroke="${o}" stroke-width="7"/><path d="M78 122 H162" stroke="${fr}" stroke-width="4"/>` : ''}</g>`; }
-    return `<svg viewBox="0 0 240 160" role="img" aria-label="Renk önizleme" style="filter:drop-shadow(0 0 .6px rgba(15,23,42,.55))">${defs}${z}${g}</svg>`;
-  }
-  EK.urunRenkOnizleme = function (p, u) {
-    let m = false;
-    const ciz = () => {
-      if (m) return; m = true;
-      try {
-        const sec = a => (p.querySelector(`.renk.on[data-a=${a}]`) || {}).dataset?.k || '';
-        const isk = sec('iskelet'), fl = sec('file'), km = sec('kumas'), ft = sec('fitil'), imza = [isk, fl, km, ft].join('|');
-        let k = p.querySelector('.r-onizle');
-        if (k && k.dataset.i === imza) return;
-        const oz = p.querySelector('.p-foto .ozet'); if (!oz) return;
-        const html = `<div class="b">Renk önizleme<span>${isk ? 'temsili çizim' : 'renk seçtikçe güncellenir'}</span></div>${onizleSvg(u.kategori, isk, fl, km, ft)}`;
-        if (!k) { oz.insertAdjacentHTML('afterend', `<div class="r-onizle"></div>`); k = p.querySelector('.r-onizle'); }
-        k.innerHTML = html; k.dataset.i = imza;
-        const bi = p.querySelector('.p-bilgi .aciklama');
-        if (bi && !p.querySelector('[data-numune-urun]')) { bi.insertAdjacentHTML('afterend', `<button class="btn cizgi" data-numune-urun style="padding:6px 10px;font-size:12px;margin:2px 0 8px">Bu ürün için numune iste</button>`); p.querySelector('[data-numune-urun]').onclick = () => numuneForm(u.ad); }
-      } finally { m = false; }
-    };
-    ciz(); new MutationObserver(ciz).observe(p, { childList: true, subtree: true });
-  };
+  // (5. canlı renk önizleme: ozellikler/renk-onizleme.js, motor ortak/renk-onizleme.js)
 
   // ================= 6. duyurular =================
   const dyOkundu = () => (ben && oku('exb-duyuru-okundu-' + ben.kul, [])) || [];
@@ -182,6 +140,12 @@
   // ================= 8. numune ve katalog talebi =================
   const NTUR = ['Kumaş kartelası', 'İskelet renk kartelası', 'File numunesi', 'Kumaş numunesi', 'Ürün numunesi', 'Basılı katalog'];
   const NDZ = { yeni: 'Alındı', hazirlaniyor: 'Hazırlanıyor', gonderildi: 'Gönderildi', iptal: 'İptal' };
+  // ürün penceresinde "Bu ürün için numune iste" (açıklamanın altında; pencere yeniden çizilince yeniden eklenir)
+  EK.urunNumune = function (p, u) {
+    const ekle = () => { const bi = p.querySelector('.p-bilgi .aciklama'); if (!bi || p.querySelector('[data-numune-urun]')) return;
+      bi.insertAdjacentHTML('afterend', `<button class="btn cizgi" data-numune-urun style="padding:6px 10px;font-size:12px;margin:2px 0 8px">Bu ürün için numune iste</button>`); p.querySelector('[data-numune-urun]').onclick = () => numuneForm(u.ad); };
+    ekle(); new MutationObserver(ekle).observe(p, { childList: true, subtree: true });
+  };
   function numuneForm(urun) {
     const p = pencere(`<h3>Numune / katalog talebi</h3><p class="kucuk">Talebiniz satış ekibine iletilir; gönderildiğinde kargo bilgisi Siparişlerim sayfasında görünür.</p>
       <div class="alan"><label>Ne istiyorsunuz?</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${NTUR.map((t, i) => `<label class="f-sec" style="font-size:13px"><input type="checkbox" value="${t}" ${(!urun && i === 0) || (urun && t === 'Ürün numunesi') ? 'checked' : ''}> ${t}</label>`).join('')}</div></div>
@@ -216,26 +180,5 @@
   const _cikP = $('#hCikis').onclick; $('#hCikis').onclick = () => { aktifPrAyarla(''); _cikP && _cikP(); };
 
   // İngilizce karşılıklar
-  if (window.dilEkle) window.dilEkle({
-    'Projeler': 'Projects', 'Proje sepetleri': 'Project baskets', "Her müşteriniz veya işiniz için ayrı sepet hazırlayın. Hazır olduğunda sepete aktarıp sipariş verin; sipariş hangi projeden verildiyse Siparişlerim'de o adla görünür.": 'Prepare a separate basket for each client or job. When ready, open it in the cart and place the order; the order shows the project name in My orders.',
-    'Yeni proje adı, örn. Otel Mavi Koy havuz başı': 'New project name, e.g. Hotel Blue Bay poolside', 'Proje oluştur': 'Create project', 'Mevcut sepetten oluştur': 'Create from current cart', 'Sepette açık': 'Open in cart', 'kalem': 'items', 'adet': 'pcs',
-    'Henüz kalem yok. Sepete ürün ekleyip “Projeye kaydet” ile bu projeye aktarın.': 'No items yet. Add products to the cart and use “Save to project”.', 'Sepette aç': 'Open in cart', 'Sepeti buraya kaydet': 'Save cart here', 'Kopyala': 'Duplicate', 'Sil': 'Delete', 'Silinsin mi?': 'Delete?',
-    'Henüz projeniz yok. Yukarıdan bir proje oluşturun.': 'No projects yet. Create one above.', 'Proje adı yazın.': 'Enter a project name.', 'Proje silindi.': 'Project deleted.', 'Projeye kaydet': 'Save to project', 'Yeni proje…': 'New project…', 'Proje adı': 'Project name',
-    'Kaydettikten sonra sepeti boşalt': 'Empty the cart after saving', 'Sepet boş.': 'Cart is empty.', 'Renk önizleme': 'Colour preview', 'temsili çizim': 'illustrative drawing', 'renk seçtikçe güncellenir': 'updates as you choose colours', 'Bu ürün için numune iste': 'Request a sample of this product',
-    'Duyurular': 'Announcements', 'Tüm duyurular': 'All announcements', 'Duyuru': 'Notice', 'Yeni ürün': 'New product', 'Fiyat': 'Price', 'Kampanya': 'Promotion', 'Okundu ✓': 'Mark read ✓', 'Yayında duyuru yok.': 'No active announcements.',
-    'Ödeme bildir': 'Report a payment', 'Yaptığınız ödemeyi bildirin; satış ekibi dekontu kontrol edip cari hesabınıza işler.': 'Report your payment; the sales team checks the receipt and posts it to your account.', 'Tutar (USD)': 'Amount (USD)', 'Ödeme tarihi': 'Payment date', 'Ödeme yöntemi': 'Payment method',
-    'Banka / referans no': 'Bank / reference no.', 'Örn. EXG-2026-0012 siparişi için': 'E.g. for order EXG-2026-0012', 'Dekont (fotoğraf veya PDF)': 'Receipt (photo or PDF)', 'Dosya seç': 'Choose file', 'Seçilmedi': 'None selected', 'Hazırlanıyor…': 'Preparing…', 'Vazgeç': 'Cancel', 'Bildir': 'Submit',
-    'Tutarı yazın.': 'Enter the amount.', 'Ödeme bildiriminiz satış ekibine iletildi.': 'Your payment report has been sent to the sales team.', 'Ödeme bildirimlerim': 'My payment reports', 'Yöntem': 'Method', 'Durum': 'Status', 'No': 'No.', 'İnceleniyor': 'Under review', 'Tahsilat işlendi': 'Payment posted', 'Reddedildi': 'Rejected',
-    'Havale / EFT': 'Bank transfer', 'Kredi kartı': 'Credit card', 'Çek': 'Cheque', 'Senet': 'Promissory note', 'Nakit': 'Cash',
-    'Numune / katalog iste': 'Request samples / catalogue', 'Numune / katalog talebi': 'Sample / catalogue request', 'Talebiniz satış ekibine iletilir; gönderildiğinde kargo bilgisi Siparişlerim sayfasında görünür.': 'Your request goes to the sales team; shipping details appear in My orders once sent.',
-    'Ne istiyorsunuz?': 'What do you need?', 'Kumaş kartelası': 'Fabric colour card', 'İskelet renk kartelası': 'Frame colour card', 'File numunesi': 'Mesh sample', 'Kumaş numunesi': 'Fabric sample', 'Ürün numunesi': 'Product sample', 'Basılı katalog': 'Printed catalogue',
-    'İlgili ürün': 'Related product', 'Renk / kumaş kodu (isteğe bağlı)': 'Colour / fabric code (optional)', 'Örn. BG09, RAL 7016, Terra 05': 'E.g. BG09, RAL 7016, Terra 05', 'Gönderim adresi': 'Shipping address', 'Not': 'Note', 'Talebi gönder': 'Send request', 'En az bir tür seçin.': 'Select at least one item.', 'Gönderim adresini yazın.': 'Enter the shipping address.',
-    'Numune ve katalog talepleri': 'Sample and catalogue requests', 'Yeni talep': 'New request', 'Talep': 'Request', 'Kargo': 'Shipping', 'Alındı': 'Received', 'Hazırlanıyor': 'Preparing', 'Gönderildi': 'Shipped',
-    'Henüz talebiniz yok. Kumaş kartelası, renk kartelası, numune veya basılı katalog isteyebilirsiniz.': 'No requests yet. You can ask for fabric or colour cards, samples or a printed catalogue.'
-  }, [
-    [/^Güncelleme: (.+)$/, (m, t) => 'Updated: ' + t], [/^Proje: (.+)$/, (m, t) => 'Project: ' + t], [/^Sipariş:$/, () => 'Order:'], [/^“(.+)” projesi oluşturuldu\.$/, (m, a) => `Project “${a}” created.`],
-    [/^“(.+)” sepette açıldı\.$/, (m, a) => `“${a}” opened in the cart.`], [/^Sepet “(.+)” projesine kaydedildi\.$/, (m, a) => `Cart saved to project “${a}”.`], [/^(\d+) yeni duyuru var\.$/, (m, n) => n + ' new announcement(s).'],
-    [/^(Tüm duyurular|Duyurular) \((\d+)\)$/, (m, a, n) => (a === 'Duyurular' ? 'Announcements' : 'All announcements') + ' (' + n + ')'], [/^(Duyuru|Yeni ürün|Fiyat|Kampanya) · (.+)$/, (m, a, t) => ({ 'Duyuru': 'Notice', 'Yeni ürün': 'New product', 'Fiyat': 'Price', 'Kampanya': 'Promotion' }[a]) + ' · ' + t],
-    [/^Numune talebiniz alındı: (.+)$/, (m, n) => 'Sample request received: ' + n], [/^(.+) · (\d+) adet$/, (m, a, n) => a + ' · ' + n + ' pcs']
-  ]);
+  // İngilizce çeviriler: kaynak/bayi/dil/en.json (ekler)
 })();

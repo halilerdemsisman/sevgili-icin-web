@@ -291,8 +291,8 @@ function urunAc(id) {
   ciz();
   const esc_ = e => { if (e.key === 'Escape') { perde.remove(); document.removeEventListener('keydown', esc_); } }; document.addEventListener('keydown', esc_);
   // ekler pencereye kendi düğmelerini/önizlemelerini ekler; pencere yeniden çizildikçe (MutationObserver) yenilerler
-  EK.urunFavoriStok?.(perde, u); EK.urunRenkOnizleme?.(perde, u); EK.urunKarsilastir?.(perde, u);
-  EK.urunParcaOnizleme?.(perde, u); EK.urunFoto?.(perde, u); EK.urunOzelTeklif?.(perde, u); EK.urunAdres?.(perde, u);
+  EK.urunFavoriStok?.(perde, u); EK.urunRenkOnizleme?.(perde, u); EK.urunNumune?.(perde, u); EK.urunKarsilastir?.(perde, u);
+  EK.urunOzelTeklif?.(perde, u); EK.urunAdres?.(perde, u);
 }
 
 // ---------- 360° görüntüleyici

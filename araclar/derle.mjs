@@ -2,7 +2,7 @@
 //
 //   kaynak/<uyg>/sablon.html  içindeki {{dahil yol}} işaretleri kaynak/yol dosyasının içeriğiyle,
 //   kodlardaki /*@katalog*/null  katalog/urunler.json ile (görseller data URI olarak gömülür),
-//   kodlardaki /*@maskeler*/null katalog/maskeler.json ile değiştirilir.
+//   kodlardaki /*@maskeler*/null katalog/maskeler.json ile, /*@json yol*/null kaynak/yol JSON dosyasıyla değiştirilir.
 //
 // Çıktı (dist/) sunucu ile birlikte doğrudan çalıştırılabilir:
 //   dist/web/                    bayi web sitesi (Faz 2): küçük index.html + içerik özetli js/ css/ dosyaları,
@@ -68,6 +68,8 @@ function parcaOku(uyg, yol, web) {
   let icerik = fs.readFileSync(tam, 'utf8');
   if (icerik.includes(KATALOG_ISARET)) icerik = icerik.split(KATALOG_ISARET).join(_katalog[!!web] ??= katalogJs(web));
   if (icerik.includes(MASKE_ISARET)) icerik = icerik.split(MASKE_ISARET).join(_maske[!!web] ??= maskeJs(web));
+  // /*@json yol*/null → kaynak/yol JSON dosyası (ör. çeviriler: bayi/dil/en.json)
+  icerik = icerik.replace(/\/\*@json ([^*]+)\*\/null/g, (_, j) => JSON.stringify(JSON.parse(fs.readFileSync(path.join(KAYNAK, j.trim()), 'utf8'))));
   return icerik;
 }
 function sablonuDoldur(uyg) {

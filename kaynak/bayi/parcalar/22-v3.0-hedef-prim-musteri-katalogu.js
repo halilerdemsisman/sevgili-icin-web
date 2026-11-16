@@ -121,17 +121,5 @@
     w.document.close();
   }
 
-  if (window.dilEkle) window.dilEkle({
-    'Müşteri kataloğu': 'Customer catalogue', 'Kendi logonuz ve satış fiyatınızla katalog': 'Catalogue with your logo and resale prices', 'Kendi logonuz ve kendi satış fiyatınızla katalog hazırlayın. EXIT bayi fiyatı katalogda görünmez.': 'Create a catalogue with your own logo and resale prices. EXIT dealer prices are not shown.',
-    'Firma adı': 'Company name', 'Logo': 'Logo', 'Logo yükle': 'Upload logo', 'Değiştir': 'Change', 'Kaldır': 'Remove', 'İletişim satırı': 'Contact line', 'Fiyatları göster': 'Show prices', 'KDV dahil (%20)': 'Incl. VAT (20%)', 'Kâr payı (%)': 'Markup (%)', 'Yuvarlama': 'Rounding', 'Yok': 'None',
-    'Para birimi': 'Currency', 'Kur (1 USD = ?)': 'Rate (1 USD = ?)', 'Hangi ürünler?': 'Which products?', 'Katalogdaki mevcut filtre': 'Current catalogue filter', 'Tüm ürünler': 'All products', 'Favorilerim': 'My favourites', 'Vazgeç': 'Cancel', 'Kataloğu oluştur': 'Create catalogue', 'Kuru yazın.': 'Enter the exchange rate.',
-    'Teslimat adreslerim': 'My delivery addresses', 'Şantiye, otel veya depo adreslerinizi kaydedin; sepette tek tıkla seçin.': 'Save site, hotel or warehouse addresses and pick them in the cart with one click.', 'Henüz kayıtlı adres yok.': 'No saved addresses yet.', 'Henüz kayıtlı adres yok': 'No saved addresses yet',
-    'Varsayılan': 'Default', 'Varsayılan yap': 'Make default', 'Düzenle': 'Edit', 'Sil': 'Delete', 'Silinsin mi?': 'Delete?', 'Yeni adres': 'New address', 'Adresi düzenle': 'Edit address', 'Adres adı': 'Address name', 'Örn. Otel Mavi Koy şantiye': 'E.g. Hotel Mavi Koy site', 'Şehir / ilçe': 'City / district', 'Teslim alacak kişi': 'Recipient', 'Telefon': 'Phone', 'Açık adres': 'Full address',
-    'Kaydet': 'Save', 'Adresi ekle': 'Add address', 'Adres eklendi.': 'Address added.', 'Adres güncellendi.': 'Address updated.', 'Adres adını ve açık adresi yazın.': 'Enter the address name and full address.', 'Kayıtlı adres seçin…': 'Choose a saved address…', 'Kayıtlı adres yok': 'No saved address', 'Adreslerim': 'My addresses', 'Adresleri yönet': 'Manage addresses',
-    'Henüz prim basamağına ulaşmadınız.': 'You have not reached a bonus tier yet.', 'En üst basamaktasınız, tebrikler!': 'You are on the top tier, congratulations!', 'hedef': 'target'
-  }, [
-    [/^(\d+) hedefim ve primim$/, (m, y) => `My ${y} target and bonus`], [/^Sevk edilen ve onaylanan siparişleriniz \(net, iptaller hariç\) · yıl sonuna (\d+) gün$/, (m, n) => `Your approved and shipped orders (net, excl. cancellations) · ${n} days to year end`],
-    [/^%(\d+) → %([\d.,]+) prim$/, (m, a, b) => `${a}% → ${b}% bonus`], [/^(\d+) kayıtlı adres · sepette tek tıkla seçilir$/, (m, n) => `${n} saved address(es) · pick in the cart with one click`], [/^Henüz kayıtlı adres yok · sepette tek tıkla seçilir$/, () => 'No saved addresses yet · pick in the cart with one click'],
-    [/^Örnek: (.+) · bayi fiyatı (.+) → katalogda (.+)$/, (m, a, b, c) => `Example: ${a} · dealer price ${b} → catalogue ${c}`]
-  ]);
+  // İngilizce çeviriler: kaynak/bayi/dil/en.json (ekler)
 })();

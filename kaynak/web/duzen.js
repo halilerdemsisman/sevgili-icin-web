@@ -88,7 +88,7 @@
   // sonradan eklenen üst çubuk düğmeleri (eklentiler #hSepet'in önüne ekler) sıraya girsin
   new MutationObserver(() => { if (sag.lastElementChild !== sar) sirala(); }).observe(sag, { childList: true });
 
-  if (window.dilEkle) window.dilEkle({ 'Daha fazla': 'More', 'Siparişler': 'Orders', 'Cari': 'Account', 'Ödeme bildirimi': 'Payment notice', 'Şifremi değiştir': 'Change password', 'Hesap menüsü': 'Account menu', 'Ana menü': 'Main menu' });
+  // İngilizce çeviriler: kaynak/bayi/dil/en.json (web)
 })();
 
 /* alt bilgideki "Bayi" sütunu: düz yazı yerine çalışan bağlantılar */

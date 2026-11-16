@@ -1,0 +1,1505 @@
+{
+ "_aciklama": "Bayi portalının İngilizce çevirileri. Anahtar Türkçe metnin kendisidir (ekrandaki metin olduğu gibi). desen: [düzenli ifade, bayraklar, çeviri ($1… grup) | {kod: dil.js içindeki dilbilgisi fonksiyonu}]; ilk eşleşen kullanılır. ekler: özelliklerin sözlükleri; yükleme sırasıyla eklenir, desenleri öne geçer. web: yalnız web sitesinde.",
+ "kategori": {
+  "Oturma Grupları": "Lounge Sets",
+  "Sandalyeler": "Chairs",
+  "Bar Sandalyeleri": "Bar Chairs",
+  "Masalar": "Tables",
+  "Bar Masaları": "Bar Tables",
+  "Sehpalar": "Side Tables",
+  "Banklar": "Benches",
+  "Şezlonglar": "Sun Loungers",
+  "Aile Paketleri": "Family Packages"
+ },
+ "renk": {
+  "Antrasit": "Anthracite",
+  "Beyaz": "White",
+  "Krem": "Cream",
+  "Cappuccino": "Cappuccino",
+  "Granit": "Granite",
+  "Seramik": "Ceramic",
+  "Siyah": "Black",
+  "Krom": "Chrome"
+ },
+ "ay": {
+  "Ocak": "January",
+  "Şubat": "February",
+  "Mart": "March",
+  "Nisan": "April",
+  "Mayıs": "May",
+  "Haziran": "June",
+  "Temmuz": "July",
+  "Ağustos": "August",
+  "Eylül": "September",
+  "Ekim": "October",
+  "Kasım": "November",
+  "Aralık": "December"
+ },
+ "gun": {
+  "Pazartesi": "Monday",
+  "Salı": "Tuesday",
+  "Çarşamba": "Wednesday",
+  "Perşembe": "Thursday",
+  "Cuma": "Friday",
+  "Cumartesi": "Saturday",
+  "Pazar": "Sunday"
+ },
+ "eksik": {
+  "seçenek": "option",
+  "iskelet rengi": "frame colour",
+  "file rengi": "mesh colour",
+  "kumaş": "fabric",
+  "fitil rengi": "piping colour",
+  "iskelet": "frame",
+  "file": "mesh",
+  "fitil": "piping"
+ },
+ "metin": {
+  "EXIT Garden · B2B": "EXIT Garden · B2B",
+  "Kurumsal": "Corporate",
+  "Bayi Portalı": "Dealer Portal",
+  "Bayi girişi": "Dealer sign-in",
+  "Dış mekân mobilya koleksiyonunu inceleyin, iskelet, file, kumaş ve fitil seçimlerinizi yapın, siparişinizi doğrudan EXIT Garden'a iletin.": "Browse the outdoor furniture collection, choose frame, mesh, fabric and piping, and send your order directly to EXIT Garden.",
+  "Bayiye özel hesap ve sipariş geçmişi": "Dedicated dealer account and order history",
+  "Ürün başına renk ve kumaş yapılandırması": "Colour and fabric configuration per product",
+  "Siparişin durumunu anlık takip": "Live order status tracking",
+  "ürün modeli": "product models",
+  "kategori": "categories",
+  "iskelet rengi": "frame colours",
+  "kumaş rengi": "fabric colours",
+  "Hesabınızla giriş yapın veya yeni bayi kaydı oluşturun.": "Sign in with your account or register as a new dealer.",
+  "Giriş yap": "Sign in",
+  "Kayıt ol": "Register",
+  "Kullanıcı adı": "Username",
+  "Şifre": "Password",
+  "Bayi kullanıcı adınız": "Your dealer username",
+  "Şifreyi göster": "Show password",
+  "Hesabınız yok mu? Üstten": "Don't have an account? Choose",
+  "'u seçin.": "above.",
+  "Firma adı": "Company name",
+  "Yetkili ad soyad": "Contact name",
+  "Telefon": "Phone",
+  "E-posta": "E-mail",
+  "Şehir": "City",
+  "Vergi no": "Tax no.",
+  "KVKK aydınlatma metnini okudum, kabul ediyorum.": "I have read and accept the privacy notice (KVKK).",
+  "Bilgileriniz yalnızca EXIT Garden satış ekibiyle paylaşılır.": "Your details are shared only with the EXIT Garden sales team.",
+  "KVKK": "Privacy (KVKK)",
+  "Gizlilik": "Privacy",
+  "Kullanıcı adı veya şifre hatalı.": "Incorrect username or password.",
+  "Bu uygulama yalnız müşteri hesapları içindir.": "This portal is for dealer accounts only.",
+  "Hesabınız pasif. EXIT Garden satış ekibiyle iletişime geçin.": "Your account is inactive. Please contact the EXIT Garden sales team.",
+  "Kullanıcı adı en az 3 karakter olmalı (harf, rakam, . _ -).": "Username must be at least 3 characters (letters, digits, . _ -).",
+  "Bu kullanıcı adı alınmış.": "This username is already taken.",
+  "Şifre en az 6 karakter olmalı.": "Password must be at least 6 characters.",
+  "Kaydınız oluşturuldu, hoş geldiniz.": "Your account has been created. Welcome!",
+  "Karanlık moda geç": "Switch to dark mode",
+  "Aydınlık moda geç": "Switch to light mode",
+  "Kayıt yapılamadı: tarayıcı depolaması kapalı.": "Could not save: browser storage is disabled.",
+  "· Kurumsal Bayi Portalı": "· Corporate Dealer Portal",
+  "Fiyatlar USD": "Prices in USD",
+  "Katalog": "Catalogue",
+  "Siparişlerim": "My orders",
+  "Cari hesabım": "My account",
+  "Sepet": "Cart",
+  "Çıkış": "Sign out",
+  "Oturumu kapat": "Sign out",
+  "Bayi hesabı": "Dealer account",
+  "Ürün ara: Enzo, şezlong, bar masa…": "Search: Enzo, lounger, bar table…",
+  "Tümü": "All",
+  "Tüm ürünler": "All products",
+  "Kategori": "Category",
+  "Ürün tipi": "Product type",
+  "Fiyat (USD)": "Price (USD)",
+  "En az": "Min",
+  "En çok": "Max",
+  "Yalnız fiyatı olanlar": "Only items with a price",
+  "Yalnız kampanyalı ürünler": "Only items on promotion",
+  "Filtreleri temizle": "Clear filters",
+  "Filtrele": "Filter",
+  "Katalog (PDF)": "Catalogue (PDF)",
+  "Seçili filtreye göre yazdırılabilir katalog": "Printable catalogue for the current filter",
+  "Tüm kategoriler": "All categories",
+  "Tüm ürün tipleri": "All product types",
+  "İsme göre": "By name",
+  "Fiyat: düşükten yükseğe": "Price: low to high",
+  "Fiyat: yüksekten düşüğe": "Price: high to low",
+  "Görsel yok": "No image",
+  "Fiyat için bize ulaşın": "Contact us for price",
+  "Fiyat sorunuz": "Price on request",
+  "başlayan": "from",
+  "Bu filtrelere uyan ürün yok.": "No products match these filters.",
+  "Kampanyalı ürünler": "Products on promotion",
+  "Kampanyalar": "Promotions",
+  "Kampanyalı ürünleri göster": "Show promoted products",
+  "Fiyatlar ve kampanyalar güncellendi.": "Prices and promotions have been updated.",
+  "Favorilerim": "My favourites",
+  "Yalnız favorilerim": "Only my favourites",
+  "Favori": "Favourite",
+  "Favorilere ekle / çıkar": "Add to / remove from favourites",
+  "Henüz favori ürününüz yok. Ürün kartındaki kalp simgesine dokunarak ekleyebilirsiniz.": "You have no favourites yet. Tap the heart on a product card to add one.",
+  "Favorilere eklendi.": "Added to favourites.",
+  "Favorilerden çıkarıldı.": "Removed from favourites.",
+  "Stokta": "In stock",
+  "Üretilecek": "Made to order",
+  "Açılır pencere engellendi; tarayıcıda izin verin.": "Pop-up blocked; please allow pop-ups in your browser.",
+  "Kapat": "Close",
+  "360° görünüm için tıklayın": "Click for 360° view",
+  "Ürün": "Product",
+  "Seçenek": "Option",
+  "İskelet": "Frame",
+  "File": "Mesh",
+  "Kumaş": "Fabric",
+  "Fitil": "Piping",
+  "Adet": "Quantity",
+  "Renkler ekranda temsilidir; kesin ton için kartelaya bakınız.": "On-screen colours are indicative; please refer to the colour card for the exact shade.",
+  "Teknik bilgiler": "Technical details",
+  "Ölçüler cm, ağırlık kg. Kaynak: exitgarden.com": "Dimensions in cm, weight in kg. Source: exitgarden.com",
+  "Seçenek / ölçü": "Option / size",
+  "İskelet rengi": "Frame colour",
+  "File rengi": "Mesh colour",
+  "Fitil rengi": "Piping colour",
+  "Seçiniz": "Select",
+  "Adet ve not": "Quantity and note",
+  "Not (isteğe bağlı)": "Note (optional)",
+  "Teklif": "Quote",
+  "fiyat sonradan bildirilir": "price to be confirmed",
+  "Sepete ekle": "Add to cart",
+  "Teklif sepetine ekle": "Add to quote request",
+  "Bu ürünün fiyatı listede yok. Seçimlerinizle birlikte fiyat teklifi isteyebilirsiniz.": "This product has no list price. You can request a quote with your selections.",
+  "İskelet rengini seçince kesinleşir.": "Confirmed once the frame colour is selected.",
+  "Sürükleyerek döndürün": "Drag to rotate",
+  "Sürükleyerek döndürün · tekerlekle yakınlaştırın": "Drag to rotate · scroll to zoom",
+  "Otomatik döndür": "Auto-rotate",
+  "Toplam": "Total",
+  "Kaldır": "Remove",
+  "Sepetiniz boş.": "Your cart is empty.",
+  "Teslimat adresi / not": "Delivery address / note",
+  "Teslimat adresi, istenen tarih vb.": "Delivery address, requested date, etc.",
+  "Sipariş talebini gönder": "Send order request",
+  "Fiyatlar USD, KDV hariçtir. Talebiniz satış ekibinin onayıyla kesinleşir.": "Prices are in USD, excluding VAT. Your request is confirmed once approved by our sales team.",
+  "Fiyatı olmayan kalemler için teklif hazırlanacak.": "A quote will be prepared for items without a price.",
+  "Toplu sipariş (Excel)": "Bulk order (Excel)",
+  "Şablon indir": "Download template",
+  "Excel / CSV yükle": "Upload Excel / CSV",
+  "Tüm kalemler stokta": "All items in stock",
+  "Tahmini teslim (en geç kalem)": "Estimated delivery (latest item)",
+  "Toplu sipariş": "Bulk order",
+  "Tekrar sipariş": "Reorder",
+  "Tamam": "OK",
+  "kalem sepete eklendi,": "items added to cart,",
+  "satır atlandı.": "rows skipped.",
+  "Satır": "Row",
+  "Sorun": "Issue",
+  "Ürün bulunamadı": "Product not found",
+  "Seçenek yazılmamış": "Option missing",
+  "Dosya okunamadı. Excel (.xlsx) veya CSV yükleyin.": "The file could not be read. Please upload Excel (.xlsx) or CSV.",
+  "Başlık satırı bulunamadı: “Ürün” ve “Adet” sütunları gerekli.": "Header row not found: “Product” and “Quantity” columns are required.",
+  "“Adet” sütunu bulunamadı.": "“Quantity” column not found.",
+  "Dosyada adedi girilmiş satır bulunamadı.": "No rows with a quantity were found in the file.",
+  "Siparişinizin durumu, tahmini teslim tarihi ve nakliye bilgisi satış ekibi güncelledikçe burada görünür.": "Order status, estimated delivery and shipping details appear here as the sales team updates them.",
+  "Açık sipariş": "Open orders",
+  "Sevk edilen": "Shipped",
+  "Toplam sipariş": "Total orders",
+  "Açık": "Open",
+  "Sevk edildi": "Shipped",
+  "İptal": "Cancelled",
+  "Yeni talep": "New request",
+  "Onaylandı": "Approved",
+  "Üretimde": "In production",
+  "Talep alındı": "Request received",
+  "Tahmini teslim": "Estimated delivery",
+  "Onaydan sonra bildirilecek": "Will be confirmed after approval",
+  "Nakliye": "Shipping",
+  "Takip / irsaliye no": "Tracking / waybill no.",
+  "Satış ekibinin notu": "Note from sales team",
+  "Kalemleri göster": "Show items",
+  "Sipariş dosyasını indir": "Download order file",
+  "Tekrar sipariş ver": "Reorder",
+  "Dosyayı indir": "Download file",
+  "iskontolu net": "net after discount",
+  "liste fiyatı": "list price",
+  "Bu filtrede sipariş yok.": "No orders in this filter.",
+  "Henüz sipariş talebiniz yok.": "You have no order requests yet.",
+  "Kataloğa git": "Go to catalogue",
+  "Bu sipariş iptal edildi. Bilgi için satış temsilcinizle görüşün.": "This order was cancelled. Please contact your sales representative.",
+  "Her sipariş talebi, satış ekibine iletilmek üzere ayrıca dosya olarak indirilir. İsterseniz aşağıdan tekrar indirebilirsiniz.": "Each order request is also downloaded as a file for the sales team. You can download it again below.",
+  "Faturalar sipariş sevk edildiğinde, ödemeler satış ekibi tahsilatı işlediğinde görünür. Ödeme vadeniz:": "Invoices appear when orders ship; payments appear when the sales team records them. Your payment term:",
+  "Güncel bakiye": "Current balance",
+  "Vadesi geçmiş": "Overdue",
+  "30 gün içinde vadesi dolacak": "Due within 30 days",
+  "Toplam ödeme": "Total paid",
+  "Ödenmemiş faturalar": "Unpaid invoices",
+  "Fatura": "Invoice",
+  "Tarih": "Date",
+  "Vade": "Due date",
+  "Tutar": "Amount",
+  "Kalan": "Outstanding",
+  "Hesap hareketleri": "Account activity",
+  "Belge": "Document",
+  "Açıklama": "Description",
+  "Borç": "Debit",
+  "Alacak": "Credit",
+  "Bakiye": "Balance",
+  "Henüz hesap hareketi yok.": "No account activity yet.",
+  "Tutarlar USD'dir. Hesap ekstresi için satış temsilcinizle iletişime geçebilirsiniz.": "Amounts are in USD. Contact your sales representative for a statement.",
+  "EXIT Garden, BG Group çatısı altında otel, kafe ve konutlar için dış mekân mobilyası üretir.": "EXIT Garden, part of BG Group, manufactures outdoor furniture for hotels, cafés and residences.",
+  "Koleksiyon": "Collection",
+  "Oturma grupları": "Lounge sets",
+  "Sandalye ve bar sandalyeleri": "Chairs and bar chairs",
+  "Masa ve sehpalar": "Tables and side tables",
+  "Bayi": "Dealer",
+  "KVKK aydınlatma metni": "Privacy notice (KVKK)",
+  "Gizlilik politikası": "Privacy policy",
+  "© 2026 BG Group · EXIT Innovative Solutions. Tüm hakları saklıdır.": "© 2026 BG Group · EXIT Innovative Solutions. All rights reserved.",
+  "Bayi Portalı v2.0": "Dealer Portal v2.0",
+  "Dil": "Language"
+ },
+ "desen": [
+  [
+   "^(\\d+) ürün$",
+   "",
+   {
+    "kod": "urunSayisi"
+   }
+  ],
+  [
+   "^(\\d+) seçenek$",
+   "",
+   {
+    "kod": "secenekSayisi"
+   }
+  ],
+  [
+   "^(\\d+) (gün)$",
+   "",
+   "$1 days"
+  ],
+  [
+   "^~(\\d+) gün$",
+   "",
+   "~$1 days"
+  ],
+  [
+   "^\\(~(\\d+) gün\\)$",
+   "",
+   "(~$1 days)"
+  ],
+  [
+   "^(\\d+) gün gecikti$",
+   "",
+   "$1 days overdue"
+  ],
+  [
+   "^(\\d+) gün kaldı$",
+   "",
+   "$1 days left"
+  ],
+  [
+   "^(\\d{1,2}) (Ocak|Şubat|Mart|Nisan|Mayıs|Haziran|Temmuz|Ağustos|Eylül|Ekim|Kasım|Aralık) (\\d{4})( \\S+)?$",
+   "",
+   {
+    "kod": "tarih"
+   }
+  ],
+  [
+   "^(.+) · (\\d+) adet · (\\d+) kalem$",
+   "",
+   {
+    "kod": "adetKalem"
+   }
+  ],
+  [
+   "^Sepet \\((\\d+)\\)$",
+   "",
+   "Cart ($1)"
+  ],
+  [
+   "^Sipariş talebiniz alındı: (.+)$",
+   "",
+   "Order request received: $1"
+  ],
+  [
+   "^Eksik seçim: (.+)$",
+   "",
+   {
+    "kod": "eksikSecim"
+   }
+  ],
+  [
+   "^Eksik: (.+)$",
+   "",
+   {
+    "kod": "eksik"
+   }
+  ],
+  [
+   "^Eksik veya hatalı renk: (.+)$",
+   "",
+   {
+    "kod": "eksikRenk"
+   }
+  ],
+  [
+   "^Seçenek bulunamadı: (.+)$",
+   "",
+   "Option not found: $1"
+  ],
+  [
+   "^(.+) sepete eklendi\\.$",
+   "",
+   {
+    "kod": "sepeteEklendi"
+   }
+  ],
+  [
+   "^(\\d+) kalem sepete eklendi; fiyatlar güncel listeye göre yenilendi\\.$",
+   "",
+   "$1 items added to cart; prices updated to the current list."
+  ],
+  [
+   "^(.+) favorilere eklendi\\.$",
+   "",
+   "$1 added to favourites."
+  ],
+  [
+   "^(.+) favorilerden çıkarıldı\\.$",
+   "",
+   "$1 removed from favourites."
+  ],
+  [
+   "^(\\d+) kalem sepete eklendi\\. Şu kalemler eklenemedi:$",
+   "",
+   "$1 items added to cart. These items could not be added:"
+  ],
+  [
+   "^(.+) \\(artık katalogda yok\\)$",
+   "",
+   "$1 (no longer in the catalogue)"
+  ],
+  [
+   "^(.+) \\(seçenek kaldırılmış\\)$",
+   "",
+   "$1 (option discontinued)"
+  ],
+  [
+   "^(İskelet|File|Kumaş|Fitil|Not|Adres\\/not): (.*)$",
+   "",
+   {
+    "kod": "alanAdi"
+   }
+  ],
+  [
+   "^(Antrasit|Beyaz|Krem|Cappuccino|Granit|Seramik|Siyah|Krom) · (.+)$",
+   "",
+   {
+    "kod": "renkAdi"
+   }
+  ],
+  [
+   "^~(\\d{2}\\.\\d{2}\\.\\d{4}) · ön tahmin$",
+   "",
+   "~$1 · preliminary estimate"
+  ],
+  [
+   "^· tahmini teslim (.+)$",
+   "",
+   "· estimated delivery $1"
+  ],
+  [
+   "^Tahmini teslim:$",
+   "",
+   "Estimated delivery:"
+  ],
+  [
+   "^%(\\d+) indirim$",
+   "",
+   "$1% off"
+  ],
+  [
+   "^%(\\d+) kampanya$",
+   "",
+   "$1% promotion"
+  ],
+  [
+   "^(.*?)(\\d{2}\\.\\d{2}\\.\\d{4})'?(?:e|a|ye|ya) kadar$",
+   "",
+   {
+    "kod": "kadar"
+   }
+  ],
+  [
+   "^(.*?)(\\d{2}\\.\\d{2}\\.\\d{4}) tarihine kadar geçerli$",
+   "",
+   {
+    "kod": "gecerli"
+   }
+  ]
+ ],
+ "parca": [
+  [
+   "tüm ürünlerde",
+   "g",
+   "on all products"
+  ],
+  [
+   "başlayan",
+   "g",
+   "from"
+  ]
+ ],
+ "secenek": [
+  [
+   "Aksesuar (kol)",
+   "Accessory (arm)"
+  ],
+  [
+   "Aile paketi",
+   "Family package"
+  ],
+  [
+   "Takım 3+1+1+sehpa",
+   "Set 3+1+1+coffee table"
+  ],
+  [
+   "Takım 2+1+1+sehpa",
+   "Set 2+1+1+coffee table"
+  ],
+  [
+   "3+1+1+sehpa",
+   "3+1+1+coffee table"
+  ],
+  [
+   "2+1+1+sehpa",
+   "2+1+1+coffee table"
+  ],
+  [
+   "Üçlü koltuk",
+   "3-seater sofa"
+  ],
+  [
+   "İkili koltuk",
+   "2-seater sofa"
+  ],
+  [
+   "Tekli koltuk",
+   "Armchair"
+  ],
+  [
+   "Orta sehpa",
+   "Coffee table"
+  ],
+  [
+   "Yan sehpa",
+   "Side table"
+  ],
+  [
+   "Şezlong sehpası",
+   "Lounger side table"
+  ],
+  [
+   "İkili şezlong",
+   "Double sun lounger"
+  ],
+  [
+   "Şezlong",
+   "Sun lounger"
+  ],
+  [
+   "Köşe modülü",
+   "Corner module"
+  ],
+  [
+   "Bar masa",
+   "Bar table"
+  ],
+  [
+   "Bar sandalye",
+   "Bar chair"
+  ],
+  [
+   "Dikdörtgen masa",
+   "Rectangular table"
+  ],
+  [
+   "Kare masa",
+   "Square table"
+  ],
+  [
+   "Yuvarlak masa",
+   "Round table"
+  ],
+  [
+   "Pedli başlıklı",
+   "Cushioned with headrest"
+  ],
+  [
+   "Kollu pedli",
+   "Arms, cushioned"
+  ],
+  [
+   "Kollu fileli",
+   "Arms, mesh"
+  ],
+  [
+   "Örgülü kol",
+   "Woven arm"
+  ],
+  [
+   "Örgülü",
+   "Woven"
+  ],
+  [
+   "Kollu",
+   "With arms"
+  ],
+  [
+   "Kolsuz",
+   "Armless"
+  ],
+  [
+   "kolsuz",
+   "armless"
+  ],
+  [
+   "Pedli",
+   "Cushioned"
+  ],
+  [
+   "pedli",
+   "cushioned"
+  ],
+  [
+   "Fileli",
+   "Mesh"
+  ],
+  [
+   "fileli",
+   "mesh"
+  ],
+  [
+   "Üçlü",
+   "3-seater"
+  ],
+  [
+   "İkili",
+   "2-seater"
+  ],
+  [
+   "Tekli",
+   "Single"
+  ],
+  [
+   "sinterize",
+   "sintered"
+  ],
+  [
+   "Minder",
+   "Cushion"
+  ],
+  [
+   "İroko",
+   "Iroko"
+  ],
+  [
+   "Sandalye",
+   "Chair"
+  ],
+  [
+   "sandalye",
+   "chair"
+  ],
+  [
+   "Sehpa",
+   "Table"
+  ],
+  [
+   "sehpa",
+   "table"
+  ],
+  [
+   "masa",
+   "table"
+  ],
+  [
+   "Bank",
+   "Bench"
+  ]
+ ],
+ "secenekKucuk": [
+  [
+   "takım",
+   "set"
+  ],
+  [
+   "üçlü koltuk",
+   "3-seater sofa"
+  ],
+  [
+   "ikili koltuk",
+   "2-seater sofa"
+  ],
+  [
+   "tekli koltuk",
+   "armchair"
+  ],
+  [
+   "orta sehpa",
+   "coffee table"
+  ],
+  [
+   "yan sehpa",
+   "side table"
+  ],
+  [
+   "köşe modülü",
+   "corner module"
+  ],
+  [
+   "aksesuar (kol)",
+   "accessory (arm)"
+  ],
+  [
+   "şezlong sehpası",
+   "lounger side table"
+  ],
+  [
+   "şezlong",
+   "sun lounger"
+  ],
+  [
+   "kare masa",
+   "square table"
+  ],
+  [
+   "dikdörtgen masa",
+   "rectangular table"
+  ],
+  [
+   "yuvarlak masa",
+   "round table"
+  ],
+  [
+   "bar masa",
+   "bar table"
+  ],
+  [
+   "bar sandalye",
+   "bar chair"
+  ],
+  [
+   "sandalye",
+   "chair"
+  ],
+  [
+   "bank",
+   "bench"
+  ]
+ ],
+ "teknik": [
+  [
+   "Yere sağlam basan, kuvvetli bir iskelete sahiptir. Minderli veya fileli alternatifleri bulunmaktadır.",
+   "Stands firmly on the ground with a strong frame. Available with cushions or mesh."
+  ],
+  [
+   "Epoksi polyester statik toz boya, ince textüre",
+   "epoxy polyester electrostatic powder coating, fine texture"
+  ],
+  [
+   "Epoksi polyester statik toz boya, ince dokulu",
+   "epoxy polyester electrostatic powder coating, fine texture"
+  ],
+  [
+   "Dış mekan için %100 polyester minderler",
+   "100% polyester cushions for outdoor use"
+  ],
+  [
+   "%100 Polyester, dış mekan oturum minderleri",
+   "100% polyester, outdoor seat cushions"
+  ],
+  [
+   "%100 Polyester, dış mekan örgü ipi ve oturma minderleri",
+   "100% polyester, outdoor weaving rope and seat cushions"
+  ],
+  [
+   "%100 Polyester, dış mekan örgü ve minderler",
+   "100% polyester, outdoor weave and cushions"
+  ],
+  [
+   "Plastik kaydırmaz tapalı",
+   "plastic non-slip caps"
+  ],
+  [
+   "Plastik, kaymaz, tapalı",
+   "plastic non-slip caps"
+  ],
+  [
+   "Alev almaz file",
+   "flame-retardant mesh"
+  ],
+  [
+   "çift kat",
+   "double-layer"
+  ],
+  [
+   "Üst üste maksimum",
+   "Stackable, max."
+  ],
+  [
+   "Üst üste maksümum",
+   "Stackable, max."
+  ],
+  [
+   "paket ebatları",
+   "package size"
+  ],
+  [
+   "Brüt ağırlık",
+   "Gross weight"
+  ],
+  [
+   "Tekli paket",
+   "Single pack"
+  ],
+  [
+   "Üçlü Paket",
+   "3-seater pack"
+  ],
+  [
+   "OTURMA YÜKSEKLİĞİ",
+   "SEAT HEIGHT"
+  ],
+  [
+   "OTURUM YÜKSEKLİĞİ",
+   "SEAT HEIGHT"
+  ],
+  [
+   "OTURMA DERİNLİĞİ",
+   "SEAT DEPTH"
+  ],
+  [
+   "OTURUM DERİNLİĞİ",
+   "SEAT DEPTH"
+  ],
+  [
+   "SIRT YÜKSEKLİĞİ",
+   "BACK HEIGHT"
+  ],
+  [
+   "OTURMA GENİŞLİĞİ",
+   "SEAT WIDTH"
+  ],
+  [
+   "OTURUM GENİŞLİĞİ",
+   "SEAT WIDTH"
+  ],
+  [
+   "TOPLAM YÜKSEKLİK",
+   "TOTAL HEIGHT"
+  ],
+  [
+   "TOPLAM TÜKSEKLİK",
+   "TOTAL HEIGHT"
+  ],
+  [
+   "L/BOY",
+   "L/LENGTH"
+  ],
+  [
+   "H/YÜKSEKLİK",
+   "H/HEIGHT"
+  ],
+  [
+   "W/EN",
+   "W/WIDTH"
+  ],
+  [
+   "Genişlik",
+   "Width"
+  ],
+  [
+   "Derinlik",
+   "Depth"
+  ],
+  [
+   "Yükseklik",
+   "Height"
+  ],
+  [
+   "İskelet",
+   "Frame"
+  ],
+  [
+   "Alüminyum",
+   "aluminium"
+  ],
+  [
+   "alüminyum",
+   "aluminium"
+  ],
+  [
+   "Boya",
+   "Paint"
+  ],
+  [
+   "Tekstil",
+   "Textile"
+  ],
+  [
+   "Ağırlık",
+   "Weight"
+  ],
+  [
+   "İstifleme",
+   "Stacking"
+  ],
+  [
+   "Yok",
+   "None"
+  ],
+  [
+   "Kol üstü",
+   "Armrest"
+  ],
+  [
+   "Ayaklar",
+   "Feet"
+  ],
+  [
+   "Textilen",
+   "Textilene"
+  ],
+  [
+   "Tectilen",
+   "Textilene"
+  ],
+  [
+   "File",
+   "Mesh"
+  ],
+  [
+   "Paketleme",
+   "Packaging"
+  ],
+  [
+   "adet",
+   "pcs"
+  ],
+  [
+   "Sehpa",
+   "Table"
+  ],
+  [
+   "TEKLİ",
+   "SINGLE"
+  ],
+  [
+   "İKİLİ",
+   "2-SEATER"
+  ],
+  [
+   "ÜÇLÜ",
+   "3-SEATER"
+  ],
+  [
+   "SEHPA",
+   "TABLE"
+  ],
+  [
+   "SANDALYE",
+   "CHAIR"
+  ],
+  [
+   "ŞEZLONG",
+   "LOUNGER"
+  ],
+  [
+   "MASA",
+   "TABLE"
+  ],
+  [
+   "KOLLU",
+   "WITH ARMS"
+  ],
+  [
+   "KOLSUZ",
+   "ARMLESS"
+  ],
+  [
+   "MİNDERLİ",
+   "CUSHIONED"
+  ],
+  [
+   "FİLELİ",
+   "MESH"
+  ],
+  [
+   "BAR",
+   "BAR"
+  ]
+ ],
+ "aciklama": [
+  [
+   "^(.+), oturma grubu, sandalye ve yemek masasını bir arada sunan avantajlı settir\\.$",
+   "",
+   "$1 is a value set combining a lounge set, chairs and a dining table."
+  ],
+  [
+   "^(.+), bahçe, teras ve otel lobileri için tasarlanmış dış mekân oturma grubudur\\.$",
+   "",
+   "$1 is an outdoor lounge set designed for gardens, terraces and hotel lobbies."
+  ],
+  [
+   "^(.+), yemek ve kafe alanları için ergonomik bir dış mekân sandalyesidir\\.$",
+   "",
+   "$1 is an ergonomic outdoor chair for dining and café areas."
+  ],
+  [
+   "^(.+), bar ve yüksek masalar için tasarlanmış dış mekân bar sandalyesidir\\.$",
+   "",
+   "$1 is an outdoor bar chair designed for bars and high tables."
+  ],
+  [
+   "^(.+), yemek ve toplantı alanları için sağlam gövdeli bir dış mekân masasıdır\\.$",
+   "",
+   "$1 is a sturdy outdoor table for dining and meeting areas."
+  ],
+  [
+   "^(.+), oturma grupları ve şezlonglarla birlikte kullanılan dış mekân sehpasıdır\\.$",
+   "",
+   "$1 is an outdoor side table used with lounge sets and sun loungers."
+  ],
+  [
+   "^(.+), havuz başı ve plaj alanları için konforlu dış mekân şezlongudur\\.$",
+   "",
+   "$1 is a comfortable outdoor sun lounger for poolside and beach areas."
+  ],
+  [
+   "^(.+), ayakta servis ve bar alanları için yüksek dış mekân masasıdır\\.$",
+   "",
+   "$1 is a high outdoor table for standing service and bar areas."
+  ],
+  [
+   "^(.+), bahçe ve geçiş alanları için dış mekân bankıdır\\.$",
+   "",
+   "$1 is an outdoor bench for gardens and walkways."
+  ],
+  [
+   "^(\\d+) farklı seçenekte sunulur: (.+)\\.$",
+   "",
+   {
+    "kod": "secenekListesi"
+   }
+  ],
+  [
+   "^Ölçüler: (.+) \\(cm\\)\\.$",
+   "",
+   {
+    "kod": "olculer"
+   }
+  ],
+  [
+   "^Tabla seçenekleri: (.+)\\.$",
+   "",
+   {
+    "kod": "tabla"
+   }
+  ],
+  [
+   "^Fileli veya pedli \\(minderli\\) olarak sipariş edilebilir\\.$",
+   "",
+   "Can be ordered with mesh or with cushions."
+  ],
+  [
+   "^Minderleri BG kumaş kartelasından istenen renkte, fitil rengi seçilerek hazırlanır\\.$",
+   "",
+   "Cushions are made in any colour from the BG fabric card, with a choice of piping colour."
+  ],
+  [
+   "^Oturum ve sırt kısmı dış mekân filesiyle kaplanır\\.$",
+   "",
+   "Seat and back are covered with outdoor mesh."
+  ],
+  [
+   "^İskelet; Granit, Seramik ve RAL renk seçenekleriyle boyanır\\.$",
+   "",
+   "The frame is powder-coated in Granite, Ceramic and RAL colour options."
+  ]
+ ],
+ "ekler": [
+  {
+   "ozellik": "proje sepetleri, renk önizleme, duyurular, ödeme bildirimi, numune talebi",
+   "metin": {
+    "Projeler": "Projects",
+    "Proje sepetleri": "Project baskets",
+    "Her müşteriniz veya işiniz için ayrı sepet hazırlayın. Hazır olduğunda sepete aktarıp sipariş verin; sipariş hangi projeden verildiyse Siparişlerim'de o adla görünür.": "Prepare a separate basket for each client or job. When ready, open it in the cart and place the order; the order shows the project name in My orders.",
+    "Yeni proje adı, örn. Otel Mavi Koy havuz başı": "New project name, e.g. Hotel Blue Bay poolside",
+    "Proje oluştur": "Create project",
+    "Mevcut sepetten oluştur": "Create from current cart",
+    "Sepette açık": "Open in cart",
+    "kalem": "items",
+    "adet": "pcs",
+    "Henüz kalem yok. Sepete ürün ekleyip “Projeye kaydet” ile bu projeye aktarın.": "No items yet. Add products to the cart and use “Save to project”.",
+    "Sepette aç": "Open in cart",
+    "Sepeti buraya kaydet": "Save cart here",
+    "Kopyala": "Duplicate",
+    "Sil": "Delete",
+    "Silinsin mi?": "Delete?",
+    "Henüz projeniz yok. Yukarıdan bir proje oluşturun.": "No projects yet. Create one above.",
+    "Proje adı yazın.": "Enter a project name.",
+    "Proje silindi.": "Project deleted.",
+    "Projeye kaydet": "Save to project",
+    "Yeni proje…": "New project…",
+    "Proje adı": "Project name",
+    "Kaydettikten sonra sepeti boşalt": "Empty the cart after saving",
+    "Sepet boş.": "Cart is empty.",
+    "Renk önizleme": "Colour preview",
+    "temsili çizim": "illustrative drawing",
+    "renk seçtikçe güncellenir": "updates as you choose colours",
+    "Bu ürün için numune iste": "Request a sample of this product",
+    "Duyurular": "Announcements",
+    "Tüm duyurular": "All announcements",
+    "Duyuru": "Notice",
+    "Yeni ürün": "New product",
+    "Fiyat": "Price",
+    "Kampanya": "Promotion",
+    "Okundu ✓": "Mark read ✓",
+    "Yayında duyuru yok.": "No active announcements.",
+    "Ödeme bildir": "Report a payment",
+    "Yaptığınız ödemeyi bildirin; satış ekibi dekontu kontrol edip cari hesabınıza işler.": "Report your payment; the sales team checks the receipt and posts it to your account.",
+    "Tutar (USD)": "Amount (USD)",
+    "Ödeme tarihi": "Payment date",
+    "Ödeme yöntemi": "Payment method",
+    "Banka / referans no": "Bank / reference no.",
+    "Örn. EXG-2026-0012 siparişi için": "E.g. for order EXG-2026-0012",
+    "Dekont (fotoğraf veya PDF)": "Receipt (photo or PDF)",
+    "Dosya seç": "Choose file",
+    "Seçilmedi": "None selected",
+    "Hazırlanıyor…": "Preparing…",
+    "Vazgeç": "Cancel",
+    "Bildir": "Submit",
+    "Tutarı yazın.": "Enter the amount.",
+    "Ödeme bildiriminiz satış ekibine iletildi.": "Your payment report has been sent to the sales team.",
+    "Ödeme bildirimlerim": "My payment reports",
+    "Yöntem": "Method",
+    "Durum": "Status",
+    "No": "No.",
+    "İnceleniyor": "Under review",
+    "Tahsilat işlendi": "Payment posted",
+    "Reddedildi": "Rejected",
+    "Havale / EFT": "Bank transfer",
+    "Kredi kartı": "Credit card",
+    "Çek": "Cheque",
+    "Senet": "Promissory note",
+    "Nakit": "Cash",
+    "Numune / katalog iste": "Request samples / catalogue",
+    "Numune / katalog talebi": "Sample / catalogue request",
+    "Talebiniz satış ekibine iletilir; gönderildiğinde kargo bilgisi Siparişlerim sayfasında görünür.": "Your request goes to the sales team; shipping details appear in My orders once sent.",
+    "Ne istiyorsunuz?": "What do you need?",
+    "Kumaş kartelası": "Fabric colour card",
+    "İskelet renk kartelası": "Frame colour card",
+    "File numunesi": "Mesh sample",
+    "Kumaş numunesi": "Fabric sample",
+    "Ürün numunesi": "Product sample",
+    "Basılı katalog": "Printed catalogue",
+    "İlgili ürün": "Related product",
+    "Renk / kumaş kodu (isteğe bağlı)": "Colour / fabric code (optional)",
+    "Örn. BG09, RAL 7016, Terra 05": "E.g. BG09, RAL 7016, Terra 05",
+    "Gönderim adresi": "Shipping address",
+    "Not": "Note",
+    "Talebi gönder": "Send request",
+    "En az bir tür seçin.": "Select at least one item.",
+    "Gönderim adresini yazın.": "Enter the shipping address.",
+    "Numune ve katalog talepleri": "Sample and catalogue requests",
+    "Yeni talep": "New request",
+    "Talep": "Request",
+    "Kargo": "Shipping",
+    "Alındı": "Received",
+    "Hazırlanıyor": "Preparing",
+    "Gönderildi": "Shipped",
+    "Henüz talebiniz yok. Kumaş kartelası, renk kartelası, numune veya basılı katalog isteyebilirsiniz.": "No requests yet. You can ask for fabric or colour cards, samples or a printed catalogue."
+   },
+   "desen": [
+    [
+     "^Güncelleme: (.+)$",
+     "",
+     "Updated: $1"
+    ],
+    [
+     "^Proje: (.+)$",
+     "",
+     "Project: $1"
+    ],
+    [
+     "^Sipariş:$",
+     "",
+     "Order:"
+    ],
+    [
+     "^“(.+)” projesi oluşturuldu\\.$",
+     "",
+     "Project “$1” created."
+    ],
+    [
+     "^“(.+)” sepette açıldı\\.$",
+     "",
+     "“$1” opened in the cart."
+    ],
+    [
+     "^Sepet “(.+)” projesine kaydedildi\\.$",
+     "",
+     "Cart saved to project “$1”."
+    ],
+    [
+     "^(\\d+) yeni duyuru var\\.$",
+     "",
+     "$1 new announcement(s)."
+    ],
+    [
+     "^(Tüm duyurular|Duyurular) \\((\\d+)\\)$",
+     "",
+     {
+      "kod": "duyuruSayisi"
+     }
+    ],
+    [
+     "^(Duyuru|Yeni ürün|Fiyat|Kampanya) · (.+)$",
+     "",
+     {
+      "kod": "duyuruTuru"
+     }
+    ],
+    [
+     "^Numune talebiniz alındı: (.+)$",
+     "",
+     "Sample request received: $1"
+    ],
+    [
+     "^(.+) · (\\d+) adet$",
+     "",
+     "$1 · $2 pcs"
+    ]
+   ]
+  },
+  {
+   "ozellik": "karşılaştırma, set oluşturucu, hatırlatmalar",
+   "metin": {
+    "Karşılaştır": "Compare",
+    "Karşılaştırmada ✓": "In comparison ✓",
+    "Karşılaştırmaya ekle": "Add to comparison",
+    "Temizle": "Clear",
+    "Ürün karşılaştırma": "Product comparison",
+    "Farklı olan satırları vurgula": "Highlight differences",
+    "Kategori": "Category",
+    "Fiyat": "Price",
+    "Kampanya": "Promotion",
+    "Seçenekler": "Options",
+    "Renk seçimi": "Colour choices",
+    "Malzeme": "Materials",
+    "Ürünü aç": "Open product",
+    "En uygun": "Best price",
+    "Fiyat sorunuz": "Price on request",
+    "başlayan": "from",
+    "Oturum yüksekliği": "Seat height",
+    "Oturum derinliği": "Seat depth",
+    "Oturum genişliği": "Seat width",
+    "Sırt yüksekliği": "Back height",
+    "Toplam yükseklik": "Total height",
+    "Ağırlık (kg)": "Weight (kg)",
+    "En": "Width",
+    "Boy / derinlik": "Length / depth",
+    "Yükseklik": "Height",
+    "İskelet, File, Kumaş, Fitil": "Frame, Mesh, Fabric, Piping",
+    "İskelet, Kumaş, Fitil": "Frame, Fabric, Piping",
+    "İskelet, File": "Frame, Mesh",
+    "İskelet": "Frame",
+    "En az 2 ürün seçin.": "Select at least 2 products.",
+    "En fazla 4 ürün karşılaştırabilirsiniz.": "You can compare up to 4 products.",
+    "En az 2 ürün seçin": "Select at least 2 products",
+    "Set oluştur": "Build a set",
+    "Set oluşturucu": "Set builder",
+    "Masa, sandalye, sehpa gibi ürünleri tek renk seçimiyle birlikte kurun; tek tıkla hepsi sepete eklenir.": "Combine tables, chairs, side tables and more with one colour choice; add them all to the cart in one click.",
+    "Masa, sandalye ve sehpayı tek renk seçimiyle birlikte kurun": "Combine table, chairs and side table with one colour choice",
+    "Yemek takımı": "Dining set",
+    "Bar takımı": "Bar set",
+    "Oturma takımı": "Lounge set",
+    "Havuz başı": "Poolside",
+    "Serbest set": "Custom set",
+    "Masa": "Table",
+    "Sandalye": "Chair",
+    "Bar masası": "Bar table",
+    "Bar sandalyesi": "Bar stool",
+    "Oturma grubu": "Sofa set",
+    "Sehpa": "Side table",
+    "Şezlong": "Sun lounger",
+    "Ürün": "Product",
+    "Ürün seçin": "Select product",
+    "Set adı (isteğe bağlı), örn. Teras yemek alanı": "Set name (optional), e.g. Terrace dining",
+    "+ Kalem ekle…": "+ Add item…",
+    "Ortak renkler": "Shared colours",
+    "Seçtiğiniz renk, setteki uygun tüm ürünlere uygulanır.": "The colour you choose is applied to every matching product in the set.",
+    "İskelet rengi": "Frame colour",
+    "File rengi": "Mesh colour",
+    "Kumaş": "Fabric",
+    "Fitil rengi": "Piping colour",
+    "Set özeti": "Set summary",
+    "Set toplamı": "Set total",
+    "Seti sepete ekle": "Add set to cart",
+    "Teklif": "Quote",
+    "Adet": "Qty",
+    "Kaldır": "Remove",
+    "Renkler ekranda temsilidir; kesin ton için kartelaya bakınız.": "Colours on screen are indicative; check the colour card for the exact shade.",
+    "Hatırlatmalar": "Reminders",
+    "Kendime hatırlatma ekle": "Add a reminder for myself",
+    "Örn. Otel Mavi Koy'a teklifi sor": "E.g. ask Hotel Mavi Koy about the quote",
+    "Ekle": "Add",
+    "Tamamlandı": "Done",
+    "Yarın": "Tomorrow",
+    "1 hafta sonra": "In 1 week",
+    "Sil": "Delete",
+    "Silinsin mi?": "Delete?",
+    "Şu an bekleyen bir şey yok.": "Nothing needs attention right now.",
+    "Planlanmış hatırlatma yok.": "No scheduled reminders.",
+    "Son tamamlananlar": "Recently completed",
+    "Cari hesabım": "My account",
+    "Siparişlerim": "My orders",
+    "Projeler": "Projects",
+    "Sepete git": "Go to cart",
+    "Okundu": "Mark read",
+    "Bugün gizle": "Hide today",
+    "Ödeme yaptıysanız Cari hesabım ekranından bildirebilirsiniz.": "If you have paid, you can report it from My account.",
+    "Sipariş talebini göndermeyi unutmayın.": "Remember to send your order request.",
+    "Favori ürününüz": "Your favourite product",
+    "Hatırlatma eklendi.": "Reminder added.",
+    "Hatırlatma metnini yazın.": "Enter the reminder text.",
+    "Satış ekibinden yeni hatırlatma var.": "New reminder from the sales team."
+   },
+   "desen": [
+    [
+     "^(\\d+) ürün seçili$",
+     "",
+     "$1 selected"
+    ],
+    [
+     "^Şimdi ilgilenilecekler \\((\\d+)\\)$",
+     "",
+     "Needs attention ($1)"
+    ],
+    [
+     "^Planlanan \\((\\d+)\\)$",
+     "",
+     "Scheduled ($1)"
+    ],
+    [
+     "^(\\d+) ürün yan yana\\. (.+)$",
+     "",
+     "$1 products side by side. Prices in USD excl. VAT; promotional prices shown where applicable."
+    ],
+    [
+     "^(\\d+) hatırlatmanız var\\.$",
+     "",
+     "You have $1 reminder(s)."
+    ],
+    [
+     "^Vadesi geçmiş bakiyeniz var: (.+)$",
+     "",
+     "You have an overdue balance: $1"
+    ],
+    [
+     "^Sepetinizde (\\d+) kalem bekliyor$",
+     "",
+     "$1 item(s) waiting in your cart"
+    ],
+    [
+     "^“(.+)” projesi (\\d+) gündür bekliyor$",
+     "",
+     "Project “$1” has been waiting for $2 days"
+    ],
+    [
+     "^(\\d+) kalem hazır; sipariş vermeyi unutmayın\\.$",
+     "",
+     "$1 item(s) ready; remember to place the order."
+    ],
+    [
+     "^(.+): tahmini teslim bugün$",
+     "",
+     "$1: estimated delivery today"
+    ],
+    [
+     "^(.+): tahmini teslim (\\d+) gün sonra$",
+     "",
+     "$1: estimated delivery in $2 day(s)"
+    ],
+    [
+     "^Teslim tarihi (.+)$",
+     "",
+     "Delivery date $1"
+    ],
+    [
+     "^(.+) faturasının vadesi bugün doluyor$",
+     "",
+     "Invoice $1 is due today"
+    ],
+    [
+     "^(.+) faturasının vadesi (\\d+) gün sonra doluyor$",
+     "",
+     "Invoice $1 is due in $2 day(s)"
+    ],
+    [
+     "^Kalan (.+) · vade (.+)$",
+     "",
+     "Remaining $1 · due $2"
+    ],
+    [
+     "^(.+): %(\\d+) kampanya bugün bitiyor$",
+     "",
+     "$1: $2% promotion ends today"
+    ],
+    [
+     "^(.+): %(\\d+) kampanya (\\d+) gün sonra bitiyor$",
+     "",
+     "$1: $2% promotion ends in $3 day(s)"
+    ],
+    [
+     "^(\\d+) gün gecikti · (.+)$",
+     "",
+     "$1 day(s) late · $2"
+    ],
+    [
+     "^Ertelendi: (.+)$",
+     "",
+     "Snoozed to $1"
+    ],
+    [
+     "^“(.+)” sepete eklendi \\((\\d+) kalem\\)\\.$",
+     "",
+     "“$1” added to cart ($2 items)."
+    ],
+    [
+     "^Eksik seçim: (.+)$",
+     "",
+     {
+      "kod": "setEksik"
+     }
+    ],
+    [
+     "^(\\d+) parça · USD, KDV hariç(.*)$",
+     "",
+     {
+      "kod": "setParca"
+     }
+    ],
+    [
+     "^EXIT Garden satış ekibi · (.+)$",
+     "",
+     "EXIT Garden sales team · $1"
+    ],
+    [
+     "^(\\d+) × (.+)$",
+     "",
+     "$1 × $2"
+    ]
+   ]
+  },
+  {
+   "ozellik": "hedef ve prim, adres defteri, müşteri kataloğu",
+   "metin": {
+    "Müşteri kataloğu": "Customer catalogue",
+    "Kendi logonuz ve satış fiyatınızla katalog": "Catalogue with your logo and resale prices",
+    "Kendi logonuz ve kendi satış fiyatınızla katalog hazırlayın. EXIT bayi fiyatı katalogda görünmez.": "Create a catalogue with your own logo and resale prices. EXIT dealer prices are not shown.",
+    "Firma adı": "Company name",
+    "Logo": "Logo",
+    "Logo yükle": "Upload logo",
+    "Değiştir": "Change",
+    "Kaldır": "Remove",
+    "İletişim satırı": "Contact line",
+    "Fiyatları göster": "Show prices",
+    "KDV dahil (%20)": "Incl. VAT (20%)",
+    "Kâr payı (%)": "Markup (%)",
+    "Yuvarlama": "Rounding",
+    "Yok": "None",
+    "Para birimi": "Currency",
+    "Kur (1 USD = ?)": "Rate (1 USD = ?)",
+    "Hangi ürünler?": "Which products?",
+    "Katalogdaki mevcut filtre": "Current catalogue filter",
+    "Tüm ürünler": "All products",
+    "Favorilerim": "My favourites",
+    "Vazgeç": "Cancel",
+    "Kataloğu oluştur": "Create catalogue",
+    "Kuru yazın.": "Enter the exchange rate.",
+    "Teslimat adreslerim": "My delivery addresses",
+    "Şantiye, otel veya depo adreslerinizi kaydedin; sepette tek tıkla seçin.": "Save site, hotel or warehouse addresses and pick them in the cart with one click.",
+    "Henüz kayıtlı adres yok.": "No saved addresses yet.",
+    "Henüz kayıtlı adres yok": "No saved addresses yet",
+    "Varsayılan": "Default",
+    "Varsayılan yap": "Make default",
+    "Düzenle": "Edit",
+    "Sil": "Delete",
+    "Silinsin mi?": "Delete?",
+    "Yeni adres": "New address",
+    "Adresi düzenle": "Edit address",
+    "Adres adı": "Address name",
+    "Örn. Otel Mavi Koy şantiye": "E.g. Hotel Mavi Koy site",
+    "Şehir / ilçe": "City / district",
+    "Teslim alacak kişi": "Recipient",
+    "Telefon": "Phone",
+    "Açık adres": "Full address",
+    "Kaydet": "Save",
+    "Adresi ekle": "Add address",
+    "Adres eklendi.": "Address added.",
+    "Adres güncellendi.": "Address updated.",
+    "Adres adını ve açık adresi yazın.": "Enter the address name and full address.",
+    "Kayıtlı adres seçin…": "Choose a saved address…",
+    "Kayıtlı adres yok": "No saved address",
+    "Adreslerim": "My addresses",
+    "Adresleri yönet": "Manage addresses",
+    "Henüz prim basamağına ulaşmadınız.": "You have not reached a bonus tier yet.",
+    "En üst basamaktasınız, tebrikler!": "You are on the top tier, congratulations!",
+    "hedef": "target"
+   },
+   "desen": [
+    [
+     "^(\\d+) hedefim ve primim$",
+     "",
+     "My $1 target and bonus"
+    ],
+    [
+     "^Sevk edilen ve onaylanan siparişleriniz \\(net, iptaller hariç\\) · yıl sonuna (\\d+) gün$",
+     "",
+     "Your approved and shipped orders (net, excl. cancellations) · $1 days to year end"
+    ],
+    [
+     "^%(\\d+) → %([\\d.,]+) prim$",
+     "",
+     "$1% → $2% bonus"
+    ],
+    [
+     "^(\\d+) kayıtlı adres · sepette tek tıkla seçilir$",
+     "",
+     "$1 saved address(es) · pick in the cart with one click"
+    ],
+    [
+     "^Henüz kayıtlı adres yok · sepette tek tıkla seçilir$",
+     "",
+     "No saved addresses yet · pick in the cart with one click"
+    ],
+    [
+     "^Örnek: (.+) · bayi fiyatı (.+) → katalogda (.+)$",
+     "",
+     "Example: $1 · dealer price $2 → catalogue $3"
+    ]
+   ]
+  }
+ ],
+ "web": {
+  "metin": {
+   "Daha fazla": "More",
+   "Siparişler": "Orders",
+   "Cari": "Account",
+   "Ödeme bildirimi": "Payment notice",
+   "Şifremi değiştir": "Change password",
+   "Hesap menüsü": "Account menu",
+   "Ana menü": "Main menu"
+  }
+ }
+}

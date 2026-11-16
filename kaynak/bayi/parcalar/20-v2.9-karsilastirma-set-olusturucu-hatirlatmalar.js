@@ -104,7 +104,7 @@
       const eksik = []; if (!V.length) eksik.push('ürün'); if (!S.isk) eksik.push('iskelet rengi'); if (ih.file && !S.fl) eksik.push('file rengi'); if (ih.kumas && !S.km) eksik.push('kumaş'); if (ih.fitil && !S.ft) eksik.push('fitil rengi');
       const top = S.K.reduce((a, k) => { const v = kalemVeri(k); return a + (v.s && v.s.fiyat != null ? v.s.fiyat * k.adet : 0); }, 0), teklif = S.K.some(k => { const v = kalemVeri(k); return v.u && (!v.s || v.s.fiyat == null); });
       const renk = (bas, L, a) => `<h4>${bas}${S[a] ? ` · <span class="kucuk">${esc((L.find(r => r.kod === S[a]) || {}).ad || S[a])}</span>` : ''}</h4><div class="renkler">${L.map(r => `<button class="renk ${S[a] === r.kod ? 'on' : ''}" data-ra="${a}" data-rk="${esc(r.kod)}"><div class="ornek" style="background:${r.ornek}"></div><b>${esc(r.ad)}</b></button>`).join('')}</div>`;
-      const on = window.onizleSvg;
+      const on = RENK_ONIZLEME.svg;
       p.querySelector('.pencere').innerHTML = `<button class="kapat" aria-label="Kapat">×</button>
         <div><h2>Set oluşturucu</h2><div class="kucuk">Masa, sandalye, sehpa gibi ürünleri tek renk seçimiyle birlikte kurun; tek tıkla hepsi sepete eklenir.</div>
           <div class="set-tip">${Object.entries(SETTIP).map(([k, t]) => `<button data-tip="${k}" class="${S.tip === k ? 'on' : ''}">${t.ad}</button>`).join('')}</div>
@@ -214,32 +214,5 @@
   EK.hatirlatmaRozeti = () => hRozet();
 
   // İngilizce karşılıklar
-  if (window.dilEkle) window.dilEkle({
-    'Karşılaştır': 'Compare', 'Karşılaştırmada ✓': 'In comparison ✓', 'Karşılaştırmaya ekle': 'Add to comparison', 'Temizle': 'Clear', 'Ürün karşılaştırma': 'Product comparison', 'Farklı olan satırları vurgula': 'Highlight differences',
-    'Kategori': 'Category', 'Fiyat': 'Price', 'Kampanya': 'Promotion', 'Seçenekler': 'Options', 'Renk seçimi': 'Colour choices', 'Malzeme': 'Materials', 'Ürünü aç': 'Open product', 'En uygun': 'Best price', 'Fiyat sorunuz': 'Price on request', 'başlayan': 'from',
-    'Oturum yüksekliği': 'Seat height', 'Oturum derinliği': 'Seat depth', 'Oturum genişliği': 'Seat width', 'Sırt yüksekliği': 'Back height', 'Toplam yükseklik': 'Total height', 'Ağırlık (kg)': 'Weight (kg)', 'En': 'Width', 'Boy / derinlik': 'Length / depth', 'Yükseklik': 'Height',
-    'İskelet, File, Kumaş, Fitil': 'Frame, Mesh, Fabric, Piping', 'İskelet, Kumaş, Fitil': 'Frame, Fabric, Piping', 'İskelet, File': 'Frame, Mesh', 'İskelet': 'Frame',
-    'En az 2 ürün seçin.': 'Select at least 2 products.', 'En fazla 4 ürün karşılaştırabilirsiniz.': 'You can compare up to 4 products.', 'En az 2 ürün seçin': 'Select at least 2 products',
-    'Set oluştur': 'Build a set', 'Set oluşturucu': 'Set builder', 'Masa, sandalye, sehpa gibi ürünleri tek renk seçimiyle birlikte kurun; tek tıkla hepsi sepete eklenir.': 'Combine tables, chairs, side tables and more with one colour choice; add them all to the cart in one click.',
-    'Masa, sandalye ve sehpayı tek renk seçimiyle birlikte kurun': 'Combine table, chairs and side table with one colour choice',
-    'Yemek takımı': 'Dining set', 'Bar takımı': 'Bar set', 'Oturma takımı': 'Lounge set', 'Havuz başı': 'Poolside', 'Serbest set': 'Custom set', 'Masa': 'Table', 'Sandalye': 'Chair', 'Bar masası': 'Bar table', 'Bar sandalyesi': 'Bar stool', 'Oturma grubu': 'Sofa set', 'Sehpa': 'Side table', 'Şezlong': 'Sun lounger', 'Ürün': 'Product', 'Ürün seçin': 'Select product',
-    'Set adı (isteğe bağlı), örn. Teras yemek alanı': 'Set name (optional), e.g. Terrace dining', '+ Kalem ekle…': '+ Add item…', 'Ortak renkler': 'Shared colours', 'Seçtiğiniz renk, setteki uygun tüm ürünlere uygulanır.': 'The colour you choose is applied to every matching product in the set.',
-    'İskelet rengi': 'Frame colour', 'File rengi': 'Mesh colour', 'Kumaş': 'Fabric', 'Fitil rengi': 'Piping colour', 'Set özeti': 'Set summary', 'Set toplamı': 'Set total', 'Seti sepete ekle': 'Add set to cart', 'Teklif': 'Quote', 'Adet': 'Qty', 'Kaldır': 'Remove',
-    'Renkler ekranda temsilidir; kesin ton için kartelaya bakınız.': 'Colours on screen are indicative; check the colour card for the exact shade.',
-    'Hatırlatmalar': 'Reminders', 'Kendime hatırlatma ekle': 'Add a reminder for myself', "Örn. Otel Mavi Koy'a teklifi sor": 'E.g. ask Hotel Mavi Koy about the quote', 'Ekle': 'Add', 'Tamamlandı': 'Done', 'Yarın': 'Tomorrow', '1 hafta sonra': 'In 1 week', 'Sil': 'Delete', 'Silinsin mi?': 'Delete?',
-    'Şu an bekleyen bir şey yok.': 'Nothing needs attention right now.', 'Planlanmış hatırlatma yok.': 'No scheduled reminders.', 'Son tamamlananlar': 'Recently completed', 'Cari hesabım': 'My account', 'Siparişlerim': 'My orders', 'Projeler': 'Projects', 'Sepete git': 'Go to cart', 'Okundu': 'Mark read', 'Bugün gizle': 'Hide today',
-    'Ödeme yaptıysanız Cari hesabım ekranından bildirebilirsiniz.': 'If you have paid, you can report it from My account.', 'Sipariş talebini göndermeyi unutmayın.': 'Remember to send your order request.', 'Favori ürününüz': 'Your favourite product', 'Hatırlatma eklendi.': 'Reminder added.', 'Hatırlatma metnini yazın.': 'Enter the reminder text.', 'Satış ekibinden yeni hatırlatma var.': 'New reminder from the sales team.'
-  }, [
-    [/^(\d+) ürün seçili$/, (m, n) => n + ' selected'], [/^Şimdi ilgilenilecekler \((\d+)\)$/, (m, n) => `Needs attention (${n})`], [/^Planlanan \((\d+)\)$/, (m, n) => `Scheduled (${n})`],
-    [/^(\d+) ürün yan yana\. (.+)$/, (m, n) => `${n} products side by side. Prices in USD excl. VAT; promotional prices shown where applicable.`],
-    [/^(\d+) hatırlatmanız var\.$/, (m, n) => `You have ${n} reminder(s).`], [/^Vadesi geçmiş bakiyeniz var: (.+)$/, (m, a) => 'You have an overdue balance: ' + a], [/^Sepetinizde (\d+) kalem bekliyor$/, (m, n) => `${n} item(s) waiting in your cart`],
-    [/^“(.+)” projesi (\d+) gündür bekliyor$/, (m, a, n) => `Project “${a}” has been waiting for ${n} days`], [/^(\d+) kalem hazır; sipariş vermeyi unutmayın\.$/, (m, n) => `${n} item(s) ready; remember to place the order.`],
-    [/^(.+): tahmini teslim bugün$/, (m, a) => a + ': estimated delivery today'], [/^(.+): tahmini teslim (\d+) gün sonra$/, (m, a, n) => `${a}: estimated delivery in ${n} day(s)`], [/^Teslim tarihi (.+)$/, (m, t) => 'Delivery date ' + t],
-    [/^(.+) faturasının vadesi bugün doluyor$/, (m, a) => `Invoice ${a} is due today`], [/^(.+) faturasının vadesi (\d+) gün sonra doluyor$/, (m, a, n) => `Invoice ${a} is due in ${n} day(s)`], [/^Kalan (.+) · vade (.+)$/, (m, a, t) => `Remaining ${a} · due ${t}`],
-    [/^(.+): %(\d+) kampanya bugün bitiyor$/, (m, a, o) => `${a}: ${o}% promotion ends today`], [/^(.+): %(\d+) kampanya (\d+) gün sonra bitiyor$/, (m, a, o, n) => `${a}: ${o}% promotion ends in ${n} day(s)`],
-    [/^(\d+) gün gecikti · (.+)$/, (m, n, t) => `${n} day(s) late · ${t}`], [/^Ertelendi: (.+)$/, (m, t) => 'Snoozed to ' + t], [/^“(.+)” sepete eklendi \((\d+) kalem\)\.$/, (m, a, n) => `“${a}” added to cart (${n} items).`],
-    [/^Eksik seçim: (.+)$/, (m, a) => 'Missing: ' + a.replace('iskelet rengi', 'frame colour').replace('file rengi', 'mesh colour').replace('kumaş', 'fabric').replace('fitil rengi', 'piping colour').replace('ürün', 'product')],
-    [/^(\d+) parça · USD, KDV hariç(.*)$/, (m, n, r) => `${n} pieces · USD excl. VAT${r ? ' · a quote will be prepared for items without a price' : ''}`], [/^EXIT Garden satış ekibi · (.+)$/, (m, t) => 'EXIT Garden sales team · ' + t],
-    [/^(\d+) × (.+)$/, (m, n, a) => n + ' × ' + a]
-  ]);
+  // İngilizce çeviriler: kaynak/bayi/dil/en.json (ekler)
 })();
