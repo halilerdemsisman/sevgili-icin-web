@@ -45,7 +45,8 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
       - name: İmza denetimi
         shell: pwsh
-        run: Get-ChildItem cikti/*.exe | ForEach-Object { $s = Get-AuthenticodeSignature $_.FullName; "$($_.Name): $($s.Status) $($s.SignerCertificate.Subject)" }
+        run: |
+          Get-ChildItem cikti/*.exe | ForEach-Object { $s = Get-AuthenticodeSignature $_.FullName; "$($_.Name): $($s.Status) $($s.SignerCertificate.Subject)" }
       - uses: actions/upload-artifact@v4
         with:
           name: exit-satis-windows
