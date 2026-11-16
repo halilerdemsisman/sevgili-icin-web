@@ -2,11 +2,13 @@
 
 Amaç: Uygulamanın satış ekibine dağıtılmadan önce gerçek Windows bilgisayarlarda denenmesi. Katılanlar satış yöneticisi ve bir temsilci. Süre 1–2 hafta: ilk gün kurulum, bir hafta günlük kullanım, sonra bir güncelleme turu.
 
-Bu ortamda denenenler:
+Otomatik denenenler:
 - Uygulamanın kendisi (Linux'ta, gerçek sunucuyla, 16 otomatik test).
-- Güncelleme turu baştan sona: 1.0.0 sürümü sunucudaki 1.0.1'i buldu, indirdi, kendi yerine kurdu, yeniden açılışta 1.0.1 çalıştı. Linux AppImage ile denendi; Windows'ta aynı yol NSIS kurulum dosyasıyla çalışır.
+- **Windows'ta** (GitHub Actions, Windows Server 2025; her değişiklikte `araclar/windows-dene.mjs`): sessiz kurulum ve kısayollar, ilk açılışta adres girme, giriş, bildirim (0,5–0,8 sn) ve görev çubuğu sayacı, bildirimden sipariş açma, son görülen verilerin DPAPI ile şifrelenmesi, sunucuya ulaşılamazken salt okunur görünüm ve "Yeniden dene", güncelleme turu 1.0.0 → 1.0.1 (12 sn, kendiliğinden yeniden açılır), kaldırma. Bu deneme, ilk açılışta adresin kaydedilemediği bir Windows hatasını buldu (düzeltildi).
 
-Yalnız Windows'ta görülebilenler aşağıdaki listededir.
+Pilotta görülecek olanlar (gerçek kullanıcı, gerçek ağ ve şirket bilgisayarı) aşağıdaki listededir.
+
+**VPS hazır değilse:** Pilot şirket içi ağda "EXIT-Deneme-Windows" paketiyle yapılabilir (GitHub › Actions › "Masaüstü paketi" › Artifacts). Paket bir bilgisayarda `BASLAT.bat` ile sunucuyu açar; pilot bilgisayarlar pencerede yazan `http://192.168.x.x:8080` adresini kullanır (`dagitim/windows/BENIOKU.txt`). Bayiler bu durumda yalnız aynı ağdan erişebilir.
 
 ## Hazırlık (bilgi işlem, pilottan önce)
 

@@ -2,6 +2,8 @@
 
 > **VPS'e kurulum ve şirket sunucusundan taşınma:** `dagitim/TASINMA.md` (adım adım, hazır betiklerle). Bu belge sunucunun genel ayarlarını anlatır.
 
+> **Tek Windows bilgisayarda hızlı deneme:** GitHub Actions'taki "EXIT-Deneme-Windows" paketi sunucuyu, masaüstü uygulamasının kurulum dosyasını ve Node'u içerir; zip açılıp `BASLAT.bat`'a çift tıklanır (`dagitim/windows/BENIOKU.txt`).
+
 Bu sunucu bayi portalını (`/`), satış panelini (`/satis`) ve MRP'yi (`/mrp`) tek yerden yayınlar ve tüm veriyi ortak tutar. Bayi kendi bilgisayarından veya telefonundan sipariş verdiğinde satış ekibi anında görür.
 
 Sürüm 1a ile gelen güvenlik düzeni:
@@ -150,7 +152,7 @@ Sürüm 3a ile satış paneli Windows uygulaması olarak da kullanılabilir ("EX
 
 **Güncelleme:** Yeni sürümün üç dosyasını aynı klasöre koymanız yeterlidir. `latest.yml`'nin üzerine yazılır; eski `.exe` dosyaları silinebilir. Uygulamalar en geç 4 saat içinde yeni sürümü indirir.
 
-Kurulum dosyası imzalanana kadar Windows "Tanınmayan uygulama" uyarısı verir ("Ek bilgi › Yine de çalıştır").
+Kurulum dosyası imzalanana kadar Windows ilk kurulumda "Windows kişisel bilgisayarınızı korudu" uyarısı verir ("Ek bilgi › Yine de çalıştır"); güncellemelerde uyarı çıkmaz. İmzalama seçenekleri: `satis-masaustu/IMZALAMA.md`.
 
 ## 8. Notlar
 
